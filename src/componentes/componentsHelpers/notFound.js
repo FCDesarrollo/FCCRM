@@ -1,0 +1,56 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import { makeStyles } from "@material-ui/core/styles";
+import { Error as ErrorIcon } from "@material-ui/icons";
+import { Grid, Typography, Card, Button } from "@material-ui/core";
+
+const useStyles = makeStyles(theme => ({
+  root: {
+    textAlign: "center",
+    width: "fit-content",
+    marginTop: "10%"
+  },
+  container: {
+    padding: theme.spacing(3, 2)
+  },
+  icon: {
+    color: "#D32F2F",
+    fontSize: 100
+  },
+  items: {
+    marginTop: "20px"
+  },
+  button: {
+      marginBottom: "20px"
+  }
+}));
+
+export default function NotFound() {
+  const classes = useStyles();
+  return (
+    <center>
+      <Card className={classes.root}>
+        <Grid container className={classes.container}>
+          <Grid item xs={12} className={classes.items}>
+            <ErrorIcon className={classes.icon} />
+          </Grid>
+          <Grid item xs={12} className={classes.items}>
+            <Typography variant="h3">Página no disponible</Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="h6">
+            La página a la que intenta acceder no está disponible.
+            </Typography>
+          </Grid>
+          <Grid item xs={12} className={classes.items}>
+            <Link to="/" style={{textDecoration: "none"}}>
+              <Button variant="contained" color="primary" className={classes.button}>
+                Ir a Home
+              </Button>
+            </Link>
+          </Grid>
+        </Grid>
+      </Card>
+    </center>
+  );
+}

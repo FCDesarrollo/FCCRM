@@ -1,9 +1,9 @@
 import React from 'react'
 
-export default function MiAdministracion() {
+export default function CartasTecnicas() {
     return (
         <div>
-            mi administración
+            Cartas Técnicas
         </div>
     )
 }

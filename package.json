@@ -1,17 +1,29 @@
 {
   "name": "fccrm",
+  "homepage": "./",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "dependencies": {
     "@material-ui/core": "^4.9.1",
     "@material-ui/icons": "^4.9.1",
+    "@material-ui/lab": "^4.0.0-alpha.44",
+    "@sweetalert/with-react": "^0.1.1",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.4.0",
     "@testing-library/user-event": "^7.2.1",
+    "axios": "^0.19.2",
+    "axios-hooks": "^1.9.0",
+    "jsonwebtoken": "^8.5.1",
+    "laravel-echo": "^1.6.1",
+    "moment": "^2.24.0",
+    "pusher-js": "^5.1.1",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-router-dom": "^5.1.2",
-    "react-scripts": "3.3.1"
+    "react-scripts": "3.3.1",
+    "react-websocket": "^2.1.0",
+    "sweetalert": "^2.1.2",
+    "ws": "^7.2.2"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -29,6 +41,7 @@
       "not op_mini all"
     ],
     "development": [
+      "ie 11",
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
