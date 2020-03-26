@@ -10,7 +10,14 @@ import {
   List,
   ListItem,
   ListItemText,
-  TextField
+  TextField,
+  FormControlLabel,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogActions,
+  Button
 } from "@material-ui/core";
 import {
   ArrowBack as ArrowBackIcon,
@@ -18,6 +25,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ChevronRight as ChevronRightIcon,
   Add as AddIcon,
+  MoneyOff as MoneyOffIcon,
   Minimize as MinimizeIcon,
   AccountBalanceWallet as AccountBalanceWalletIcon
 } from "@material-ui/icons";
@@ -29,6 +37,11 @@ import { dataBaseErrores } from "../../helpers/erroresDB";
 import swalReact from "@sweetalert/with-react";
 import swal from "sweetalert";
 import jwt from "jsonwebtoken";
+import { Fragment } from "react";
+import {
+  doubleKeyValidation,
+  doublePasteValidation
+} from "../../helpers/inputHelpers";
 
 const useStyles = makeStyles(theme => ({
   card: {
@@ -179,7 +192,15 @@ export default function ConfiguracionesPermisos(props) {
   const [expanded, setExpanded] = useState([]);
   const [redirect, setRedirect] = useState(false);
   const [conceptoBusqueda, setConceptoBusqueda] = useState(0);
+  const [checkedLimite, setCheckedLimite] = useState(false);
+  const [
+    openDialogLimiteImporteGastos,
+    setOpenDialogLimiteImporteGastos
+  ] = useState(false);
+  const [idUsuario, setIdUsuario] = useState(0);
+  const [importeLimite, setImporteLimite] = useState(0);
   let idMenu;
+  let permisos;
   if (localStorage.getItem("idMenuTemporal")) {
     try {
       const decodedToken = jwt.verify(
@@ -187,6 +208,7 @@ export default function ConfiguracionesPermisos(props) {
         "mysecretpassword"
       );
       idMenu = decodedToken.idMenuTemporal.idMenu;
+      permisos = decodedToken.idMenuTemporal.permisos;
     } catch (err) {
       localStorage.removeItem("idMenuTemporal");
       if (!redirect) {
@@ -275,6 +297,38 @@ export default function ConfiguracionesPermisos(props) {
       manual: true
     }
   );
+  const [
+    {
+      data: traerLimiteGastosUsuarioData,
+      loading: traerLimiteGastosUsuarioLoading,
+      error: traerLimiteGastosUsuarioError
+    },
+    executeTraerLimiteGastosUsuario
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/traerLimiteGastosUsuario`,
+      method: "GET"
+    },
+    {
+      manual: true
+    }
+  );
+  const [
+    {
+      data: guardaLimiteGastosData,
+      loading: guardaLimiteGastosLoading,
+      error: guardaLimiteGastosError
+    },
+    executeGuardaLimiteGastos
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/guardaLimiteGastos`,
+      method: "POST"
+    },
+    {
+      manual: true
+    }
+  );
 
   useEffect(() => {
     function checkData() {
@@ -312,11 +366,12 @@ export default function ConfiguracionesPermisos(props) {
     function checkData() {
       if (guardaPermisoAutorizacionData) {
         if (guardaPermisoAutorizacionData.error !== 0) {
-          return (
+          swal("Error", dataBaseErrores(guardaPermisoAutorizacionData.error), "warning");
+          /* return (
             <Typography variant="h6">
               {dataBaseErrores(guardaPermisoAutorizacionData.error)}
             </Typography>
-          );
+          ); */
         } else {
           swal(
             "Concepto agregado",
@@ -335,11 +390,12 @@ export default function ConfiguracionesPermisos(props) {
     function checkData() {
       if (eliminaPermisoAutorizacionData) {
         if (eliminaPermisoAutorizacionData.error !== 0) {
-          return (
+          swal("Error", dataBaseErrores(eliminaPermisoAutorizacionData.error), "warning");
+          /* return (
             <Typography variant="h6">
               {dataBaseErrores(eliminaPermisoAutorizacionData.error)}
             </Typography>
-          );
+          ); */
         } else {
           swal(
             "Concepto eliminado",
@@ -354,11 +410,68 @@ export default function ConfiguracionesPermisos(props) {
     checkData();
   }, [eliminaPermisoAutorizacionData, executepermisosAutorizaciones]);
 
+  useEffect(() => {
+    function checkData() {
+      if (guardaLimiteGastosData) {
+        if (guardaLimiteGastosData.error !== 0) {
+          swal("Error", dataBaseErrores(guardaLimiteGastosData.error), "warning");
+          /* return (
+            <Typography variant="h6">
+              {dataBaseErrores(guardaLimiteGastosData.error)}
+            </Typography>
+          ); */
+        } else {
+          swal(
+            "Límite de gasto guardado",
+            "El límite de gasto se ha guardado",
+            "success"
+          );
+        }
+      }
+    }
+
+    checkData();
+  }, [guardaLimiteGastosData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (traerLimiteGastosUsuarioData) {
+        if (traerLimiteGastosUsuarioData.error !== 0) {
+          swal("Error", dataBaseErrores(traerLimiteGastosUsuarioData.error), "warning");
+          setOpenDialogLimiteImporteGastos(false);
+          /* return (
+            <Typography variant="h6">
+              {dataBaseErrores(traerLimiteGastosUsuarioData.error)}
+            </Typography>
+          ); */
+        } else {
+          if (traerLimiteGastosUsuarioData.limiteGasto.length > 0) {
+            setImporteLimite(
+              traerLimiteGastosUsuarioData.limiteGasto[0].importe
+            );
+            setCheckedLimite(
+              traerLimiteGastosUsuarioData.limiteGasto[0].importe > 0
+                ? true
+                : false
+            );
+          } else {
+            setImporteLimite(0);
+            setCheckedLimite(false);
+          }
+        }
+      }
+    }
+
+    checkData();
+  }, [traerLimiteGastosUsuarioData]);
+
   if (
     permisosAutorizacionesLoading ||
     cargaConceptosLoading ||
     guardaPermisoAutorizacionLoading ||
-    eliminaPermisoAutorizacionLoading
+    eliminaPermisoAutorizacionLoading ||
+    guardaLimiteGastosLoading ||
+    traerLimiteGastosUsuarioLoading
   ) {
     setLoading(true);
     return <div></div>;
@@ -369,13 +482,27 @@ export default function ConfiguracionesPermisos(props) {
     permisosAutorizacionesError ||
     cargaConceptosError ||
     guardaPermisoAutorizacionError ||
-    eliminaPermisoAutorizacionError
+    eliminaPermisoAutorizacionError ||
+    guardaLimiteGastosError ||
+    traerLimiteGastosUsuarioError
   ) {
     return <ErrorQueryDB />;
   }
 
   const handleChangeTreeView = (event, nodes) => {
     setExpanded(nodes);
+  };
+
+  const handleChangeLimite = event => {
+    setCheckedLimite(event.target.checked);
+  };
+
+  const handleOpenDialogLimiteImporteGastos = () => {
+    setOpenDialogLimiteImporteGastos(true);
+  };
+
+  const handleCloseDialogLimiteImporteGastos = () => {
+    setOpenDialogLimiteImporteGastos(false);
   };
 
   const getConceptosUsuarioExistentes = (idUsuario, idConcepto) => {
@@ -478,14 +605,19 @@ export default function ConfiguracionesPermisos(props) {
           labelIcon={AccountBalanceWalletIcon}
           labelInfo={
             <Tooltip title="Quitar concepto">
-              <IconButton
-                onClick={e => {
-                  e.stopPropagation();
-                  eliminarConcepto(concepto.id, idUsuario);
-                }}
-              >
-                <MinimizeIcon color="secondary" />
-              </IconButton>
+              <span>
+                <IconButton
+                  disabled={permisos < 3}
+                  onClick={e => {
+                    e.stopPropagation();
+                    eliminarConcepto(concepto.id, idUsuario);
+                  }}
+                >
+                  <MinimizeIcon
+                    color={permisos === 3 ? "secondary" : "inherit"}
+                  />
+                </IconButton>
+              </span>
             </Tooltip>
           }
           color="#1a73e8"
@@ -505,7 +637,7 @@ export default function ConfiguracionesPermisos(props) {
   };
 
   const getUsuarios = () => {
-    //console.log(permisosAutorizacionesData);
+    const usuarioCorreo = usuario;
     return permisosAutorizacionesData.usuarios.map((usuario, index) => {
       return conceptoUsuarioValidacion(usuario.conceptos) ||
         parseInt(conceptoBusqueda) === 0 ? (
@@ -517,16 +649,48 @@ export default function ConfiguracionesPermisos(props) {
           conceptos={usuario.conceptos}
           itemPadre={true}
           labelInfo={
-            <Tooltip title="Agregar concepto">
-              <IconButton
-                onClick={e => {
-                  e.stopPropagation();
-                  agregarConcepto(usuario.idusuario);
-                }}
-              >
-                <AddIcon style={{ color: "#4caf50" }} />
-              </IconButton>
-            </Tooltip>
+            <Fragment>
+              <Tooltip title="Máximo importe de gastos">
+                <span>
+                  <IconButton
+                    disabled={permisos < 1}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setIdUsuario(usuario.idusuario);
+                      executeTraerLimiteGastosUsuario({
+                        params: {
+                          usuario: usuarioCorreo,
+                          pwd: pwd,
+                          rfc: rfc,
+                          idsubmenu: 45,
+                          idusuario: usuario.idusuario
+                        }
+                      });
+                      handleOpenDialogLimiteImporteGastos();
+                    }}
+                  >
+                    <MoneyOffIcon
+                      style={{ color: permisos >= 1 ? "black" : "" }}
+                    />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title="Agregar concepto">
+                <span>
+                  <IconButton
+                    disabled={permisos < 2}
+                    onClick={e => {
+                      e.stopPropagation();
+                      agregarConcepto(usuario.idusuario);
+                    }}
+                  >
+                    <AddIcon
+                      style={{ color: permisos >= 2 ? "#4caf50" : "" }}
+                    />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Fragment>
           }
           color="#1a73e8"
           bgColor="#e8f0fe"
@@ -552,6 +716,24 @@ export default function ConfiguracionesPermisos(props) {
         </option>
       );
     });
+  };
+
+  const guardarLimiteImporte = () => {
+    if (checkedLimite && importeLimite === "") {
+      swal("Error", "Ingresa un importe límite", "warning");
+    } else {
+      executeGuardaLimiteGastos({
+        data: {
+          usuario: usuario,
+          pwd: pwd,
+          rfc: rfc,
+          idsubmenu: 45,
+          idusuario: idUsuario,
+          idconcepto: 4,
+          importe: checkedLimite ? parseFloat(importeLimite) : 0
+        }
+      });
+    }
   };
 
   return redirect ? (
@@ -593,7 +775,7 @@ export default function ConfiguracionesPermisos(props) {
             }}
           >
             <option value="0">Todos</option>
-            {getConceptos()}
+            {cargaConceptosData && cargaConceptosData.conceptos ? getConceptos() : <Redirect to="/autorizacionesGastos" />}
           </TextField>
         </Grid>
         <Grid item xs={12}>
@@ -605,10 +787,74 @@ export default function ConfiguracionesPermisos(props) {
             expanded={expanded}
             onNodeToggle={handleChangeTreeView}
           >
-            {getUsuarios()}
+            {permisosAutorizacionesData && permisosAutorizacionesData.usuarios ? getUsuarios() : null}
           </TreeView>
         </Grid>
       </Grid>
+      <Dialog
+        onClose={handleCloseDialogLimiteImporteGastos}
+        aria-labelledby="simple-dialog-title"
+        open={openDialogLimiteImporteGastos}
+      >
+        <DialogTitle id="simple-dialog-title">
+          Asignar Límite de Importe de Gastos
+        </DialogTitle>
+        <DialogContent dividers>
+          <Grid container justify="center" spacing={3}>
+            <Grid item xs={12} sm={6} style={{ alignSelf: "flex-end" }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    color="primary"
+                    checked={checkedLimite}
+                    onChange={handleChangeLimite}
+                  />
+                }
+                label="Límite"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                style={{ verticalAlign: "text-bottom" }}
+                id="maximoImporteGastos"
+                type="text"
+                disabled={!checkedLimite}
+                label="Importe Máximo"
+                value={importeLimite}
+                inputProps={{
+                  maxLength: 20
+                }}
+                onKeyPress={e => {
+                  doubleKeyValidation(e, 2);
+                }}
+                onChange={e => {
+                  doublePasteValidation(e, 2);
+                  setImporteLimite(e.target.value);
+                }}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleCloseDialogLimiteImporteGastos}
+          >
+            Cerrar
+          </Button>
+          <Button
+            variant="contained"
+            disabled={permisos < 2}
+            color="primary"
+            onClick={() => {
+              guardarLimiteImporte();
+            }}
+          >
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

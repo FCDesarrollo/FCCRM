@@ -39,6 +39,7 @@ import {
   RadioGroup,
   Radio
 } from "@material-ui/core";
+import Autocomplete, { createFilterOptions } from "@material-ui/lab/Autocomplete";
 import {
   AddCircle as AddCircleIcon,
   FilterList as FilterListIcon,
@@ -67,6 +68,7 @@ import {
   doublePasteValidation
 } from "../../helpers/inputHelpers";
 import { Fragment } from "react";
+import { verificarExtensionArchivo } from "../../helpers/extensionesArchivos";
 
 const useStyles = makeStyles(theme => ({
   card: {
@@ -130,9 +132,9 @@ function createData(
   detalle,
   importe,
   status,
-  acciones
+  idUsuario
 ) {
-  return { id, fecha, usuario, sucursal, detalle, importe, status };
+  return { id, fecha, usuario, sucursal, detalle, importe, status, idUsuario };
 }
 
 let rows = [];
@@ -410,7 +412,8 @@ export default function AutorizacionesGastos(props) {
                 requerimiento.sucursal,
                 `Concepto: ${requerimiento.id_concepto} Folio: ${requerimiento.folio} Serie: ${requerimiento.serie}`,
                 requerimiento.importe_estimado,
-                requerimiento.estado_documento
+                requerimiento.estado_documento,
+                requerimiento.id_usuario
               )
             );
           });
@@ -439,23 +442,35 @@ export default function AutorizacionesGastos(props) {
           key={index}
           style={{ float: "right" }}
         >
-          <Link to="/configuracionesPermisos">
-            <IconButton
-              onClick={() => {
-                const token = jwt.sign(
-                  {
-                    idMenuTemporal: {
-                      idMenu: submenuContent[0].submenu.idmenu
-                    }
-                  },
-                  "mysecretpassword"
-                );
-                localStorage.setItem("idMenuTemporal", token);
+          <span>
+            <Link
+              to="/configuracionesPermisos"
+              style={{ cursor: content.permisos === 0 ? "default" : "" }}
+              onClick={e => {
+                if (content.permisos === 0) {
+                  e.preventDefault();
+                }
               }}
             >
-              <SettingsIcon />
-            </IconButton>
-          </Link>
+              <IconButton
+                disabled={content.permisos === 0}
+                onClick={() => {
+                  const token = jwt.sign(
+                    {
+                      idMenuTemporal: {
+                        idMenu: submenuContent[0].submenu.idmenu,
+                        permisos: submenuContent[0].permisos
+                      }
+                    },
+                    "mysecretpassword"
+                  );
+                  localStorage.setItem("idMenuTemporal", token);
+                }}
+              >
+                <SettingsIcon />
+              </IconButton>
+            </Link>
+          </span>
         </Tooltip>
       ) : null;
     });
@@ -540,6 +555,7 @@ export default function AutorizacionesGastos(props) {
             empresaDatos={empresaDatos}
             idModulo={idModulo}
             idMenu={idMenu}
+            setIdSubmenu={setIdSubmenu}
             idSubmenu={idSubmenu}
             setAccionAG={setAccionAG}
             setIdRequerimiento={setIdRequerimiento}
@@ -566,6 +582,7 @@ export default function AutorizacionesGastos(props) {
             idRequerimiento={idRequerimiento}
             setIdRequerimiento={setIdRequerimiento}
             estatusRequerimiento={estatusRequerimiento}
+            permisosSubmenu={permisosSubmenu}
             radioTipo={radioTipo}
           />
         ) : null}
@@ -582,6 +599,7 @@ function TablaAYG(props) {
   const setShowComponent = props.setShowComponent;
   const setLoading = props.setLoading;
   const usuarioDatos = props.usuarioDatos;
+  const idUsuarioLogueado = usuarioDatos.idusuario;
   const usuario = usuarioDatos.correo;
   const usuarioPassword = usuarioDatos.password;
   const empresaDatos = props.empresaDatos;
@@ -591,6 +609,7 @@ function TablaAYG(props) {
   const idModulo = props.idModulo;
   const idMenu = props.idMenu;
   const idSubmenu = props.idSubmenu;
+  //const setIdSubmenu = props.setIdSubmenu;
   const setAccionAG = props.setAccionAG;
   const setIdRequerimiento = props.setIdRequerimiento;
   const executeListaRequerimientos = props.executeListaRequerimientos;
@@ -630,8 +649,12 @@ function TablaAYG(props) {
           );
         } else {
           swal(
-            "Requerimiento eliminado",
-            "El requerimiento ha sido eliminado",
+            radioTipo !== "gastos"
+              ? "Requerimiento eliminado"
+              : "Gasto Eliminado",
+            radioTipo !== "gastos"
+              ? "El requerimiento ha sido eliminado"
+              : "El gasto ha sido eliminado",
             "success"
           );
           executeListaRequerimientos();
@@ -640,7 +663,7 @@ function TablaAYG(props) {
     }
 
     checkData();
-  }, [eliminaRequerimientoData, executeListaRequerimientos]);
+  }, [eliminaRequerimientoData, executeListaRequerimientos, radioTipo]);
 
   if (eliminaRequerimientoLoading) {
     setLoading(true);
@@ -669,6 +692,10 @@ function TablaAYG(props) {
 
   const handleChangeRadioTipo = event => {
     setRadioTipo(event.target.value);
+    /* if(idSubmenu === 44) {
+      setIdSubmenu(event.target.value !== "gastos" ? 444 : 44)
+    }
+    console.log(event.target.value); */
     const token = jwt.sign(
       {
         menuTemporal: {
@@ -687,9 +714,18 @@ function TablaAYG(props) {
 
   const eliminarRequerimiento = (
     idRequerimiento,
-    estatusActualRequerimiento
+    estatusActualRequerimiento,
+    idUsuario
   ) => {
-    if (estatusActualRequerimiento !== 1 && radioTipo !== "gastos") {
+    if (idUsuarioLogueado !== idUsuario) {
+      swal(
+        "Error",
+        `No puedes eliminar los ${
+          radioTipo !== "gastos" ? "requerimientos" : "gastos"
+        } de otro usuario`,
+        "warning"
+      );
+    } else if (estatusActualRequerimiento !== 1 && radioTipo !== "gastos") {
       swal(
         "Error",
         "Solo se pueden eliminar requerimientos con estatus pendiente",
@@ -697,7 +733,9 @@ function TablaAYG(props) {
       );
     } else {
       swal({
-        text: "¿Está seguro de eliminar el requerimiento?",
+        text: `¿Está seguro de eliminar el ${
+          radioTipo !== "gastos" ? "requerimiento" : "gasto"
+        }?`,
         buttons: ["No", "Sí"],
         dangerMode: true
       }).then(value => {
@@ -760,33 +798,40 @@ function TablaAYG(props) {
               >
                 <Grid item style={{ alignSelf: "flex-end" }}>
                   <Tooltip title="Nuevo">
-                    <IconButton
-                      aria-label="nuevo"
-                      onClick={() => {
-                        setShowComponent(2);
-                        setAccionAG(1);
-                        setIdRequerimiento(0);
-                        const token = jwt.sign(
-                          {
-                            menuTemporal: {
-                              tableTittle: tableTittle,
-                              showComponent: 2,
-                              idModulo: idModulo,
-                              idMenu: idMenu,
-                              idSubmenu: idSubmenu,
-                              accionAG: 1,
-                              idRequerimiento: 0,
-                              estatusRequerimiento:
-                                radioTipo !== "gastos" ? 1 : 2
-                            }
-                          },
-                          "mysecretpassword"
-                        );
-                        localStorage.setItem("menuTemporal", token);
-                      }}
-                    >
-                      <AddCircleIcon style={{ color: "#4caf50" }} />
-                    </IconButton>
+                    <span>
+                      <IconButton
+                        aria-label="nuevo"
+                        disabled={permisosSubmenu < 2}
+                        onClick={() => {
+                          setShowComponent(2);
+                          setAccionAG(1);
+                          setIdRequerimiento(0);
+                          const token = jwt.sign(
+                            {
+                              menuTemporal: {
+                                tableTittle: tableTittle,
+                                showComponent: 2,
+                                idModulo: idModulo,
+                                idMenu: idMenu,
+                                idSubmenu: idSubmenu,
+                                accionAG: 1,
+                                idRequerimiento: 0,
+                                estatusRequerimiento:
+                                  radioTipo !== "gastos" ? 1 : 2
+                              }
+                            },
+                            "mysecretpassword"
+                          );
+                          localStorage.setItem("menuTemporal", token);
+                        }}
+                      >
+                        <AddCircleIcon
+                          style={{
+                            color: permisosSubmenu >= 2 ? "#4caf50" : ""
+                          }}
+                        />
+                      </IconButton>
+                    </span>
                   </Tooltip>
                 </Grid>
                 <Grid item style={{ alignSelf: "flex-end" }}>
@@ -865,21 +910,23 @@ function TablaAYG(props) {
                         <TableCell align="right">{row.detalle}</TableCell>
                         <TableCell align="right">{row.importe}</TableCell>
                         <TableCell align="right">
-                          {row.status === 1
-                            ? "Pendiente"
-                            : row.status === 2
-                            ? "Cancelado"
-                            : row.status === 3
-                            ? "Autorizado"
-                            : row.status === 4
-                            ? "Surtido"
-                            : row.status === 5
-                            ? "Surtido Parcial"
-                            : row.status === 6
-                            ? "Sin Surtir"
-                            : row.status === 7
-                            ? "No autorizado"
-                            : ""}
+                          {radioTipo !== "gastos"
+                            ? row.status === 1
+                              ? "Pendiente"
+                              : row.status === 2
+                              ? "Cancelado"
+                              : row.status === 3
+                              ? "Autorizado"
+                              : row.status === 4
+                              ? "Surtido"
+                              : row.status === 5
+                              ? "Surtido Parcial"
+                              : row.status === 6
+                              ? "Sin Surtir"
+                              : row.status === 7
+                              ? "No autorizado"
+                              : ""
+                            : "-"}
                         </TableCell>
                         <TableCell align="right">
                           <div>
@@ -923,7 +970,11 @@ function TablaAYG(props) {
                                 <IconButton
                                   disabled={permisosSubmenu < 3}
                                   onClick={() => {
-                                    eliminarRequerimiento(row.id, row.status);
+                                    eliminarRequerimiento(
+                                      row.id,
+                                      row.status,
+                                      row.idUsuario
+                                    );
                                   }}
                                 >
                                   <DeleteIcon
@@ -997,6 +1048,7 @@ const StyledMenu = withStyles({
 function FormularioAYG(props) {
   const classes = useStyles();
   const theme = useTheme();
+  let proveedores = [];
   const tableTittle = props.tittle;
   const setShowComponent = props.setShowComponent;
   const usuarioDatos = props.usuarioDatos;
@@ -1020,6 +1072,7 @@ function FormularioAYG(props) {
   const setIdRequerimiento = props.setIdRequerimiento;
   const executeListaRequerimientos = props.executeListaRequerimientos;
   const idRequerimiento = props.idRequerimiento;
+  const permisosSubmenu = props.permisosSubmenu;
   const radioTipo = props.radioTipo;
   //console.log(radioTipo);
   const [RADatos, setRADatos] = useState({
@@ -1046,6 +1099,9 @@ function FormularioAYG(props) {
   const [archivosSecundario, setArchivosSecundario] = useState(null);
   const [documentosGuardados, setDocumentosGuardados] = useState([]);
   const [historial, setHistorial] = useState([]);
+  const [gastos, setGastos] = useState([]);
+  const [requerimiento, setRequerimiento] = useState([]);
+  const [gastoAutorizacion, setGastoAutorizacion] = useState(false);
   const [selectedListItem1Index, setSelectedListItem1Index] = useState(-1);
   const [selectedListItem2Index, setSelectedListItem2Index] = useState(-1);
   const [idDocumentoPrincipal, setIdDocumentoPrincipal] = useState(0);
@@ -1072,11 +1128,18 @@ function FormularioAYG(props) {
     openMenuReenviarNotificacion,
     setOpenMenuReenviarNotificacion
   ] = useState(false);
+  const [conceptoRequerimientoGasto, setConceptoRequerimientoGasto] = useState(
+    "0"
+  );
   const fullScreenDialog = useMediaQuery(theme.breakpoints.down("xs"));
   const [
     usuariosNotificacionesSelected,
     setUsuariosNotificacionesSelected
   ] = useState([]);
+  const [limiteImporteGasto, setLimiteImporteGasto] = useState(0);
+  const [gastoRequiereAutorizacion, setGastoRequiereAutorizacion] = useState(
+    false
+  );
   const [
     {
       data: cargaConceptosData,
@@ -1316,13 +1379,82 @@ function FormularioAYG(props) {
       useCache: false
     }
   );
+  const [
+    {
+      data: traerLimiteGastosUsuarioData,
+      loading: traerLimiteGastosUsuarioLoading,
+      error: traerLimiteGastosUsuarioError
+    },
+    executeTraerLimiteGastosUsuario
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/traerLimiteGastosUsuario`,
+      method: "GET",
+      params: {
+        usuario: usuario,
+        pwd: usuarioPassword,
+        rfc: rfcEmpresa,
+        idsubmenu: idSubmenu,
+        idusuario: idUsuarioLogueado
+      }
+    },
+    {
+      manual: true
+    }
+  );
+  const [
+    {
+      data: traerProveedoresData,
+      loading: traerProveedoresLoading,
+      error: traerProveedoresError
+    },
+    executeTraerProveedores
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/traerProveedores`,
+      method: "GET",
+      params: {
+        usuario: usuario,
+        pwd: usuarioPassword,
+        rfc: rfcEmpresa,
+        idsubmenu: idSubmenu
+      }
+    },
+    {
+      manual: true
+    }
+  );
+
+  useEffect(() => {
+    if (
+      gastos.length > 0 &&
+      gastos[0].id_bit === 0 &&
+      gastos[0].idrequerimiento !== gastos[0].idgasto
+    ) {
+      setGastoAutorizacion(true);
+    }
+  }, [gastos]);
 
   useEffect(() => {
     if (accionAG === 2) {
       executeDatosRequerimiento();
       executeUsuariosNotificacion();
+    } else if (radioTipo === "gastos") {
+      executeTraerProveedores();
     }
-  }, [accionAG, executeDatosRequerimiento, executeUsuariosNotificacion]);
+  }, [
+    accionAG,
+    radioTipo,
+    executeDatosRequerimiento,
+    executeUsuariosNotificacion,
+    executeTraerProveedores
+  ]);
+
+  useEffect(() => {
+    if (radioTipo === "gastos") {
+      executeTraerLimiteGastosUsuario();
+    }
+  }, [radioTipo, executeTraerLimiteGastosUsuario]);
 
   useEffect(() => {
     function checkData() {
@@ -1366,6 +1498,10 @@ function FormularioAYG(props) {
                     historialLength
                   ].status
                 : 0
+            );
+            setGastos(datosRequerimientoData.requerimiento[0].gastos);
+            setRequerimiento(
+              datosRequerimientoData.requerimiento[0].requerimiento
             );
             setIdUsuarioRequerimiento(
               datosRequerimientoData.requerimiento[0].id_usuario
@@ -1425,6 +1561,33 @@ function FormularioAYG(props) {
 
   useEffect(() => {
     function checkData() {
+      if (traerProveedoresData) {
+        if (traerProveedoresData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(traerProveedoresData.error)}
+            </Typography>
+          );
+        } else {
+          if (proveedores.length === 0) {
+            for (let x = 0; x < traerProveedoresData.proveedores.length; x++) {
+              proveedores.push({
+                pos: x,
+                rfc: traerProveedoresData.proveedores[x].rfc,
+                razonsocial: traerProveedoresData.proveedores[x].razonsocial
+              });
+            }
+            //console.log(proveedores);
+          }
+        }
+      }
+    }
+
+    checkData();
+  }, [traerProveedoresData, proveedores]);
+
+  useEffect(() => {
+    function checkData() {
       if (cargaConceptosData) {
         if (cargaConceptosData.error !== 0) {
           return (
@@ -1456,80 +1619,104 @@ function FormularioAYG(props) {
   }, [cargaEstatusData]);
 
   useEffect(() => {
-    function checkData() {
+    async function checkData() {
       if (nuevoRequerimientoData) {
         if (nuevoRequerimientoData.error !== 0) {
           swal(
             "Aviso",
             `${dataBaseErrores(nuevoRequerimientoData.error)}`,
             "warning"
-          );
-          if (nuevoRequerimientoData.error === 10) {
-            if (nuevoRequerimientoData.archivos) {
-              swalReact({
-                title: "Status de archivo(s)",
-                buttons: {
-                  cancel: "Cerrar"
+          ).then(async () => {
+            if (nuevoRequerimientoData.error === 10) {
+              if (nuevoRequerimientoData.archivos) {
+                swalReact({
+                  title: "Status de archivo(s)",
+                  buttons: {
+                    cancel: "Cerrar"
+                  },
+                  icon: "info",
+                  content: (
+                    <List style={{ maxHeight: "40vh", overflowY: "auto" }}>
+                      {nuevoRequerimientoData.archivos.map((archivo, index) => {
+                        return (
+                          <ListItem key={index}>
+                            <ListItemIcon>
+                              {archivo.status === 0 ? (
+                                <SentimentVerySatisfiedIcon
+                                  style={{ color: "green" }}
+                                />
+                              ) : (
+                                <SentimentVeryDissatisfiedIcon
+                                  style={{ color: "red" }}
+                                />
+                              )}
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={archivo.archivo}
+                              secondary={
+                                archivo.status === 0
+                                  ? "Archivo subido con éxito"
+                                  : archivo.status === 1
+                                  ? "Error al subir el archivo"
+                                  : archivo.status === 2
+                                  ? "No se pudo generar el link del archivo"
+                                  : archivo.status === 3
+                                  ? "El archivo está en blanco"
+                                  : "Ya existe el archivo"
+                              }
+                            />
+                          </ListItem>
+                        );
+                      })}
+                    </List>
+                  )
+                });
+              }
+              if (gastoRequiereAutorizacion) {
+                const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${nuevoRequerimientoData.idrequerimiento}`;
+                const encabezadoMensaje = "Nuevo gasto agregado";
+                const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`;
+                await executeCreaGasto({
+                  data: {
+                    usuario: usuario,
+                    pwd: usuarioPassword,
+                    rfc: rfcEmpresa,
+                    idmenu: idMenu,
+                    idsubmenu: idSubmenu,
+                    idrequerimiento: nuevoRequerimientoData.idrequerimiento,
+                    importe: parseFloat(RADatos.importe),
+                    fecha: moment().format("YYYY-MM-DD"),
+                    fechagasto: RADatos.fecha,
+                    rfcproveedor: rfcGasto,
+                    nombreproveedor: nombreGasto.trim(),
+                    idbitacora: 0,
+                    encabezado: encabezadoMensaje,
+                    mensaje: mensaje
+                  }
+                });
+              }
+              executeListaRequerimientos();
+              setShowComponent(1);
+              setAccionAG(0);
+              setIdRequerimiento(0);
+              const token = jwt.sign(
+                {
+                  menuTemporal: {
+                    tableTittle: tableTittle,
+                    showComponent: 1,
+                    idModulo: idModulo,
+                    idMenu: idMenu,
+                    idSubmenu: idSubmenu,
+                    accionAG: 0,
+                    idRequerimiento: 0,
+                    estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2
+                  }
                 },
-                icon: "info",
-                content: (
-                  <List style={{ maxHeight: "40vh", overflowY: "auto" }}>
-                    {nuevoRequerimientoData.archivos.map((archivo, index) => {
-                      return (
-                        <ListItem key={index}>
-                          <ListItemIcon>
-                            {archivo.status === 0 ? (
-                              <SentimentVerySatisfiedIcon
-                                style={{ color: "green" }}
-                              />
-                            ) : (
-                              <SentimentVeryDissatisfiedIcon
-                                style={{ color: "red" }}
-                              />
-                            )}
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={archivo.archivo}
-                            secondary={
-                              archivo.status === 0
-                                ? "Archivo subido con éxito"
-                                : archivo.status === 1
-                                ? "Error al subir el archivo"
-                                : archivo.status === 2
-                                ? "No se pudo generar el link del archivo"
-                                : archivo.status === 3
-                                ? "El archivo está en blanco"
-                                : "Ya existe el archivo"
-                            }
-                          />
-                        </ListItem>
-                      );
-                    })}
-                  </List>
-                )
-              });
+                "mysecretpassword"
+              );
+              localStorage.setItem("menuTemporal", token);
             }
-            executeListaRequerimientos();
-            setShowComponent(1);
-            setAccionAG(0);
-            setIdRequerimiento(0);
-            const token = jwt.sign(
-              {
-                menuTemporal: {
-                  tableTittle: tableTittle,
-                  showComponent: 1,
-                  idModulo: idModulo,
-                  idMenu: idMenu,
-                  idSubmenu: idSubmenu,
-                  accionAG: 0,
-                  idRequerimiento: 0,
-                  estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2
-                }
-              },
-              "mysecretpassword"
-            );
-            localStorage.setItem("menuTemporal", token);
-          }
+          });
         } else {
           swal(
             radioTipo !== "gastos"
@@ -1583,6 +1770,31 @@ function FormularioAYG(props) {
               )
             });
           });
+
+          if (gastoRequiereAutorizacion) {
+            const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${nuevoRequerimientoData.idrequerimiento}`;
+            const encabezadoMensaje = "Nuevo gasto agregado";
+            const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`;
+            await executeCreaGasto({
+              data: {
+                usuario: usuario,
+                pwd: usuarioPassword,
+                rfc: rfcEmpresa,
+                idmenu: idMenu,
+                idsubmenu: idSubmenu,
+                idrequerimiento: nuevoRequerimientoData.idrequerimiento,
+                importe: parseFloat(RADatos.importe),
+                fecha: moment().format("YYYY-MM-DD"),
+                fechagasto: RADatos.fecha,
+                rfcproveedor: rfcGasto,
+                nombreproveedor: nombreGasto.trim(),
+                idbitacora: 0,
+                encabezado: encabezadoMensaje,
+                mensaje: mensaje
+              }
+            });
+          }
+
           executeListaRequerimientos();
           setShowComponent(1);
           setAccionAG(0);
@@ -1618,7 +1830,21 @@ function FormularioAYG(props) {
     setIdRequerimiento,
     setShowComponent,
     tableTittle,
-    radioTipo
+    radioTipo,
+    RADatos.importe,
+    limiteImporteGasto,
+    RADatos.fecha,
+    empresaId,
+    executeCreaGasto,
+    gastoRequiereAutorizacion,
+    idRequerimiento,
+    nombreEmpresa,
+    nombreGasto,
+    rfcEmpresa,
+    rfcGasto,
+    usuario,
+    usuarioNombreCompleto,
+    usuarioPassword
   ]);
 
   useEffect(() => {
@@ -1703,15 +1929,22 @@ function FormularioAYG(props) {
             </Typography>
           );
         } else {
-          swal("Gasto creado", "Se creo el gasto con éxito", "success");
-          executeDatosRequerimiento();
-          executeListaRequerimientos();
+          if (!gastoRequiereAutorizacion) {
+            swal("Gasto creado", "Se creo el gasto con éxito", "success");
+            executeDatosRequerimiento();
+            executeListaRequerimientos();
+          }
         }
       }
     }
 
     checkData();
-  }, [creaGastoData, executeDatosRequerimiento, executeListaRequerimientos]);
+  }, [
+    creaGastoData,
+    executeDatosRequerimiento,
+    executeListaRequerimientos,
+    gastoRequiereAutorizacion
+  ]);
 
   useEffect(() => {
     function checkData() {
@@ -1873,8 +2106,12 @@ function FormularioAYG(props) {
           );
         } else {
           swal(
-            "Requerimiento eliminado",
-            "El requerimiento ha sido eliminado",
+            radioTipo !== "gastos"
+              ? "Requerimiento eliminado"
+              : "Gasto Eliminado",
+            radioTipo !== "gastos"
+              ? "El requerimiento ha sido eliminado"
+              : "El gasto ha sido eliminado",
             "success"
           );
           executeListaRequerimientos();
@@ -1938,6 +2175,28 @@ function FormularioAYG(props) {
     checkData();
   }, [reenviarNotificacionData]);
 
+  useEffect(() => {
+    function checkData() {
+      if (traerLimiteGastosUsuarioData) {
+        if (traerLimiteGastosUsuarioData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(traerLimiteGastosUsuarioData.error)}
+            </Typography>
+          );
+        } else {
+          if (traerLimiteGastosUsuarioData.limiteGasto.length > 0) {
+            setLimiteImporteGasto(
+              traerLimiteGastosUsuarioData.limiteGasto[0].importe
+            );
+          }
+        }
+      }
+    }
+
+    checkData();
+  }, [traerLimiteGastosUsuarioData]);
+
   if (
     cargaConceptosLoading ||
     cargaEstatusLoading ||
@@ -1951,7 +2210,9 @@ function FormularioAYG(props) {
     usuariosNotificacionLoading ||
     reenviarNotificacionLoading ||
     creaGastoLoading ||
-    getTotalImporteLoading
+    getTotalImporteLoading ||
+    traerLimiteGastosUsuarioLoading ||
+    traerProveedoresLoading
   ) {
     setLoading(true);
     return <div></div>;
@@ -1971,7 +2232,9 @@ function FormularioAYG(props) {
     usuariosNotificacionError ||
     reenviarNotificacionError ||
     creaGastoError ||
-    getTotalImporteError
+    getTotalImporteError ||
+    traerLimiteGastosUsuarioError ||
+    traerProveedoresError
   ) {
     if (datosRequerimientoError) {
       setShowComponent(1);
@@ -1995,11 +2258,23 @@ function FormularioAYG(props) {
 
   const getConceptos = () => {
     return cargaConceptosData.conceptos.map((concepto, index) => {
-      return (
+      return (radioTipo === "gastos" && concepto.concepto_relacion === 2) ||
+        (radioTipo !== "gastos" && concepto.concepto_relacion === 1) ||
+        idSubmenu !== 44 ? (
         <option key={index} value={concepto.id}>
           {concepto.nombre_concepto}
         </option>
-      );
+      ) : null;
+    });
+  };
+
+  const getConceptosRequerimientoGasto = () => {
+    return cargaConceptosData.conceptos.map((concepto, index) => {
+      return idSubmenu === 44 && concepto.concepto_relacion === 1 ? (
+        <option key={index} value={concepto.id}>
+          {concepto.nombre_concepto}
+        </option>
+      ) : null;
     });
   };
 
@@ -2010,7 +2285,7 @@ function FormularioAYG(props) {
           return idEstatus === 2 ? true : false;
         case 3:
         case 5:
-          return idEstatus === 4 || idEstatus === 5 || idEstatus === 6
+          return !gastoAutorizacion && (idEstatus === 4 || idEstatus === 5)
             ? true
             : false;
         default:
@@ -2022,7 +2297,7 @@ function FormularioAYG(props) {
           return idEstatus === 3 || idEstatus === 7 ? true : false;
         case 3:
         case 5:
-          return idEstatus === 4 || idEstatus === 5 || idEstatus === 6
+          return !gastoAutorizacion && (idEstatus === 4 || idEstatus === 5)
             ? true
             : false;
         case 7:
@@ -2073,6 +2348,37 @@ function FormularioAYG(props) {
       folio,
       descripcion
     } = RADatos;
+    if (archivosPrincipal === null || archivosPrincipal.length === 0) {
+      swal(
+        "Error en campos",
+        "Seleccione por lo menos un documento principal",
+        "warning"
+      );
+      return;
+    } else {
+      for (let x = 0; x < archivosPrincipal.length; x++) {
+        if (!verificarExtensionArchivo(archivosPrincipal[x].name)) {
+          swal(
+            "Error de archivo",
+            `Extensión de archivo no permitida en archivo ${archivosPrincipal[x].name}`,
+            "warning"
+          );
+          return;
+        }
+      }
+      if (archivosSecundario !== null) {
+        for (let x = 0; x < archivosSecundario.length; x++) {
+          if (!verificarExtensionArchivo(archivosSecundario[x].name)) {
+            swal(
+              "Error de archivo",
+              `Extensión de archivo no permitida en archivo ${archivosSecundario[x].name}`,
+              "warning"
+            );
+            return;
+          }
+        }
+      }
+    }
     if (sucursal === "0") {
       swal("Error en campos", "Seleccione una sucursal", "warning");
     } else if (fecha === "") {
@@ -2092,10 +2398,15 @@ function FormularioAYG(props) {
       nombreGasto.trim() === ""
     ) {
       swal("Error en campos", "Ingrese un nombre largo", "warning");
-    } else if (archivosPrincipal === null) {
+    } else if (
+      radioTipo === "gastos" &&
+      importe > limiteImporteGasto &&
+      limiteImporteGasto !== 0 &&
+      conceptoRequerimientoGasto === "0"
+    ) {
       swal(
         "Error en campos",
-        "Seleccione por lo menos un documento principal",
+        "Seleccione un concepto del requerimiento",
         "warning"
       );
     } else {
@@ -2118,7 +2429,6 @@ function FormularioAYG(props) {
       formData.append("fechareq", fecha);
       formData.append("descripcion", descripcion.trim());
       formData.append("importe", parseFloat(importe));
-      formData.append("idconcepto", concepto);
       formData.append("serie", serie);
       formData.append("folio", folio);
       formData.append("idmenu", idMenu);
@@ -2126,7 +2436,6 @@ function FormularioAYG(props) {
       formData.append("password_storage", passwordStorage);
       formData.append("encabezado", encabezadoMensaje);
       formData.append("mensaje", mensaje);
-      //formData.append("estatus", importe > 5000 && idSubmenu === 44 ? 1 : 2);
       for (let x = 0; x < archivosPrincipal.length; x++) {
         formData.append("principal" + x, archivosPrincipal[x]);
       }
@@ -2137,10 +2446,25 @@ function FormularioAYG(props) {
       }
 
       if (radioTipo === "gastos") {
-        formData.append("rfcproveedor", rfcGasto);
-        formData.append("nombreproveedor", nombreGasto);
-        formData.append("estatus", 2);
+        if (limiteImporteGasto !== 0) {
+          if (importe <= limiteImporteGasto) {
+            formData.append("idconcepto", concepto);
+            formData.append("rfcproveedor", rfcGasto);
+            formData.append("nombreproveedor", nombreGasto);
+            formData.append("estatus", 2);
+          } else {
+            formData.append("idconcepto", conceptoRequerimientoGasto);
+            formData.append("estatus", 1);
+            setGastoRequiereAutorizacion(true);
+          }
+        } else {
+          formData.append("idconcepto", concepto);
+          formData.append("rfcproveedor", rfcGasto);
+          formData.append("nombreproveedor", nombreGasto);
+          formData.append("estatus", 2);
+        }
       } else {
+        formData.append("idconcepto", concepto);
         formData.append("estatus", 1);
       }
 
@@ -2157,14 +2481,14 @@ function FormularioAYG(props) {
     if (
       (radioTipo === "requerimientos" &&
         descripcionAntigua === RADatos.descripcion.trim() &&
-        archivosPrincipal === null &&
-        archivosSecundario === null) ||
+        (archivosPrincipal === null || archivosPrincipal.length === 0) &&
+        (archivosSecundario === null || archivosSecundario.length === 0)) ||
       (radioTipo === "gastos" &&
         descripcionAntigua === RADatos.descripcion.trim() &&
         fechaAntigua === RADatos.fecha &&
         importeAntiguo === RADatos.importe &&
-        archivosPrincipal === null &&
-        archivosSecundario === null)
+        (archivosPrincipal === null || archivosPrincipal.length === 0) &&
+        (archivosSecundario === null || archivosSecundario.length === 0))
     ) {
       swal(
         radioTipo !== "gastos" ? "Requerimiento editado" : "Gasto editado",
@@ -2174,6 +2498,39 @@ function FormularioAYG(props) {
         "success"
       );
     } else {
+      if (archivosPrincipal !== null) {
+        for (let x = 0; x < archivosPrincipal.length; x++) {
+          if (!verificarExtensionArchivo(archivosPrincipal[x].name)) {
+            swal(
+              "Error de archivo",
+              `Extensión de archivo no permitida en archivo ${archivosPrincipal[x].name}`,
+              "warning"
+            );
+            return;
+          }
+        }
+      }
+      if (archivosSecundario !== null) {
+        for (let x = 0; x < archivosSecundario.length; x++) {
+          if (!verificarExtensionArchivo(archivosSecundario[x].name)) {
+            swal(
+              "Error de archivo",
+              `Extensión de archivo no permitida en archivo ${archivosSecundario[x].name}`,
+              "warning"
+            );
+            return;
+          }
+        }
+      }
+      if (radioTipo === "gastos") {
+        if (RADatos.fecha === "") {
+          swal("Error de archivo", `Ingrese una fecha`, "warning");
+          return;
+        } else if (RADatos.importe === "") {
+          swal("Error de archivo", `Ingrese un importe`, "warning");
+          return;
+        }
+      }
       const encabezadoMensaje = `Se actualizo un requerimiento de ${tableTittle.toLowerCase()}`;
       const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}`;
       const mensaje = `${usuarioNombreCompleto} ha actualizado un requerimiento de ${tableTittle.toLowerCase()} en ${nombreEmpresa}: \n ${linkMensaje}`;
@@ -2341,7 +2698,9 @@ function FormularioAYG(props) {
   };
 
   const cambiarEstatus = () => {
-    console.log(cargaEstatusData);
+    if (gastoAutorizacion) {
+      alert("gasto que necesita requerimiento");
+    }
     if (estatusRequerimiento === "0" || estatusRequerimiento === 0) {
       swal("Error", "Seleccione un estatus", "warning");
     } else if (
@@ -2676,7 +3035,15 @@ function FormularioAYG(props) {
   };
 
   const eliminarRequerimiento = () => {
-    if (estatusActualRequerimiento !== 1 && radioTipo !== "gastos") {
+    if (idUsuarioRequerimiento !== idUsuarioLogueado) {
+      swal(
+        "Error",
+        `No puedes eliminar los ${
+          radioTipo !== "gastos" ? "requerimientos" : "gastos"
+        } de otro usuario`,
+        "warning"
+      );
+    } else if (estatusActualRequerimiento !== 1 && radioTipo !== "gastos") {
       swal(
         "Error",
         "Solo se pueden eliminar requerimientos con estatus pendiente",
@@ -2684,7 +3051,9 @@ function FormularioAYG(props) {
       );
     } else {
       swal({
-        text: "¿Está seguro de eliminar el requerimiento?",
+        text: `¿Está seguro de eliminar el ${
+          radioTipo !== "gastos" ? "requerimiento" : "gasto"
+        }?`,
         buttons: ["No", "Sí"],
         dangerMode: true
       }).then(value => {
@@ -2865,6 +3234,118 @@ function FormularioAYG(props) {
     setOpenMenuReenviarNotificacion(false);
   };
 
+  const top100Films = [
+    { title: "The Shawshank Redemption", year: 1994 },
+    { title: "The Godfather", year: 1972 },
+    { title: "The Godfather: Part II", year: 1974 },
+    { title: "The Dark Knight", year: 2008 },
+    { title: "12 Angry Men", year: 1957 },
+    { title: "Schindler's List", year: 1993 },
+    { title: "Pulp Fiction", year: 1994 },
+    { title: "The Lord of the Rings: The Return of the King", year: 2003 },
+    { title: "The Good, the Bad and the Ugly", year: 1966 },
+    { title: "Fight Club", year: 1999 },
+    { title: "The Lord of the Rings: The Fellowship of the Ring", year: 2001 },
+    { title: "Star Wars: Episode V - The Empire Strikes Back", year: 1980 },
+    { title: "Forrest Gump", year: 1994 },
+    { title: "Inception", year: 2010 },
+    { title: "The Lord of the Rings: The Two Towers", year: 2002 },
+    { title: "One Flew Over the Cuckoo's Nest", year: 1975 },
+    { title: "Goodfellas", year: 1990 },
+    { title: "The Matrix", year: 1999 },
+    { title: "Seven Samurai", year: 1954 },
+    { title: "Star Wars: Episode IV - A New Hope", year: 1977 },
+    { title: "City of God", year: 2002 },
+    { title: "Se7en", year: 1995 },
+    { title: "The Silence of the Lambs", year: 1991 },
+    { title: "It's a Wonderful Life", year: 1946 },
+    { title: "Life Is Beautiful", year: 1997 },
+    { title: "The Usual Suspects", year: 1995 },
+    { title: "Léon: The Professional", year: 1994 },
+    { title: "Spirited Away", year: 2001 },
+    { title: "Saving Private Ryan", year: 1998 },
+    { title: "Once Upon a Time in the West", year: 1968 },
+    { title: "American History X", year: 1998 },
+    { title: "Interstellar", year: 2014 },
+    { title: "Casablanca", year: 1942 },
+    { title: "City Lights", year: 1931 },
+    { title: "Psycho", year: 1960 },
+    { title: "The Green Mile", year: 1999 },
+    { title: "The Intouchables", year: 2011 },
+    { title: "Modern Times", year: 1936 },
+    { title: "Raiders of the Lost Ark", year: 1981 },
+    { title: "Rear Window", year: 1954 },
+    { title: "The Pianist", year: 2002 },
+    { title: "The Departed", year: 2006 },
+    { title: "Terminator 2: Judgment Day", year: 1991 },
+    { title: "Back to the Future", year: 1985 },
+    { title: "Whiplash", year: 2014 },
+    { title: "Gladiator", year: 2000 },
+    { title: "Memento", year: 2000 },
+    { title: "The Prestige", year: 2006 },
+    { title: "The Lion King", year: 1994 },
+    { title: "Apocalypse Now", year: 1979 },
+    { title: "Alien", year: 1979 },
+    { title: "Sunset Boulevard", year: 1950 },
+    {
+      title:
+        "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
+      year: 1964
+    },
+    { title: "The Great Dictator", year: 1940 },
+    { title: "Cinema Paradiso", year: 1988 },
+    { title: "The Lives of Others", year: 2006 },
+    { title: "Grave of the Fireflies", year: 1988 },
+    { title: "Paths of Glory", year: 1957 },
+    { title: "Django Unchained", year: 2012 },
+    { title: "The Shining", year: 1980 },
+    { title: "WALL·E", year: 2008 },
+    { title: "American Beauty", year: 1999 },
+    { title: "The Dark Knight Rises", year: 2012 },
+    { title: "Princess Mononoke", year: 1997 },
+    { title: "Aliens", year: 1986 },
+    { title: "Oldboy", year: 2003 },
+    { title: "Once Upon a Time in America", year: 1984 },
+    { title: "Witness for the Prosecution", year: 1957 },
+    { title: "Das Boot", year: 1981 },
+    { title: "Citizen Kane", year: 1941 },
+    { title: "North by Northwest", year: 1959 },
+    { title: "Vertigo", year: 1958 },
+    { title: "Star Wars: Episode VI - Return of the Jedi", year: 1983 },
+    { title: "Reservoir Dogs", year: 1992 },
+    { title: "Braveheart", year: 1995 },
+    { title: "M", year: 1931 },
+    { title: "Requiem for a Dream", year: 2000 },
+    { title: "Amélie", year: 2001 },
+    { title: "A Clockwork Orange", year: 1971 },
+    { title: "Like Stars on Earth", year: 2007 },
+    { title: "Taxi Driver", year: 1976 },
+    { title: "Lawrence of Arabia", year: 1962 },
+    { title: "Double Indemnity", year: 1944 },
+    { title: "Eternal Sunshine of the Spotless Mind", year: 2004 },
+    { title: "Amadeus", year: 1984 },
+    { title: "To Kill a Mockingbird", year: 1962 },
+    { title: "Toy Story 3", year: 2010 },
+    { title: "Logan", year: 2017 },
+    { title: "Full Metal Jacket", year: 1987 },
+    { title: "Dangal", year: 2016 },
+    { title: "The Sting", year: 1973 },
+    { title: "2001: A Space Odyssey", year: 1968 },
+    { title: "Singin' in the Rain", year: 1952 },
+    { title: "Toy Story", year: 1995 },
+    { title: "Bicycle Thieves", year: 1948 },
+    { title: "The Kid", year: 1921 },
+    { title: "Inglourious Basterds", year: 2009 },
+    { title: "Snatch", year: 2000 },
+    { title: "3 Idiots", year: 2009 },
+    { title: "Monty Python and the Holy Grail", year: 1975 }
+  ];
+
+  const filterOptions = createFilterOptions({
+    matchFrom: 'any',
+    stringify: option => option.rfc,
+  });
+
   return (
     <Grid container justify="center" style={{ padding: "10px" }}>
       <Grid item xs={12}>
@@ -2898,7 +3379,11 @@ function FormularioAYG(props) {
               <ArrowBackIcon color="primary" />
             </IconButton>
           </Tooltip>
-          Requerimiento de Autorización
+          {radioTipo !== "gastos"
+            ? gastoAutorizacion
+              ? "Autorización de Gasto"
+              : " Requerimiento de Autorización"
+            : "Gasto"}
         </Typography>
       </Grid>
       <Grid item xs={12} style={{ marginTop: "15px" }}>
@@ -2955,7 +3440,7 @@ function FormularioAYG(props) {
               color="secondary"
               variant="contained"
               className={classes.formButtons}
-              disabled={accionAG !== 2}
+              disabled={accionAG !== 2 || permisosSubmenu < 3}
               onClick={() => {
                 eliminarRequerimiento();
               }}
@@ -3241,7 +3726,8 @@ function FormularioAYG(props) {
                 disabled={
                   accionAG !== 2 ||
                   //idUsuarioLogueado !== idUsuarioRequerimiento ||
-                  historial.length === 1
+                  historial.length === 1 ||
+                  permisosSubmenu < 3
                 }
                 onClick={() => {
                   eliminarHistorialRequerimiento();
@@ -3402,6 +3888,37 @@ function FormularioAYG(props) {
               />
             </Grid>
             <Grid item xs={12}>
+              <Autocomplete
+              filterOptions={filterOptions}
+                options={proveedores}
+                getOptionLabel={option => option.rfc}
+                disabled={accionAG === 2}
+                id="debug"
+                debug
+                renderInput={params => (
+                  <TextField
+                    {...params}
+                    id="rfcAutocomplete"
+                    style={{ width: "100%" }}
+                    onKeyPress={e => {
+                      keyValidation(e, 5);
+                    }}
+                    onChange={e => {
+                      pasteValidation(e, 5);
+                    }}
+                    label="RFC"
+                    margin="normal"
+                    variant="outlined"
+                  />
+                )}
+                onInputChange={(e, value) => {
+                  setRfcGasto(value);
+                  /* console.log(e.target.value);
+                  console.log(value); */
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
               <TextField
                 style={{
                   display:
@@ -3427,6 +3944,99 @@ function FormularioAYG(props) {
                 }}
               />
             </Grid>
+            {accionAG === 1 &&
+            RADatos.importe > limiteImporteGasto &&
+            limiteImporteGasto !== 0 ? (
+              <Grid item xs={12}>
+                <TextField
+                  className={classes.textFields}
+                  select
+                  SelectProps={{
+                    native: true
+                  }}
+                  variant="outlined"
+                  label="Concepto Del Requerimiento"
+                  type="text"
+                  value={conceptoRequerimientoGasto}
+                  onChange={e => {
+                    setConceptoRequerimientoGasto(e.target.value);
+                  }}
+                >
+                  <option value="0">Selecciona un concepto</option>
+                  {getConceptosRequerimientoGasto()}
+                </TextField>
+              </Grid>
+            ) : null}
+            {requerimiento.length > 0 ? (
+              requerimiento[0].idReq !== idRequerimiento ? (
+                <Fragment>
+                  <Grid item xs={12}>
+                    <Typography variant="h6">
+                      Requerimiento al que pertenece
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TableContainer component={Paper}>
+                      <Table aria-label="simple table">
+                        <TableHead style={{ background: "#FAFAFA" }}>
+                          <TableRow>
+                            <TableCell align="left">
+                              <strong># Requerimiento</strong>
+                            </TableCell>
+                            <TableCell align="left">
+                              <strong>Fecha</strong>
+                            </TableCell>
+                            <TableCell align="left">
+                              <strong>Importe</strong>
+                            </TableCell>
+                            <TableCell align="left">
+                              <strong>Status</strong>
+                            </TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          <TableRow hover>
+                            <TableCell align="left">
+                              {requerimiento[0].idReq}
+                            </TableCell>
+                            <TableCell align="left">
+                              {requerimiento[0].fecha_req}
+                            </TableCell>
+                            <TableCell align="left">
+                              {requerimiento[0].importe_estimado}
+                            </TableCell>
+                            <TableCell align="left">
+                              {requerimiento[0].estado_documento === 1
+                                ? "Pendiente"
+                                : requerimiento[0].estado_documento === 2
+                                ? "Cancelado"
+                                : requerimiento[0].estado_documento === 3
+                                ? "Autorizado"
+                                : requerimiento[0].estado_documento === 4
+                                ? "Surtido"
+                                : requerimiento[0].estado_documento === 5
+                                ? "Surtido Parcial"
+                                : requerimiento[0].estado_documento === 7
+                                ? "No autorizado"
+                                : ""}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Grid>
+                </Fragment>
+              ) : (
+                <Grid item xs={12}>
+                  <Typography
+                    variant="subtitle1"
+                    style={{ textAlign: "center" }}
+                  >
+                    <strong>Gasto sin necesidad de autorización</strong>
+                  </Typography>
+                </Grid>
+              )
+            ) : null}
           </Grid>
         </Grid>
       )}
@@ -3464,7 +4074,7 @@ function FormularioAYG(props) {
                   className={classes.formButtons}
                   color="secondary"
                   variant="contained"
-                  disabled={accionAG !== 2}
+                  disabled={accionAG !== 2 || permisosSubmenu < 3}
                   onClick={() => {
                     eliminarDocumentoPrincipal();
                   }}
@@ -3519,7 +4129,7 @@ function FormularioAYG(props) {
                   className={classes.formButtons}
                   color="secondary"
                   variant="contained"
-                  disabled={accionAG !== 2}
+                  disabled={accionAG !== 2 || permisosSubmenu < 3}
                   onClick={() => {
                     eliminarDocumentoSecundario();
                   }}

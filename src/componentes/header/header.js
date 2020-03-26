@@ -988,7 +988,7 @@ export default function Header(props) {
           if (notificacion.status === 0 && badgeVisibility) {
             setBadgeVisibility(false);
           }
-          console.log(notificacion);
+          //console.log(notificacion);
           return notificacion.idusuario === userId ? (
             <NavLink
               to={notificacion.idmodulo === 4 ? "/autorizacionesGastos" : "/"}
