@@ -20,7 +20,10 @@ import {
   useMediaQuery,
   RadioGroup,
   FormControlLabel,
-  Radio
+  Radio,
+  Button,
+  FormGroup,
+  Checkbox
 } from "@material-ui/core";
 import { TreeView, TreeItem } from "@material-ui/lab";
 import {
@@ -36,7 +39,8 @@ import {
   AccountBox as AccountBoxIcon,
   Email as EmailIcon,
   Assessment as AssessmentIcon,
-  Minimize as MinimizeIcon
+  Minimize as MinimizeIcon,
+  Star as StarIcon
 } from "@material-ui/icons";
 import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
@@ -154,7 +158,7 @@ function stableSort(array, comparator) {
 
 const headCells = [
   {
-    id: "nombrePerfil",
+    id: "nombre",
     align: "left",
     sortHeadCell: true,
     disablePadding: true,
@@ -195,7 +199,7 @@ export default function Perfiles(props) {
   const setLoading = props.setLoading;
   const [idPerfilEditar, setIdPerfilEditar] = useState(0);
   const [order, setOrder] = useState("desc");
-  const [orderBy, setOrderBy] = useState("nombrePerfil");
+  const [orderBy, setOrderBy] = useState("nombre");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [showComponent, setShowComponent] = useState(0);
@@ -232,7 +236,6 @@ export default function Perfiles(props) {
           for (let x = 0; x < listaPerfilesData.perfiles.length; x++) {
             rows.push(listaPerfilesData.perfiles[x]);
           }
-          //console.log(rows);
         }
       }
     }
@@ -265,7 +268,6 @@ export default function Perfiles(props) {
     setPage(0);
   };
 
-  //console.log(submenuContent);
   return (
     <div>
       {showComponent === 0 ? (
@@ -280,7 +282,6 @@ export default function Perfiles(props) {
             </Typography>
             <Tooltip title="Nuevo">
               <IconButton
-                disabled
                 aria-label="nuevo"
                 onClick={() => {
                   setShowComponent(1);
@@ -406,6 +407,7 @@ export default function Perfiles(props) {
         <Card style={{ padding: "10px" }}>
           <CrearPerfil
             setShowComponent={setShowComponent}
+            setLoading={setLoading}
             usuario={usuario}
             pwd={pwd}
             rfc={rfc}
@@ -535,6 +537,7 @@ function CrearPerfil(props) {
   const [expanded, setExpanded] = useState([]);
   //const [permiso, setPermiso] = useState(-1);
   //const [idModulo, setIdModulo] = useState(0);
+  const [permisosModulos, setPermisosModulos] = useState([]);
   const [{ data: menuData, loading: menuLoading, error: menuError }] = useAxios(
     {
       url: API_BASE_URL + `/menuWeb`,
@@ -558,6 +561,55 @@ function CrearPerfil(props) {
             dataBaseErrores(menuData.error),
             "error"
           );
+        } else {
+          let modulos = [];
+          let menus = [];
+          let submenus = [];
+          for (let x = 0; x < menuData.modulos.length; x++) {
+            modulos[x] = {
+              idModulo: menuData.modulos[x].idmodulo,
+              nombreModulo: menuData.modulos[x].nombre_modulo,
+              status: menuData.modulos[x].status,
+              orden: menuData.modulos[x].orden,
+              icono: menuData.modulos[x].icono,
+              permisos: 0
+            };
+            menus = [];
+            for (let y = 0; y < menuData.modulos[x].menus.length; y++) {
+              menus[y] = {
+                idMenu: menuData.modulos[x].menus[y].idmenu,
+                nombreMenu: menuData.modulos[x].menus[y].nombre_menu,
+                status: menuData.modulos[x].menus[y].status,
+                orden: menuData.modulos[x].menus[y].orden,
+                permisos: 0
+              };
+              submenus = [];
+              for (
+                let z = 0;
+                z < menuData.modulos[x].menus[y].submenus.length;
+                z++
+              ) {
+                submenus[z] = {
+                  idSubmenu: menuData.modulos[x].menus[y].submenus[z].idsubmenu,
+                  nombreSubmenu:
+                    menuData.modulos[x].menus[y].submenus[z].nombre_submenu,
+                  status: menuData.modulos[x].menus[y].submenus[z].status,
+                  orden: menuData.modulos[x].menus[y].submenus[z].orden,
+                  permisos: 0,
+                  permisosNotificaciones: 0
+                };
+              }
+              menus[y] = {
+                ...menus[y],
+                submenus: submenus
+              };
+            }
+            modulos[x] = {
+              ...modulos[x],
+              menus: menus
+            };
+          }
+          setPermisosModulos(modulos);
         }
       }
     }
@@ -577,38 +629,130 @@ function CrearPerfil(props) {
 
   const handleChangeTreeView = (event, nodes) => {
     setExpanded(nodes);
-    /* const token = jwt.sign(
-      {
-        menuTemporal: {
-          showComponent: 4,
-          idUsuarioEditar: idUsuarioEditar,
-          permisosSubmenu: permisosSubmenu,
-          treeNodes: nodes,
-          idSubmenuActual: idSubmenuActual
-        }
-      },
-      "mysecretpassword"
-    );
-    localStorage.setItem("menuTemporal", token); */
+  };
+
+  const getSubMenus = submenus => {
+    return submenus.map((submenu, index) => {
+      return submenu.orden !== 0 ? (
+        <StyledTreeItem
+          key={submenu.idSubmenu}
+          nodeId={`${submenu.idSubmenu}00`}
+          labelText={submenu.nombreSubmenu}
+          labelIcon={StarIcon}
+          isMenu={false}
+          labelInfo={
+            <div>
+              <TextField
+                select
+                SelectProps={{
+                  native: true
+                }}
+                variant="outlined"
+                label="Permisos"
+                type="text"
+                value={0}
+                InputLabelProps={{
+                  shrink: true
+                }}
+                margin="normal"
+                onClick={e => {
+                  e.stopPropagation();
+                }}
+              >
+                <option value="0">Bloqueado</option>
+                <option value="1">Lectura</option>
+                <option value="2">Lectura y Escritura</option>
+                <option value="3">Todos</option>
+              </TextField>
+              <Typography style={{ fontSize: "13px" }}>
+                Notificaciones
+              </Typography>
+              <FormGroup
+                onClick={e => {
+                  e.stopPropagation();
+                }}
+              >
+                <FormControlLabel
+                  control={<Checkbox />}
+                  label="Aplicación Móvil"
+                  labelPlacement="end"
+                />
+                <FormControlLabel
+                  control={<Checkbox />}
+                  label="Email"
+                  labelPlacement="end"
+                />
+                <FormControlLabel
+                  control={<Checkbox />}
+                  label="SMS"
+                  labelPlacement="end"
+                />
+              </FormGroup>
+            </div>
+          }
+          color="#00c853"
+          bgColor="#b9f6ca"
+        />
+      ) : (
+        <div key={index}></div>
+      );
+    });
+  };
+
+  const getMenus = (menus, indexModulo) => {
+    return menus.map((menu, index) => {
+      return menu.orden !== 0 ? (
+        <StyledTreeItem
+          key={menu.idMenu}
+          nodeId={`${menu.idMenu}0`}
+          labelText={menu.nombreMenu}
+          labelIcon={MinimizeIcon}
+          isMenu={true}
+          labelInfo={
+            <RadioGroup
+              aria-label="permisos"
+              name="permisos"
+              row
+              value={menu.permisos}
+              onClick={e => {
+                e.stopPropagation();
+                //let newModulosData = [...permisosModulos];
+                //console.log(newModulosData[indexModulo].menus[index]);---aqui me quede
+                /* newModulosData[index].permisos = parseInt(e.target.value);
+                setPermisosModulos(newModulosData); */
+              }}
+            >
+              <FormControlLabel value={1} control={<Radio />} label="Sí" />
+              <FormControlLabel value={0} control={<Radio />} label="No" />
+            </RadioGroup>
+          }
+          color="#e3742f"
+          bgColor="#fcefe3"
+        >
+          {getSubMenus(menu.submenus)}
+        </StyledTreeItem>
+      ) : (
+        <div key={index}></div>
+      );
+    });
   };
 
   const getModulos = () => {
-    //console.log(menuData);
-    return menuData.modulos.map((modulo, index) => {
+    return permisosModulos.map((modulo, index) => {
       return modulo.orden !== 0 ? (
         <StyledTreeItem
-          key={modulo.idmodulo}
-          nodeId={modulo.idmodulo.toString()}
-          labelText={modulo.nombre_modulo}
+          key={modulo.idModulo}
+          nodeId={modulo.idModulo.toString()}
+          labelText={modulo.nombreModulo}
           isMenu={false}
           labelIcon={
-            modulo.idmodulo === 1
+            modulo.idModulo === 1
               ? AccountBoxIcon
-              : modulo.idmodulo === 2
+              : modulo.idModulo === 2
               ? EmailIcon
-              : modulo.idmodulo === 3
+              : modulo.idModulo === 3
               ? SettingsIcon
-              : modulo.idmodulo === 4
+              : modulo.idModulo === 4
               ? AssessmentIcon
               : MinimizeIcon
           }
@@ -617,18 +761,22 @@ function CrearPerfil(props) {
               aria-label="permisos"
               name="permisos"
               row
+              value={modulo.permisos}
               onClick={e => {
                 e.stopPropagation();
+                let newModulosData = [...permisosModulos];
+                newModulosData[index].permisos = parseInt(e.target.value);
+                setPermisosModulos(newModulosData);
               }}
             >
-              <FormControlLabel value={true} control={<Radio />} label="Sí" />
-              <FormControlLabel value={false} control={<Radio />} label="No" />
+              <FormControlLabel value={1} control={<Radio />} label="Sí" />
+              <FormControlLabel value={0} control={<Radio />} label="No" />
             </RadioGroup>
           }
           color="#1a73e8"
           bgColor="#e8f0fe"
         >
-          {/* {getMenus(modulo)} */}
+          {getMenus(modulo.menus, index)}
         </StyledTreeItem>
       ) : null;
     });
@@ -650,11 +798,17 @@ function CrearPerfil(props) {
           Crear Perfil
         </Typography>
       </Grid>
+      <Grid item xs={12}>
+        <Button variant="contained" color="primary" style={{ float: "right" }}>
+          Guardar
+        </Button>
+      </Grid>
       <Grid item xs={12} sm={4}>
         <TextField
           className={classes.textFields}
           label="Nombre Perfil"
           type="text"
+          required
           margin="normal"
           inputProps={{
             maxLength: 50
@@ -666,11 +820,15 @@ function CrearPerfil(props) {
           className={classes.textFields}
           label="Descripción"
           type="text"
+          required
           margin="normal"
           inputProps={{
             maxLength: 100
           }}
         />
+      </Grid>
+      <Grid item xs={12}>
+        <Typography variant="h6">Permisos Del Perfil</Typography>
       </Grid>
       <Grid item xs={12}>
         <TreeView

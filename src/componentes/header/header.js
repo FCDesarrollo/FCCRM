@@ -279,6 +279,7 @@ export default function Header(props) {
   const urlIdMenu = getUrlVariable("idmenu");
   const urlIdSubmenu = getUrlVariable("idsubmenu");
   const urlIdDocumento = getUrlVariable("iddocumento");
+  const urlTipoDocumento = getUrlVariable("tipo");
   const classes = useStyles();
   const theme = useTheme();
   const fullScreenDialog = useMediaQuery(theme.breakpoints.down("xs"));
@@ -644,7 +645,8 @@ export default function Header(props) {
     urlIdModulo !== false &&
     urlIdMenu !== false &&
     urlIdSubmenu !== false &&
-    urlIdDocumento !== false
+    urlIdDocumento !== false &&
+    urlTipoDocumento !== false
   ) {
     if (!userAuth) {
       const token = jwt.sign(
@@ -664,7 +666,8 @@ export default function Header(props) {
             idSubmenu: urlIdSubmenu,
             accionAG: 2,
             idRequerimiento: urlIdDocumento,
-            idEmpresa: urlIdEmpresa
+            idEmpresa: urlIdEmpresa,
+            estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2
           }
         },
         "mysecretpassword"
@@ -698,7 +701,8 @@ export default function Header(props) {
             idMenu: urlIdMenu,
             idSubmenu: urlIdSubmenu,
             accionAG: 2,
-            idRequerimiento: urlIdDocumento
+            idRequerimiento: urlIdDocumento,
+            estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2
           }
         },
         "mysecretpassword"

@@ -192,6 +192,8 @@ export default function ConfiguracionesPermisos(props) {
   const [expanded, setExpanded] = useState([]);
   const [redirect, setRedirect] = useState(false);
   const [conceptoBusqueda, setConceptoBusqueda] = useState(0);
+  const [conceptosLimite, setConceptosLimite] = useState([]);
+  const [selectedConceptoLimite, setSelectedConceptoLimite] = useState("0");
   const [checkedLimite, setCheckedLimite] = useState(false);
   const [
     openDialogLimiteImporteGastos,
@@ -366,7 +368,11 @@ export default function ConfiguracionesPermisos(props) {
     function checkData() {
       if (guardaPermisoAutorizacionData) {
         if (guardaPermisoAutorizacionData.error !== 0) {
-          swal("Error", dataBaseErrores(guardaPermisoAutorizacionData.error), "warning");
+          swal(
+            "Error",
+            dataBaseErrores(guardaPermisoAutorizacionData.error),
+            "warning"
+          );
           /* return (
             <Typography variant="h6">
               {dataBaseErrores(guardaPermisoAutorizacionData.error)}
@@ -390,7 +396,11 @@ export default function ConfiguracionesPermisos(props) {
     function checkData() {
       if (eliminaPermisoAutorizacionData) {
         if (eliminaPermisoAutorizacionData.error !== 0) {
-          swal("Error", dataBaseErrores(eliminaPermisoAutorizacionData.error), "warning");
+          swal(
+            "Error",
+            dataBaseErrores(eliminaPermisoAutorizacionData.error),
+            "warning"
+          );
           /* return (
             <Typography variant="h6">
               {dataBaseErrores(eliminaPermisoAutorizacionData.error)}
@@ -414,7 +424,11 @@ export default function ConfiguracionesPermisos(props) {
     function checkData() {
       if (guardaLimiteGastosData) {
         if (guardaLimiteGastosData.error !== 0) {
-          swal("Error", dataBaseErrores(guardaLimiteGastosData.error), "warning");
+          swal(
+            "Error",
+            dataBaseErrores(guardaLimiteGastosData.error),
+            "warning"
+          );
           /* return (
             <Typography variant="h6">
               {dataBaseErrores(guardaLimiteGastosData.error)}
@@ -437,7 +451,11 @@ export default function ConfiguracionesPermisos(props) {
     function checkData() {
       if (traerLimiteGastosUsuarioData) {
         if (traerLimiteGastosUsuarioData.error !== 0) {
-          swal("Error", dataBaseErrores(traerLimiteGastosUsuarioData.error), "warning");
+          swal(
+            "Error",
+            dataBaseErrores(traerLimiteGastosUsuarioData.error),
+            "warning"
+          );
           setOpenDialogLimiteImporteGastos(false);
           /* return (
             <Typography variant="h6">
@@ -503,6 +521,7 @@ export default function ConfiguracionesPermisos(props) {
 
   const handleCloseDialogLimiteImporteGastos = () => {
     setOpenDialogLimiteImporteGastos(false);
+    setSelectedConceptoLimite("0");
   };
 
   const getConceptosUsuarioExistentes = (idUsuario, idConcepto) => {
@@ -637,7 +656,6 @@ export default function ConfiguracionesPermisos(props) {
   };
 
   const getUsuarios = () => {
-    const usuarioCorreo = usuario;
     return permisosAutorizacionesData.usuarios.map((usuario, index) => {
       return conceptoUsuarioValidacion(usuario.conceptos) ||
         parseInt(conceptoBusqueda) === 0 ? (
@@ -656,16 +674,8 @@ export default function ConfiguracionesPermisos(props) {
                     disabled={permisos < 1}
                     onClick={e => {
                       e.stopPropagation();
+                      setConceptosLimite(usuario.conceptos);
                       setIdUsuario(usuario.idusuario);
-                      executeTraerLimiteGastosUsuario({
-                        params: {
-                          usuario: usuarioCorreo,
-                          pwd: pwd,
-                          rfc: rfc,
-                          idsubmenu: 45,
-                          idusuario: usuario.idusuario
-                        }
-                      });
                       handleOpenDialogLimiteImporteGastos();
                     }}
                   >
@@ -718,6 +728,14 @@ export default function ConfiguracionesPermisos(props) {
     });
   };
 
+  const getConceptosLimite = () => {
+    return conceptosLimite.map((concepto, index) => {
+      return (
+      <option key={index} value={concepto.id}>{concepto.nombre_concepto}</option>
+      )
+    })
+  };
+
   const guardarLimiteImporte = () => {
     if (checkedLimite && importeLimite === "") {
       swal("Error", "Ingresa un importe límite", "warning");
@@ -729,7 +747,7 @@ export default function ConfiguracionesPermisos(props) {
           rfc: rfc,
           idsubmenu: 45,
           idusuario: idUsuario,
-          idconcepto: 4,
+          idconcepto: parseInt(selectedConceptoLimite),
           importe: checkedLimite ? parseFloat(importeLimite) : 0
         }
       });
@@ -775,7 +793,11 @@ export default function ConfiguracionesPermisos(props) {
             }}
           >
             <option value="0">Todos</option>
-            {cargaConceptosData && cargaConceptosData.conceptos ? getConceptos() : <Redirect to="/autorizacionesGastos" />}
+            {cargaConceptosData && cargaConceptosData.conceptos ? (
+              getConceptos()
+            ) : (
+              <Redirect to="/autorizacionesGastos" />
+            )}
           </TextField>
         </Grid>
         <Grid item xs={12}>
@@ -787,7 +809,9 @@ export default function ConfiguracionesPermisos(props) {
             expanded={expanded}
             onNodeToggle={handleChangeTreeView}
           >
-            {permisosAutorizacionesData && permisosAutorizacionesData.usuarios ? getUsuarios() : null}
+            {permisosAutorizacionesData && permisosAutorizacionesData.usuarios
+              ? getUsuarios()
+              : null}
           </TreeView>
         </Grid>
       </Grid>
@@ -801,7 +825,40 @@ export default function ConfiguracionesPermisos(props) {
         </DialogTitle>
         <DialogContent dividers>
           <Grid container justify="center" spacing={3}>
-            <Grid item xs={12} sm={6} style={{ alignSelf: "flex-end" }}>
+            <Grid item xs={12}>
+              <TextField
+                className={classes.textFields}
+                select
+                SelectProps={{
+                  native: true
+                }}
+                value={selectedConceptoLimite}
+                variant="outlined"
+                label="Concepto"
+                type="text"
+                onChange={(e) => {
+                  setSelectedConceptoLimite(e.target.value);
+                  if(e.target.value !== "0") {
+                    executeTraerLimiteGastosUsuario({
+                      params: {
+                        usuario: usuario,
+                        pwd: pwd,
+                        rfc: rfc,
+                        idsubmenu: 45,
+                        idusuario: idUsuario,
+                        idconcepto: parseInt(e.target.value)
+                      }
+                    });
+                  }
+                }}
+              >
+                <option value={0}>Selecciona un concepto</option>
+                {getConceptosLimite()}
+              </TextField>
+            </Grid>
+            {selectedConceptoLimite !== "0" ? (
+              <Fragment>
+                <Grid item xs={12} sm={6} style={{ alignSelf: "flex-end" }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -833,6 +890,8 @@ export default function ConfiguracionesPermisos(props) {
                 }}
               />
             </Grid>
+              </Fragment>
+            ) : null}
           </Grid>
         </DialogContent>
         <DialogActions>
@@ -845,7 +904,7 @@ export default function ConfiguracionesPermisos(props) {
           </Button>
           <Button
             variant="contained"
-            disabled={permisos < 2}
+            disabled={permisos < 2 || selectedConceptoLimite === "0"}
             color="primary"
             onClick={() => {
               guardarLimiteImporte();

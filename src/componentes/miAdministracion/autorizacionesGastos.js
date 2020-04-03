@@ -39,7 +39,7 @@ import {
   RadioGroup,
   Radio
 } from "@material-ui/core";
-import Autocomplete, { createFilterOptions } from "@material-ui/lab/Autocomplete";
+import Autocomplete from "@material-ui/lab/Autocomplete";
 import {
   AddCircle as AddCircleIcon,
   FilterList as FilterListIcon,
@@ -132,9 +132,28 @@ function createData(
   detalle,
   importe,
   status,
-  idUsuario
+  idUsuario,
+  requerimientoGasto,
+  gastoRequerimiento,
+  gastoSurtido,
+  gasto,
+  requerimiento
 ) {
-  return { id, fecha, usuario, sucursal, detalle, importe, status, idUsuario };
+  return {
+    id,
+    fecha,
+    usuario,
+    sucursal,
+    detalle,
+    importe,
+    status,
+    idUsuario,
+    requerimientoGasto,
+    gastoRequerimiento,
+    gastoSurtido,
+    gasto,
+    requerimiento
+  };
 }
 
 let rows = [];
@@ -287,7 +306,6 @@ export default function AutorizacionesGastos(props) {
   const [idRequerimiento, setIdRequerimiento] = useState(0);
   const [radioTipo, setRadioTipo] = useState("requerimientos");
   const [estatusRequerimiento, setEstatusRequerimiento] = useState(1);
-  //console.log(usuario, usuarioPassword, rfcEmpresa, idSubmenu, estatusRequerimiento);
   const [
     {
       data: listaRequerimientosData,
@@ -314,7 +332,7 @@ export default function AutorizacionesGastos(props) {
 
   useEffect(() => {
     for (let x = 0; x < submenuContent.length; x++) {
-      if (submenuContent[x].submenu.idsubmenu === idSubmenu) {
+      if (submenuContent[x].submenu.idsubmenu === parseInt(idSubmenu)) {
         setPermisosSubmenu(submenuContent[x].permisos);
       }
     }
@@ -348,7 +366,6 @@ export default function AutorizacionesGastos(props) {
               : "requerimientos"
           );
         } catch (err) {
-          console.log(err);
           localStorage.removeItem("menuTemporal");
         }
       } else if (localStorage.getItem("notificacionData")) {
@@ -394,7 +411,6 @@ export default function AutorizacionesGastos(props) {
   useEffect(() => {
     function checkData() {
       if (listaRequerimientosData) {
-        //console.log(listaRequerimientosData);
         if (listaRequerimientosData.error !== 0) {
           return (
             <Typography variant="h5">
@@ -413,7 +429,12 @@ export default function AutorizacionesGastos(props) {
                 `Concepto: ${requerimiento.id_concepto} Folio: ${requerimiento.folio} Serie: ${requerimiento.serie}`,
                 requerimiento.importe_estimado,
                 requerimiento.estado_documento,
-                requerimiento.id_usuario
+                requerimiento.id_usuario,
+                requerimiento.requerimiento_gasto,
+                requerimiento.gasto_requerimiento,
+                requerimiento.gasto_surtido,
+                requerimiento.gasto,
+                requerimiento.requerimiento
               )
             );
           });
@@ -715,7 +736,9 @@ function TablaAYG(props) {
   const eliminarRequerimiento = (
     idRequerimiento,
     estatusActualRequerimiento,
-    idUsuario
+    idUsuario,
+    requerimientoGasto,
+    gastoRequerimiento
   ) => {
     if (idUsuarioLogueado !== idUsuario) {
       swal(
@@ -723,6 +746,18 @@ function TablaAYG(props) {
         `No puedes eliminar los ${
           radioTipo !== "gastos" ? "requerimientos" : "gastos"
         } de otro usuario`,
+        "warning"
+      );
+    } else if (requerimientoGasto === 1) {
+      swal(
+        "Error",
+        "No se pueden eliminar requerimientos creados a partir de un gasto",
+        "warning"
+      );
+    } else if (gastoRequerimiento === 1 && estatusActualRequerimiento !== 1) {
+      swal(
+        "Error",
+        "Solo se pueden eliminar los gastos que necesitan autorización con estatus pendiente",
         "warning"
       );
     } else if (estatusActualRequerimiento !== 1 && radioTipo !== "gastos") {
@@ -750,7 +785,8 @@ function TablaAYG(props) {
               usuario_storage: usuarioStorage,
               password_storage: passwordStorage,
               idrequerimiento: idRequerimiento,
-              estatus: radioTipo !== "gastos" ? 1 : 2
+              estatus: radioTipo !== "gastos" ? 1 : 2,
+              gastoRequerimiento: gastoRequerimiento
             }
           });
         }
@@ -926,7 +962,11 @@ function TablaAYG(props) {
                               : row.status === 7
                               ? "No autorizado"
                               : ""
-                            : "-"}
+                            : row.status === 1
+                            ? "Pendiente"
+                            : row.status === 3
+                            ? "Autorizado"
+                            : "No autorizado"}
                         </TableCell>
                         <TableCell align="right">
                           <div>
@@ -973,7 +1013,9 @@ function TablaAYG(props) {
                                     eliminarRequerimiento(
                                       row.id,
                                       row.status,
-                                      row.idUsuario
+                                      row.idUsuario,
+                                      row.requerimientoGasto,
+                                      row.gastoRequerimiento
                                     );
                                   }}
                                 >
@@ -1048,7 +1090,7 @@ const StyledMenu = withStyles({
 function FormularioAYG(props) {
   const classes = useStyles();
   const theme = useTheme();
-  let proveedores = [];
+  const [proveedores, setProveedores] = useState([]);
   const tableTittle = props.tittle;
   const setShowComponent = props.setShowComponent;
   const usuarioDatos = props.usuarioDatos;
@@ -1074,7 +1116,6 @@ function FormularioAYG(props) {
   const idRequerimiento = props.idRequerimiento;
   const permisosSubmenu = props.permisosSubmenu;
   const radioTipo = props.radioTipo;
-  //console.log(radioTipo);
   const [RADatos, setRADatos] = useState({
     sucursal: "0",
     fecha: moment().format("YYYY-MM-DD"),
@@ -1086,12 +1127,16 @@ function FormularioAYG(props) {
   });
   const [rfcGasto, setRfcGasto] = useState("");
   const [nombreGasto, setNombreGasto] = useState("");
+  const [rfcGastoNoRFC, setRfcGastoNoRFC] = useState("");
+  const [nombreGastoNoRFC, setNombreGastoNoRFC] = useState("");
   const [importeEstatus, setImporteEstatus] = useState("");
   const [fechaEstatus, setFechaEstatus] = useState(
     moment().format("YYYY-MM-DD")
   );
   const [rfcEstatus, setRfcEstatus] = useState("");
   const [nombreLargoEstatus, setNombreLargoEstatus] = useState("");
+  const [rfcEstatusNoRFC, setRfcEstatusNoRFC] = useState("");
+  const [nombreLargoEstatusNoRFC, setNombreLargoEstatusNoRFC] = useState("");
   const [descripcionAntigua, setDescripcionAntigua] = useState("");
   const [fechaAntigua, setFechaAntigua] = useState("");
   const [importeAntiguo, setImporteAntiguo] = useState("");
@@ -1140,6 +1185,8 @@ function FormularioAYG(props) {
   const [gastoRequiereAutorizacion, setGastoRequiereAutorizacion] = useState(
     false
   );
+  const [checkNoRFCEstatus, setCheckNoRFCEstatus] = useState(false);
+  const [checkNoRFC, setCheckNoRFC] = useState(false);
   const [
     {
       data: cargaConceptosData,
@@ -1395,7 +1442,8 @@ function FormularioAYG(props) {
         pwd: usuarioPassword,
         rfc: rfcEmpresa,
         idsubmenu: idSubmenu,
-        idusuario: idUsuarioLogueado
+        idusuario: idUsuarioLogueado,
+        idconcepto: RADatos.concepto
       }
     },
     {
@@ -1407,8 +1455,8 @@ function FormularioAYG(props) {
       data: traerProveedoresData,
       loading: traerProveedoresLoading,
       error: traerProveedoresError
-    },
-    executeTraerProveedores
+    } /* ,
+    executeTraerProveedores */
   ] = useAxios(
     {
       url: API_BASE_URL + `/traerProveedores`,
@@ -1419,10 +1467,10 @@ function FormularioAYG(props) {
         rfc: rfcEmpresa,
         idsubmenu: idSubmenu
       }
-    },
+    } /* ,
     {
       manual: true
-    }
+    } */
   );
 
   useEffect(() => {
@@ -1435,26 +1483,29 @@ function FormularioAYG(props) {
     }
   }, [gastos]);
 
+  /* useEffect(() => {
+    if (radioTipo === "gastos" && accionAG === 1) {
+      executeTraerProveedores();
+    }
+  }, [executeTraerProveedores, radioTipo, accionAG]); */
+
   useEffect(() => {
     if (accionAG === 2) {
       executeDatosRequerimiento();
       executeUsuariosNotificacion();
-    } else if (radioTipo === "gastos") {
-      executeTraerProveedores();
     }
   }, [
     accionAG,
     radioTipo,
     executeDatosRequerimiento,
-    executeUsuariosNotificacion,
-    executeTraerProveedores
+    executeUsuariosNotificacion
   ]);
 
   useEffect(() => {
-    if (radioTipo === "gastos") {
+    if (radioTipo === "gastos" && RADatos.concepto !== "0") {
       executeTraerLimiteGastosUsuario();
     }
-  }, [radioTipo, executeTraerLimiteGastosUsuario]);
+  }, [radioTipo, executeTraerLimiteGastosUsuario, RADatos.concepto]);
 
   useEffect(() => {
     function checkData() {
@@ -1487,11 +1538,9 @@ function FormularioAYG(props) {
             setDocumentosGuardados(
               datosRequerimientoData.requerimiento[0].documentos
             );
-            //console.log(datosRequerimientoData.requerimiento[0]);
             setHistorial(datosRequerimientoData.requerimiento[0].historial);
             const historialLength =
               datosRequerimientoData.requerimiento[0].historial.length - 1;
-            //console.log(historialLength);
             setEstatusActualRequerimiento(
               historialLength !== -1
                 ? datosRequerimientoData.requerimiento[0].historial[
@@ -1507,8 +1556,10 @@ function FormularioAYG(props) {
               datosRequerimientoData.requerimiento[0].id_usuario
             );
             if (radioTipo === "gastos") {
-              setRfcGasto(datosRequerimientoData.requerimiento[0].rfcproveedor);
-              setNombreGasto(
+              setRfcGastoNoRFC(
+                datosRequerimientoData.requerimiento[0].rfcproveedor
+              );
+              setNombreGastoNoRFC(
                 datosRequerimientoData.requerimiento[0].nombreproveedor !== null
                   ? datosRequerimientoData.requerimiento[0].nombreproveedor
                   : ""
@@ -1569,20 +1620,10 @@ function FormularioAYG(props) {
             </Typography>
           );
         } else {
-          if (proveedores.length === 0) {
-            for (let x = 0; x < traerProveedoresData.proveedores.length; x++) {
-              proveedores.push({
-                pos: x,
-                rfc: traerProveedoresData.proveedores[x].rfc,
-                razonsocial: traerProveedoresData.proveedores[x].razonsocial
-              });
-            }
-            //console.log(proveedores);
-          }
+          setProveedores(traerProveedoresData.proveedores);
         }
       }
     }
-
     checkData();
   }, [traerProveedoresData, proveedores]);
 
@@ -1673,7 +1714,7 @@ function FormularioAYG(props) {
                 });
               }
               if (gastoRequiereAutorizacion) {
-                const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${nuevoRequerimientoData.idrequerimiento}`;
+                const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${nuevoRequerimientoData.idrequerimiento}&tipo=${radioTipo}`;
                 const encabezadoMensaje = "Nuevo gasto agregado";
                 const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`;
                 await executeCreaGasto({
@@ -1685,6 +1726,8 @@ function FormularioAYG(props) {
                     idsubmenu: idSubmenu,
                     idrequerimiento: nuevoRequerimientoData.idrequerimiento,
                     importe: parseFloat(RADatos.importe),
+                    idconcepto: RADatos.concepto,
+                    estatusgasto: 1,
                     fecha: moment().format("YYYY-MM-DD"),
                     fechagasto: RADatos.fecha,
                     rfcproveedor: rfcGasto,
@@ -1772,7 +1815,7 @@ function FormularioAYG(props) {
           });
 
           if (gastoRequiereAutorizacion) {
-            const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${nuevoRequerimientoData.idrequerimiento}`;
+            const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${nuevoRequerimientoData.idrequerimiento}&tipo=${radioTipo}`;
             const encabezadoMensaje = "Nuevo gasto agregado";
             const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`;
             await executeCreaGasto({
@@ -1784,6 +1827,8 @@ function FormularioAYG(props) {
                 idsubmenu: idSubmenu,
                 idrequerimiento: nuevoRequerimientoData.idrequerimiento,
                 importe: parseFloat(RADatos.importe),
+                idconcepto: RADatos.concepto,
+                estatusgasto: 1,
                 fecha: moment().format("YYYY-MM-DD"),
                 fechagasto: RADatos.fecha,
                 rfcproveedor: rfcGasto,
@@ -1833,6 +1878,7 @@ function FormularioAYG(props) {
     radioTipo,
     RADatos.importe,
     limiteImporteGasto,
+    RADatos.concepto,
     RADatos.fecha,
     empresaId,
     executeCreaGasto,
@@ -1866,7 +1912,7 @@ function FormularioAYG(props) {
               (estatusRequerimiento === "4" || estatusRequerimiento === "5") &&
               idSubmenu === 44
             ) {
-              const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}`;
+              const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
               const encabezadoMensaje = "Nuevo gasto agregado";
               const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`;
               executeCreaGasto({
@@ -1878,6 +1924,8 @@ function FormularioAYG(props) {
                   idsubmenu: idSubmenu,
                   idrequerimiento: idRequerimiento,
                   importe: parseFloat(importeEstatus),
+                  idconcepto: 4,
+                  estatusgasto: 3,
                   fecha: moment().format("YYYY-MM-DD"),
                   fechagasto: fechaEstatus,
                   rfcproveedor: rfcEstatus,
@@ -1916,7 +1964,8 @@ function FormularioAYG(props) {
     idMenu,
     idModulo,
     nombreEmpresa,
-    usuarioNombreCompleto
+    usuarioNombreCompleto,
+    radioTipo
   ]);
 
   useEffect(() => {
@@ -1961,7 +2010,6 @@ function FormularioAYG(props) {
               ? getTotalImporteData.importe
               : 0
           );
-          console.log(getTotalImporteData);
         }
       }
     }
@@ -2063,12 +2111,18 @@ function FormularioAYG(props) {
           setArchivosPrincipal(null);
           setArchivosSecundario(null);
           executeDatosRequerimiento();
+          executeListaRequerimientos();
         }
       }
     }
 
     checkData();
-  }, [editarRequerimientoData, executeDatosRequerimiento, radioTipo]);
+  }, [
+    editarRequerimientoData,
+    executeDatosRequerimiento,
+    executeListaRequerimientos,
+    radioTipo
+  ]);
 
   useEffect(() => {
     function checkData() {
@@ -2328,6 +2382,22 @@ function FormularioAYG(props) {
     setIdDocumentoSecundario(idDocumento);
   };
 
+  const handleCheckNoRFCEstatus = event => {
+    setCheckNoRFCEstatus(!checkNoRFCEstatus);
+    if (event.target.checked) {
+      setRfcEstatus("");
+      setNombreLargoEstatus("");
+    }
+  };
+
+  const handleCheckNoRFC = event => {
+    setCheckNoRFC(!checkNoRFC);
+    if (event.target.checked) {
+      setRfcGasto("");
+      setNombreGasto("");
+    }
+  };
+
   const getSucursalesEmpresa = () => {
     return sucursales.map((sucursal, index) => {
       return (
@@ -2389,13 +2459,28 @@ function FormularioAYG(props) {
       swal("Error en campos", "Seleccione un concepto", "warning");
     } else if (folio === "") {
       swal("Error en campos", "Ingrese un folio", "warning");
-    } else if (radioTipo === "gastos" && rfcGasto.trim() === "") {
+    } else if (
+      radioTipo === "gastos" &&
+      !checkNoRFC &&
+      rfcGasto.trim() === ""
+    ) {
       swal("Error en campos", "Ingrese un RFC", "warning");
     } else if (
       radioTipo === "gastos" &&
-      (rfcGasto.trim() === "XAX010101000" ||
-        rfcGasto.trim() === "XEX010101000") &&
+      !checkNoRFC &&
       nombreGasto.trim() === ""
+    ) {
+      swal("Error en campos", "Ingrese un nombre largo", "warning");
+    } else if (
+      radioTipo === "gastos" &&
+      checkNoRFC &&
+      rfcGastoNoRFC.trim() === ""
+    ) {
+      swal("Error en campos", "Ingrese un RFC", "warning");
+    } else if (
+      radioTipo === "gastos" &&
+      checkNoRFC &&
+      nombreGastoNoRFC.trim() === ""
     ) {
       swal("Error en campos", "Ingrese un nombre largo", "warning");
     } else if (
@@ -2410,7 +2495,7 @@ function FormularioAYG(props) {
         "warning"
       );
     } else {
-      const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}`;
+      const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
       const encabezadoMensaje =
         radioTipo !== "gastos"
           ? `Nuevo requerimiento de ${tableTittle.toLowerCase()}`
@@ -2448,22 +2533,38 @@ function FormularioAYG(props) {
       if (radioTipo === "gastos") {
         if (limiteImporteGasto !== 0) {
           if (importe <= limiteImporteGasto) {
+            formData.append("estadodocumento", 3);
             formData.append("idconcepto", concepto);
-            formData.append("rfcproveedor", rfcGasto);
-            formData.append("nombreproveedor", nombreGasto);
+            formData.append(
+              "rfcproveedor",
+              !checkNoRFC ? rfcGasto : rfcGastoNoRFC
+            );
+            formData.append(
+              "nombreproveedor",
+              !checkNoRFC ? nombreGasto : nombreGastoNoRFC
+            );
             formData.append("estatus", 2);
           } else {
+            formData.append("estadodocumento", 1);
             formData.append("idconcepto", conceptoRequerimientoGasto);
             formData.append("estatus", 1);
             setGastoRequiereAutorizacion(true);
           }
         } else {
+          formData.append("estadodocumento", 3);
           formData.append("idconcepto", concepto);
-          formData.append("rfcproveedor", rfcGasto);
-          formData.append("nombreproveedor", nombreGasto);
+          formData.append(
+            "rfcproveedor",
+            !checkNoRFC ? rfcGasto : rfcGastoNoRFC
+          );
+          formData.append(
+            "nombreproveedor",
+            !checkNoRFC ? nombreGasto : nombreGastoNoRFC
+          );
           formData.append("estatus", 2);
         }
       } else {
+        formData.append("estadodocumento", 1);
         formData.append("idconcepto", concepto);
         formData.append("estatus", 1);
       }
@@ -2532,7 +2633,7 @@ function FormularioAYG(props) {
         }
       }
       const encabezadoMensaje = `Se actualizo un requerimiento de ${tableTittle.toLowerCase()}`;
-      const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}`;
+      const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
       const mensaje = `${usuarioNombreCompleto} ha actualizado un requerimiento de ${tableTittle.toLowerCase()} en ${nombreEmpresa}: \n ${linkMensaje}`;
       const formData = new FormData();
       formData.append("usuario", usuario);
@@ -2666,7 +2767,6 @@ function FormularioAYG(props) {
   };
 
   const getHistorial = () => {
-    //console.log(historial);
     return historial.map((item, index) => {
       return (
         <TableRow hover role="checkbox" tabIndex={-1} key={index}>
@@ -2698,9 +2798,6 @@ function FormularioAYG(props) {
   };
 
   const cambiarEstatus = () => {
-    if (gastoAutorizacion) {
-      alert("gasto que necesita requerimiento");
-    }
     if (estatusRequerimiento === "0" || estatusRequerimiento === 0) {
       swal("Error", "Seleccione un estatus", "warning");
     } else if (
@@ -2730,15 +2827,29 @@ function FormularioAYG(props) {
     } else if (
       (estatusRequerimiento === "4" || estatusRequerimiento === "5") &&
       idSubmenu === 44 &&
+      !checkNoRFCEstatus &&
       rfcEstatus.trim() === ""
     ) {
       swal("Error", "Ingrese un RFC", "warning");
     } else if (
       (estatusRequerimiento === "4" || estatusRequerimiento === "5") &&
       idSubmenu === 44 &&
-      (rfcEstatus.trim() === "XAX010101000" ||
-        rfcEstatus.trim() === "XEX010101000") &&
+      !checkNoRFCEstatus &&
       nombreLargoEstatus.trim() === ""
+    ) {
+      swal("Error", "Ingrese un nombre largo", "warning");
+    } else if (
+      (estatusRequerimiento === "4" || estatusRequerimiento === "5") &&
+      idSubmenu === 44 &&
+      checkNoRFCEstatus &&
+      rfcEstatusNoRFC.trim() === ""
+    ) {
+      swal("Error", "Ingrese un RFC", "warning");
+    } else if (
+      (estatusRequerimiento === "4" || estatusRequerimiento === "5") &&
+      idSubmenu === 44 &&
+      checkNoRFCEstatus &&
+      nombreLargoEstatusNoRFC.trim() === ""
     ) {
       swal("Error", "Ingrese un nombre largo", "warning");
     } else {
@@ -2858,7 +2969,7 @@ function FormularioAYG(props) {
       }
       if (cambioEstatus) {
         const encabezadoMensaje = `Se actualizo el estatus de un requerimiento de ${tableTittle.toLowerCase()}`;
-        const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}`;
+        const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
         const mensaje = `${usuarioNombreCompleto} ha actualizado el estatus de un requerimiento de ${tableTittle.toLowerCase()} en ${nombreEmpresa}: \n ${linkMensaje}`;
         let estatusGasto = 0;
         if (
@@ -3043,6 +3154,23 @@ function FormularioAYG(props) {
         } de otro usuario`,
         "warning"
       );
+    } else if (radioTipo !== "gastos" && gastoAutorizacion) {
+      swal(
+        "Error",
+        "No se pueden eliminar requerimientos creados a partir de un gasto",
+        "warning"
+      );
+    } else if (
+      datosRequerimientoData.requerimiento[0].estado_documento !== 1 &&
+      radioTipo === "gastos" &&
+      datosRequerimientoData.requerimiento[0].requerimiento.length > 0 &&
+      datosRequerimientoData.requerimiento[0].requerimiento[0].gasto_requerimiento === 1
+    ) {
+      swal(
+        "Error",
+        "Solo se pueden eliminar los gastos que necesitan autorización con estatus pendiente",
+        "warning"
+      );
     } else if (estatusActualRequerimiento !== 1 && radioTipo !== "gastos") {
       swal(
         "Error",
@@ -3068,7 +3196,13 @@ function FormularioAYG(props) {
               usuario_storage: usuarioStorage,
               password_storage: passwordStorage,
               idrequerimiento: idRequerimiento,
-              estatus: radioTipo !== "gastos" ? 1 : 2
+              estatus: radioTipo !== "gastos" ? 1 : 2,
+              gastoRequerimiento:
+                radioTipo === "gastos" &&
+                requerimiento.length > 0 &&
+                requerimiento[0].gasto_requerimiento === 1
+                  ? 1
+                  : 0
             }
           });
         }
@@ -3078,7 +3212,7 @@ function FormularioAYG(props) {
 
   const reenviarNotificacionUsuarios = () => {
     if (usuariosNotificacionesSelected.length > 0) {
-      const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}`;
+      const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
       const reenviarNotificacionDatos = {
         usuario: usuario,
         pwd: usuarioPassword,
@@ -3233,118 +3367,6 @@ function FormularioAYG(props) {
   const handleCloseMenuReenviarNotificacion = () => {
     setOpenMenuReenviarNotificacion(false);
   };
-
-  const top100Films = [
-    { title: "The Shawshank Redemption", year: 1994 },
-    { title: "The Godfather", year: 1972 },
-    { title: "The Godfather: Part II", year: 1974 },
-    { title: "The Dark Knight", year: 2008 },
-    { title: "12 Angry Men", year: 1957 },
-    { title: "Schindler's List", year: 1993 },
-    { title: "Pulp Fiction", year: 1994 },
-    { title: "The Lord of the Rings: The Return of the King", year: 2003 },
-    { title: "The Good, the Bad and the Ugly", year: 1966 },
-    { title: "Fight Club", year: 1999 },
-    { title: "The Lord of the Rings: The Fellowship of the Ring", year: 2001 },
-    { title: "Star Wars: Episode V - The Empire Strikes Back", year: 1980 },
-    { title: "Forrest Gump", year: 1994 },
-    { title: "Inception", year: 2010 },
-    { title: "The Lord of the Rings: The Two Towers", year: 2002 },
-    { title: "One Flew Over the Cuckoo's Nest", year: 1975 },
-    { title: "Goodfellas", year: 1990 },
-    { title: "The Matrix", year: 1999 },
-    { title: "Seven Samurai", year: 1954 },
-    { title: "Star Wars: Episode IV - A New Hope", year: 1977 },
-    { title: "City of God", year: 2002 },
-    { title: "Se7en", year: 1995 },
-    { title: "The Silence of the Lambs", year: 1991 },
-    { title: "It's a Wonderful Life", year: 1946 },
-    { title: "Life Is Beautiful", year: 1997 },
-    { title: "The Usual Suspects", year: 1995 },
-    { title: "Léon: The Professional", year: 1994 },
-    { title: "Spirited Away", year: 2001 },
-    { title: "Saving Private Ryan", year: 1998 },
-    { title: "Once Upon a Time in the West", year: 1968 },
-    { title: "American History X", year: 1998 },
-    { title: "Interstellar", year: 2014 },
-    { title: "Casablanca", year: 1942 },
-    { title: "City Lights", year: 1931 },
-    { title: "Psycho", year: 1960 },
-    { title: "The Green Mile", year: 1999 },
-    { title: "The Intouchables", year: 2011 },
-    { title: "Modern Times", year: 1936 },
-    { title: "Raiders of the Lost Ark", year: 1981 },
-    { title: "Rear Window", year: 1954 },
-    { title: "The Pianist", year: 2002 },
-    { title: "The Departed", year: 2006 },
-    { title: "Terminator 2: Judgment Day", year: 1991 },
-    { title: "Back to the Future", year: 1985 },
-    { title: "Whiplash", year: 2014 },
-    { title: "Gladiator", year: 2000 },
-    { title: "Memento", year: 2000 },
-    { title: "The Prestige", year: 2006 },
-    { title: "The Lion King", year: 1994 },
-    { title: "Apocalypse Now", year: 1979 },
-    { title: "Alien", year: 1979 },
-    { title: "Sunset Boulevard", year: 1950 },
-    {
-      title:
-        "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
-      year: 1964
-    },
-    { title: "The Great Dictator", year: 1940 },
-    { title: "Cinema Paradiso", year: 1988 },
-    { title: "The Lives of Others", year: 2006 },
-    { title: "Grave of the Fireflies", year: 1988 },
-    { title: "Paths of Glory", year: 1957 },
-    { title: "Django Unchained", year: 2012 },
-    { title: "The Shining", year: 1980 },
-    { title: "WALL·E", year: 2008 },
-    { title: "American Beauty", year: 1999 },
-    { title: "The Dark Knight Rises", year: 2012 },
-    { title: "Princess Mononoke", year: 1997 },
-    { title: "Aliens", year: 1986 },
-    { title: "Oldboy", year: 2003 },
-    { title: "Once Upon a Time in America", year: 1984 },
-    { title: "Witness for the Prosecution", year: 1957 },
-    { title: "Das Boot", year: 1981 },
-    { title: "Citizen Kane", year: 1941 },
-    { title: "North by Northwest", year: 1959 },
-    { title: "Vertigo", year: 1958 },
-    { title: "Star Wars: Episode VI - Return of the Jedi", year: 1983 },
-    { title: "Reservoir Dogs", year: 1992 },
-    { title: "Braveheart", year: 1995 },
-    { title: "M", year: 1931 },
-    { title: "Requiem for a Dream", year: 2000 },
-    { title: "Amélie", year: 2001 },
-    { title: "A Clockwork Orange", year: 1971 },
-    { title: "Like Stars on Earth", year: 2007 },
-    { title: "Taxi Driver", year: 1976 },
-    { title: "Lawrence of Arabia", year: 1962 },
-    { title: "Double Indemnity", year: 1944 },
-    { title: "Eternal Sunshine of the Spotless Mind", year: 2004 },
-    { title: "Amadeus", year: 1984 },
-    { title: "To Kill a Mockingbird", year: 1962 },
-    { title: "Toy Story 3", year: 2010 },
-    { title: "Logan", year: 2017 },
-    { title: "Full Metal Jacket", year: 1987 },
-    { title: "Dangal", year: 2016 },
-    { title: "The Sting", year: 1973 },
-    { title: "2001: A Space Odyssey", year: 1968 },
-    { title: "Singin' in the Rain", year: 1952 },
-    { title: "Toy Story", year: 1995 },
-    { title: "Bicycle Thieves", year: 1948 },
-    { title: "The Kid", year: 1921 },
-    { title: "Inglourious Basterds", year: 2009 },
-    { title: "Snatch", year: 2000 },
-    { title: "3 Idiots", year: 2009 },
-    { title: "Monty Python and the Holy Grail", year: 1975 }
-  ];
-
-  const filterOptions = createFilterOptions({
-    matchFrom: 'any',
-    stringify: option => option.rfc,
-  });
 
   return (
     <Grid container justify="center" style={{ padding: "10px" }}>
@@ -3777,7 +3799,7 @@ function FormularioAYG(props) {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                {/* <Grid item xs={12} sm={6}>
                   <TextField
                     style={{ width: "100%" }}
                     id="rfcEstatus"
@@ -3796,34 +3818,128 @@ function FormularioAYG(props) {
                       setRfcEstatus(e.target.value);
                     }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    style={{
-                      display:
-                        rfcEstatus === "XAX010101000" ||
-                        rfcEstatus === "XEX010101000"
-                          ? "flex"
-                          : "none",
-                      width: "100%"
-                    }}
-                    id="nombreLargoEstatus"
-                    type="text"
-                    label="Nombre Largo"
-                    variant="outlined"
-                    value={nombreLargoEstatus}
-                    inputProps={{
-                      maxLength: 100
-                    }}
-                    onKeyPress={e => {
-                      keyValidation(e, 1);
-                    }}
-                    onChange={e => {
-                      pasteValidation(e, 1);
-                      setNombreLargoEstatus(e.target.value);
-                    }}
+                </Grid> */}
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="checkeNoRfcEstatus"
+                        color="primary"
+                        checked={checkNoRFCEstatus}
+                        onChange={handleCheckNoRFCEstatus}
+                      />
+                    }
+                    label="¿No aparece tu RFC?"
                   />
                 </Grid>
+                {!checkNoRFCEstatus ? (
+                  <Fragment>
+                    <Grid item xs={12}>
+                      <Autocomplete
+                        options={proveedores}
+                        getOptionLabel={option =>
+                          `${option.rfc}-${option.razonsocial}`
+                        }
+                        id="debug"
+                        onInputChange={(e, value) => {
+                          const separacion = value.split("-");
+                          if (separacion.length === 2) {
+                            const rfc = separacion[0];
+                            const nombreLargo = separacion[1];
+                            setRfcEstatus(rfc);
+                            setNombreLargoEstatus(nombreLargo);
+                          } else {
+                            setRfcEstatus("");
+                            setNombreLargoEstatus("");
+                          }
+                        }}
+                        renderInput={params => (
+                          <TextField
+                            {...params}
+                            id="rfcAutocompleteStatus"
+                            style={{ width: "100%" }}
+                            value={rfcEstatus}
+                            onKeyPress={e => {
+                              keyValidation(e, 5);
+                            }}
+                            onChange={e => {
+                              pasteValidation(e, 5);
+                            }}
+                            label="RFC"
+                            margin="normal"
+                            variant="outlined"
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        style={{
+                          width: "100%"
+                        }}
+                        disabled
+                        id="nombreLargoEstatus"
+                        type="text"
+                        label="Nombre Largo"
+                        variant="outlined"
+                        value={nombreLargoEstatus}
+                        inputProps={{
+                          maxLength: 100
+                        }}
+                        onKeyPress={e => {
+                          keyValidation(e, 1);
+                        }}
+                        onChange={e => {
+                          pasteValidation(e, 1);
+                          setNombreLargoEstatus(e.target.value);
+                        }}
+                      />
+                    </Grid>
+                  </Fragment>
+                ) : (
+                  <Fragment>
+                    <Grid item xs={12}>
+                      <TextField
+                        id="rfcEstatusNoRFC"
+                        style={{ width: "100%" }}
+                        value={rfcEstatusNoRFC}
+                        onKeyPress={e => {
+                          keyValidation(e, 5);
+                        }}
+                        onChange={e => {
+                          pasteValidation(e, 5);
+                          setRfcEstatusNoRFC(e.target.value);
+                        }}
+                        label="RFC"
+                        margin="normal"
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        style={{
+                          width: "100%"
+                        }}
+                        disabled
+                        id="nombreLargoEstatusNoRFC"
+                        type="text"
+                        label="Nombre Largo"
+                        variant="outlined"
+                        value={nombreLargoEstatusNoRFC}
+                        inputProps={{
+                          maxLength: 100
+                        }}
+                        onKeyPress={e => {
+                          keyValidation(e, 1);
+                        }}
+                        onChange={e => {
+                          pasteValidation(e, 1);
+                          setNombreLargoEstatusNoRFC(e.target.value);
+                        }}
+                      />
+                    </Grid>
+                  </Fragment>
+                )}
               </Fragment>
             ) : null}
             <Grid item xs={12}>
@@ -3867,7 +3983,7 @@ function FormularioAYG(props) {
             <Grid item xs={12}>
               <Typography variant="h6">Información de Gasto</Typography>
             </Grid>
-            <Grid item xs={12}>
+            {/* <Grid item xs={12}>
               <TextField
                 style={{ width: "100%" }}
                 id="rfcGasto"
@@ -3886,64 +4002,139 @@ function FormularioAYG(props) {
                   setRfcGasto(e.target.value);
                 }}
               />
-            </Grid>
-            <Grid item xs={12}>
-              <Autocomplete
-              filterOptions={filterOptions}
-                options={proveedores}
-                getOptionLabel={option => option.rfc}
-                disabled={accionAG === 2}
-                id="debug"
-                debug
-                renderInput={params => (
+            </Grid> */}
+            {accionAG === 1 ? (
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="checkeNoRfc"
+                      color="primary"
+                      checked={checkNoRFC}
+                      onChange={handleCheckNoRFC}
+                    />
+                  }
+                  label="¿No aparece tu RFC?"
+                />
+              </Grid>
+            ) : null}
+            {!checkNoRFC && accionAG === 1 ? (
+              <Fragment>
+                <Grid item xs={12}>
+                  <Autocomplete
+                    options={proveedores}
+                    getOptionLabel={option =>
+                      `${option.rfc}-${option.razonsocial}`
+                    }
+                    disabled={accionAG === 2}
+                    id="debug"
+                    onInputChange={(e, value) => {
+                      const separacion = value.split("-");
+                      if (separacion.length === 2) {
+                        const rfc = separacion[0];
+                        const nombreLargo = separacion[1];
+                        setRfcGasto(rfc);
+                        setNombreGasto(nombreLargo);
+                      } else {
+                        setRfcGasto("");
+                        setNombreGasto("");
+                      }
+                      /* setRfcGasto(value);
+                      for (let x = 0; x < proveedores.length; x++) {
+                        if (proveedores[x].rfc === value) {
+                          setNombreGasto(proveedores[x].razonsocial);
+                          break;
+                        }
+                      } */
+                    }}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        id="rfcAutocomplete"
+                        style={{ width: "100%" }}
+                        onKeyPress={e => {
+                          keyValidation(e, 5);
+                        }}
+                        onChange={e => {
+                          pasteValidation(e, 5);
+                        }}
+                        label="RFC"
+                        margin="normal"
+                        variant="outlined"
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12}>
                   <TextField
-                    {...params}
-                    id="rfcAutocomplete"
+                    style={{
+                      width: "100%"
+                    }}
+                    id="nombreGasto"
+                    label="Nombre Largo"
+                    disabled
+                    variant="outlined"
+                    value={nombreGasto}
+                    inputProps={{
+                      maxLength: 100
+                    }}
+                    onKeyPress={e => {
+                      keyValidation(e, 1);
+                    }}
+                    onChange={e => {
+                      pasteValidation(e, 1);
+                      setNombreGasto(e.target.value);
+                    }}
+                  />
+                </Grid>
+              </Fragment>
+            ) : (
+              <Fragment>
+                <Grid item xs={12}>
+                  <TextField
+                    id="rfcGastoNoRFC"
                     style={{ width: "100%" }}
+                    disabled={accionAG === 2}
+                    value={rfcGastoNoRFC}
+                    inputProps={{
+                      maxLength: 20
+                    }}
                     onKeyPress={e => {
                       keyValidation(e, 5);
                     }}
                     onChange={e => {
                       pasteValidation(e, 5);
+                      setRfcGastoNoRFC(e.target.value);
                     }}
                     label="RFC"
                     margin="normal"
                     variant="outlined"
                   />
-                )}
-                onInputChange={(e, value) => {
-                  setRfcGasto(value);
-                  /* console.log(e.target.value);
-                  console.log(value); */
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                style={{
-                  display:
-                    rfcGasto === "XAX010101000" || rfcGasto === "XEX010101000"
-                      ? "flex"
-                      : "none",
-                  width: "100%"
-                }}
-                id="nombreGasto"
-                label="Nombre Largo"
-                disabled={accionAG === 2}
-                variant="outlined"
-                value={nombreGasto}
-                inputProps={{
-                  maxLength: 100
-                }}
-                onKeyPress={e => {
-                  keyValidation(e, 1);
-                }}
-                onChange={e => {
-                  pasteValidation(e, 1);
-                  setNombreGasto(e.target.value);
-                }}
-              />
-            </Grid>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    style={{
+                      width: "100%"
+                    }}
+                    id="nombreGastoNoRFC"
+                    label="Nombre Largo"
+                    variant="outlined"
+                    disabled={accionAG === 2}
+                    value={nombreGastoNoRFC}
+                    inputProps={{
+                      maxLength: 100
+                    }}
+                    onKeyPress={e => {
+                      keyValidation(e, 1);
+                    }}
+                    onChange={e => {
+                      pasteValidation(e, 1);
+                      setNombreGastoNoRFC(e.target.value);
+                    }}
+                  />
+                </Grid>
+              </Fragment>
+            )}
             {accionAG === 1 &&
             RADatos.importe > limiteImporteGasto &&
             limiteImporteGasto !== 0 ? (
@@ -3976,7 +4167,65 @@ function FormularioAYG(props) {
                     </Typography>
                   </Grid>
                   <Grid item xs={12}>
-                    <TableContainer component={Paper}>
+                    <Card>
+                      <Grid container spacing={1} style={{ padding: "10px" }}>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle1">
+                            <strong>Fecha: </strong>
+                            {requerimiento[0].fecha_req}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle1">
+                            <strong>Importe: </strong>
+                            {requerimiento[0].importe_estimado}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle1">
+                            <strong>Status: </strong>
+                            {requerimiento[0].estado_documento === 1
+                              ? "Pendiente"
+                              : requerimiento[0].estado_documento === 2
+                              ? "Cancelado"
+                              : requerimiento[0].estado_documento === 3
+                              ? "Autorizado"
+                              : requerimiento[0].estado_documento === 4
+                              ? "Surtido"
+                              : requerimiento[0].estado_documento === 5
+                              ? "Surtido Parcial"
+                              : requerimiento[0].estado_documento === 7
+                              ? "No autorizado"
+                              : ""}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle1">
+                            <strong>Sucursal: </strong>
+                            {requerimiento[0].sucursal}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle1">
+                            <strong>Concepto: </strong>
+                            {requerimiento[0].concepto}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle1">
+                            <strong>Folio: </strong>
+                            {requerimiento[0].folio}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle1">
+                            <strong>Serie: </strong>
+                            {requerimiento[0].serie}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Card>
+                    {/* <TableContainer component={Paper}>
                       <Table aria-label="simple table">
                         <TableHead style={{ background: "#FAFAFA" }}>
                           <TableRow>
@@ -4023,7 +4272,7 @@ function FormularioAYG(props) {
                           </TableRow>
                         </TableBody>
                       </Table>
-                    </TableContainer>
+                    </TableContainer> */}
                   </Grid>
                 </Fragment>
               ) : (
