@@ -30,7 +30,7 @@ import {
   Dialog,
   DialogContent,
   DialogActions,
-  Divider
+  Divider,
 } from "@material-ui/core";
 import {
   AddCircle as AddCircleIcon,
@@ -43,7 +43,7 @@ import {
   ArrowBack as ArrowBackIcon,
   SentimentVerySatisfied as SentimentVerySatisfiedIcon,
   SentimentVeryDissatisfied as SentimentVeryDissatisfiedIcon,
-  Error as ErrorIcon
+  Error as ErrorIcon,
 } from "@material-ui/icons";
 import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
@@ -51,7 +51,7 @@ import {
   makeStyles,
   lighten,
   withStyles,
-  useTheme
+  useTheme,
 } from "@material-ui/core/styles";
 import clsx from "clsx";
 import swal from "sweetalert";
@@ -62,34 +62,34 @@ import { verificarExtensionArchivo } from "../../helpers/extensionesArchivos";
 import moment from "moment";
 const jwt = require("jsonwebtoken");
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   card: {
     padding: "10px",
-    marginBottom: "20px"
+    marginBottom: "20px",
   },
   title: {
     marginTop: "10px",
-    marginBottom: "20px"
+    marginBottom: "20px",
   },
   titleTable: {
-    flex: "1 1 100%"
+    flex: "1 1 100%",
   },
   buttons: {
     width: "100%",
     height: "100%",
     "&:hover": {
       background: "#0866C6",
-      color: "#FFFFFF"
-    }
+      color: "#FFFFFF",
+    },
   },
   root: {
-    maxWidth: "100%"
+    maxWidth: "100%",
   },
   paper: {
-    width: "100%"
+    width: "100%",
   },
   table: {
-    minWidth: 750
+    minWidth: 750,
   },
   visuallyHidden: {
     border: 0,
@@ -100,42 +100,42 @@ const useStyles = makeStyles(theme => ({
     padding: 0,
     position: "absolute",
     top: 20,
-    width: 1
+    width: 1,
   },
   textFields: {
-    width: "100%"
+    width: "100%",
   },
   toolbarRoot: {
     paddingLeft: theme.spacing(2),
-    paddingRight: theme.spacing(1)
+    paddingRight: theme.spacing(1),
   },
   highlight:
     theme.palette.type === "light"
       ? {
           color: theme.palette.secondary.main,
-          backgroundColor: lighten(theme.palette.secondary.light, 0.85)
+          backgroundColor: lighten(theme.palette.secondary.light, 0.85),
         }
       : {
           color: theme.palette.text.primary,
-          backgroundColor: theme.palette.secondary.dark
-        }
+          backgroundColor: theme.palette.secondary.dark,
+        },
 }));
 
 const StyledMenu = withStyles({
   paper: {
-    border: "1px solid #d3d4d5"
-  }
-})(props => (
+    border: "1px solid #d3d4d5",
+  },
+})((props) => (
   <Menu
     elevation={0}
     getContentAnchorEl={null}
     anchorOrigin={{
       vertical: "bottom",
-      horizontal: "center"
+      horizontal: "center",
     }}
     transformOrigin={{
       vertical: "top",
-      horizontal: "center"
+      horizontal: "center",
     }}
     {...props}
   />
@@ -145,7 +145,8 @@ function createData(id, fecha, usuario, sucursal, detalle, acciones) {
   return { id, fecha, usuario, sucursal, detalle, acciones };
 }
 
-let rows = [];
+//let rows = [];
+let filterRows = [];
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -170,7 +171,7 @@ function stableSort(array, comparator) {
     if (order !== 0) return order;
     return a[1] - b[1];
   });
-  return stabilizedThis.map(el => el[0]);
+  return stabilizedThis.map((el) => el[0]);
 }
 
 const headCells = [
@@ -179,49 +180,49 @@ const headCells = [
     align: "left",
     sortHeadCell: true,
     disablePadding: true,
-    label: "Fecha"
+    label: "Fecha",
   },
   {
     id: "usuario",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
-    label: "Usuario"
+    label: "Usuario",
   },
   {
     id: "sucursal",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
-    label: "Sucursal"
+    label: "Sucursal",
   },
   {
     id: "detalle",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
-    label: "Detalle"
+    label: "Detalle",
   },
   {
     id: "acciones",
     align: "right",
     sortHeadCell: false,
     disablePadding: false,
-    label: <SettingsIcon style={{ color: "black" }} />
-  }
+    label: <SettingsIcon style={{ color: "black" }} />,
+  },
 ];
 
 function EnhancedTableHead(props) {
   const { classes, order, orderBy, onRequestSort } = props;
-  const createSortHandler = property => event => {
+  const createSortHandler = (property) => (event) => {
     onRequestSort(event, property);
   };
 
   return (
-    <TableHead style={{background: "#FAFAFA"}}>
+    <TableHead style={{ background: "#FAFAFA" }}>
       <TableRow>
         <TableCell padding="checkbox" />
-        {headCells.map(headCell => (
+        {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
             align={headCell.align}
@@ -258,7 +259,7 @@ EnhancedTableHead.propTypes = {
   onRequestSort: PropTypes.func.isRequired,
   order: PropTypes.oneOf(["asc", "desc"]).isRequired,
   orderBy: PropTypes.string.isRequired,
-  rowCount: PropTypes.number.isRequired
+  rowCount: PropTypes.number.isRequired,
 };
 
 export default function AlmacenDigitalExpedientes(props) {
@@ -271,6 +272,8 @@ export default function AlmacenDigitalExpedientes(props) {
   const userPassword = props.usuarioDatos.password;
   const empresaDatos = props.empresaDatos;
   const empresaRFC = empresaDatos.RFC;
+  const [rows, setRows] = useState([]);
+  const [page, setPage] = useState(0);
   const [idSubmenu, setIdSubmenu] = useState(0);
   const [idAlmacenDigital, setIdAlmacenDigital] = useState(0);
   const setLoading = props.setLoading;
@@ -278,7 +281,7 @@ export default function AlmacenDigitalExpedientes(props) {
   const [tittleTableComponent, setTittleTableComponent] = useState("");
   const [
     { data: ADEData, loading: ADELoading, error: ADEError },
-    executeADE
+    executeADE,
   ] = useAxios(
     {
       url: API_BASE_URL + `/listaAlmacenDigital`,
@@ -287,11 +290,11 @@ export default function AlmacenDigitalExpedientes(props) {
         usuario: userEmail,
         pwd: userPassword,
         rfc: empresaRFC,
-        idsubmenu: idSubmenu
-      }
+        idsubmenu: idSubmenu,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
 
@@ -305,9 +308,10 @@ export default function AlmacenDigitalExpedientes(props) {
             </Typography>
           );
         } else {
-          rows = [];
-          ADEData.registros.map(registro => {
-            return rows.push(
+          //rows = [];
+          filterRows = [];
+          ADEData.registros.map((registro) => {
+            return filterRows.push(
               createData(
                 registro.id,
                 registro.fechadocto,
@@ -320,6 +324,7 @@ export default function AlmacenDigitalExpedientes(props) {
               )
             );
           });
+          setRows(filterRows);
         }
       }
     }
@@ -344,6 +349,7 @@ export default function AlmacenDigitalExpedientes(props) {
           setShowComponent(decodedToken.menuTemporal.showComponent);
           setTittleTableComponent(decodedToken.menuTemporal.tableTittle);
           setIdSubmenu(decodedToken.menuTemporal.idSubmenu);
+          setPage(decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0);
         } catch (err) {
           localStorage.removeItem("menuTemporal");
         }
@@ -379,16 +385,17 @@ export default function AlmacenDigitalExpedientes(props) {
                   disabled={content.permisos === 0}
                   className={classes.buttons}
                   onClick={() => {
-                    if (showComponent === 2) {
-                      executeADE({
-                        data: {
-                          usuario: userEmail,
-                          pwd: userPassword,
-                          rfc: empresaRFC,
-                          idsubmenu: content.submenu.idsubmenu
-                        }
-                      });
-                    }
+                    //if (showComponent === 2) {
+                    executeADE({
+                      data: {
+                        usuario: userEmail,
+                        pwd: userPassword,
+                        rfc: empresaRFC,
+                        idsubmenu: content.submenu.idsubmenu,
+                        page: 0
+                      },
+                    });
+                    //}
                     setShowComponent(1);
                     setTittleTableComponent(content.submenu.nombre_submenu);
                     setIdSubmenu(content.submenu.idsubmenu);
@@ -398,8 +405,8 @@ export default function AlmacenDigitalExpedientes(props) {
                           tableTittle: content.submenu.nombre_submenu,
                           showComponent: 1,
                           idAlmacenDigital: idAlmacenDigital,
-                          idSubmenu: content.submenu.idsubmenu
-                        }
+                          idSubmenu: content.submenu.idsubmenu,
+                        },
                       },
                       "mysecretpassword"
                     );
@@ -416,6 +423,11 @@ export default function AlmacenDigitalExpedientes(props) {
       <Card>
         {showComponent === 1 ? (
           <TablaADE
+            rows={rows}
+            setRows={setRows}
+            page={page}
+            setPage={setPage}
+            idAlmacenDigital={idAlmacenDigital}
             tittle={tittleTableComponent}
             setShowComponent={setShowComponent}
             userEmail={userEmail}
@@ -454,11 +466,16 @@ function TablaADE(props) {
   const theme = useTheme();
   const now = moment().format("YYYY-MM-DD");
   const fullScreenDialog = useMediaQuery(theme.breakpoints.down("xs"));
+  const rows = props.rows;
+  const setRows = props.setRows;
+  const page = props.page;
+  const setPage = props.setPage;
   const userEmail = props.userEmail;
   const userPassword = props.userPassword;
   const empresaRFC = props.empresaRFC;
   const tableTittle = props.tittle;
   const setShowComponent = props.setShowComponent;
+  const idAlmacenDigital = props.idAlmacenDigital;
   const setIdAlmacenDigital = props.setIdAlmacenDigital;
   const idModulo = props.idModulo;
   const idMenu = props.idMenu;
@@ -469,7 +486,7 @@ function TablaADE(props) {
   const sucursalesEmpresa = empresaDatos.sucursales;
   const [order, setOrder] = React.useState("desc");
   const [orderBy, setOrderBy] = React.useState("fecha");
-  const [page, setPage] = React.useState(0);
+  //const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [anchorMenuEl, setAnchorMenuEl] = useState(null);
   const [openDialogNuevoADO, setOpenDialogNuevoADO] = useState(false);
@@ -477,25 +494,56 @@ function TablaADE(props) {
     archivos: null,
     fecha: now,
     sucursal: "0",
-    comentarios: ""
+    comentarios: "",
   });
+  const [busquedaFiltro, setBusquedaFiltro] = useState("");
   const [
     {
       data: cargaArchivosADOData,
       loading: cargaArchivosADOLoading,
-      error: cargaArchivosADOError
+      error: cargaArchivosADOError,
     },
-    executeCargaArchivos
+    executeCargaArchivos,
   ] = useAxios(
     {
       url: API_BASE_URL + `/cargaArchivosAlmacenDigital`,
-      method: "POST"
+      method: "POST",
     },
     {
       manual: true,
-      useCache: false
+      useCache: false,
     }
   );
+
+  useEffect(() => {
+    function getFilterRows() {
+      let dataFilter = [];
+      for (let x = 0; x < filterRows.length; x++) {
+        if (
+          filterRows[x].fecha
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
+          moment(filterRows[x].fecha)
+            .format("DD/MM/YYYY")
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
+          filterRows[x].usuario
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
+          filterRows[x].sucursal
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
+          filterRows[x].detalle
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1
+        ) {
+          dataFilter.push(filterRows[x]);
+        }
+      }
+      return dataFilter;
+    }
+
+    setRows(busquedaFiltro !== "" ? getFilterRows() : filterRows);
+  }, [busquedaFiltro, setRows]);
 
   useEffect(() => {
     function checkData() {
@@ -510,7 +558,7 @@ function TablaADE(props) {
           swalReact({
             title: "Status de archivos",
             buttons: {
-              cancel: "Cerrar"
+              cancel: "Cerrar",
             },
             icon: "info",
             content: (
@@ -547,7 +595,7 @@ function TablaADE(props) {
                   );
                 })}
               </List>
-            )
+            ),
           });
 
           executeADE();
@@ -586,14 +634,27 @@ function TablaADE(props) {
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
+    const token = jwt.sign(
+      {
+        menuTemporal: {
+          tableTittle: tableTittle,
+          showComponent: 1,
+          idAlmacenDigital: idAlmacenDigital,
+          idSubmenu: idSubmenu,
+          page: newPage
+        },
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("menuTemporal", token);
   };
 
-  const handleChangeRowsPerPage = event => {
+  const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const handleOpenMenu = event => {
+  const handleOpenMenu = (event) => {
     setAnchorMenuEl(event.currentTarget);
   };
 
@@ -648,8 +709,8 @@ function TablaADE(props) {
         executeCargaArchivos({
           data: formData,
           headers: {
-            "Content-Type": "multipart/form-data"
-          }
+            "Content-Type": "multipart/form-data",
+          },
         });
       }
     }
@@ -710,8 +771,12 @@ function TablaADE(props) {
                 label="Escriba algo para filtrar"
                 type="text"
                 margin="normal"
+                value={busquedaFiltro}
                 inputProps={{
-                  maxLength: 20
+                  maxLength: 20,
+                }}
+                onChange={(e) => {
+                  setBusquedaFiltro(e.target.value);
                 }}
               />
             </Grid>
@@ -743,7 +808,7 @@ function TablaADE(props) {
                         hover
                         role="checkbox"
                         tabIndex={-1}
-                        key={row.fecha}
+                        key={index}
                       >
                         <TableCell padding="checkbox" />
                         <TableCell component="th" id={labelId} scope="row">
@@ -754,7 +819,7 @@ function TablaADE(props) {
                         <TableCell align="right">{row.detalle}</TableCell>
                         <TableCell
                           align="right"
-                          onClick={e => {
+                          onClick={(e) => {
                             handleOpenMenu(e);
                             setIdAlmacenDigital(row.id);
                           }}
@@ -783,12 +848,12 @@ function TablaADE(props) {
           rowsPerPageOptions={[10, 25, 50]}
           component="div"
           labelRowsPerPage="Filas por página"
-          labelDisplayedRows={e => {
+          labelDisplayedRows={(e) => {
             return `${e.from}-${e.to} de ${e.count}`;
           }}
           count={rows.length}
           rowsPerPage={rowsPerPage}
-          page={page}
+          page={rows.length > 0 ? page : 0}
           onChangePage={handleChangePage}
           onChangeRowsPerPage={handleChangeRowsPerPage}
         />
@@ -849,12 +914,12 @@ function TablaADE(props) {
                 type="file"
                 margin="normal"
                 inputProps={{
-                  multiple: true
+                  multiple: true,
                 }}
-                onChange={e => {
+                onChange={(e) => {
                   setNuevoADO({
                     ...nuevoADO,
-                    archivos: e.target.files
+                    archivos: e.target.files,
                   });
                 }}
               />
@@ -867,13 +932,13 @@ function TablaADE(props) {
                 value={nuevoADO.fecha}
                 label="Fecha del Documento"
                 InputLabelProps={{
-                  shrink: true
+                  shrink: true,
                 }}
                 margin="normal"
-                onChange={e => {
+                onChange={(e) => {
                   setNuevoADO({
                     ...nuevoADO,
-                    fecha: e.target.value
+                    fecha: e.target.value,
                   });
                 }}
               />
@@ -883,20 +948,20 @@ function TablaADE(props) {
                 className={classes.textFields}
                 select
                 SelectProps={{
-                  native: true
+                  native: true,
                 }}
                 variant="outlined"
                 label="Sucursales"
                 value={nuevoADO.sucursal}
                 type="text"
                 InputLabelProps={{
-                  shrink: true
+                  shrink: true,
                 }}
                 margin="normal"
-                onChange={e => {
+                onChange={(e) => {
                   setNuevoADO({
                     ...nuevoADO,
-                    sucursal: e.target.value
+                    sucursal: e.target.value,
                   });
                 }}
               >
@@ -913,10 +978,10 @@ function TablaADE(props) {
                 multiline
                 rows="5"
                 variant="outlined"
-                onChange={e => {
+                onChange={(e) => {
                   setNuevoADO({
                     ...nuevoADO,
-                    comentarios: e.target.value
+                    comentarios: e.target.value,
                   });
                 }}
               />
@@ -971,9 +1036,9 @@ function VerDocumentos(props) {
     {
       data: archivosADOData,
       loading: archivosADOLoading,
-      error: archivosADOError
+      error: archivosADOError,
     },
-    executeArchivosADO
+    executeArchivosADO,
   ] = useAxios({
     url: API_BASE_URL + `/archivosAlmacenDigital`,
     method: "GET",
@@ -981,23 +1046,23 @@ function VerDocumentos(props) {
       usuario: userEmail,
       pwd: userPassword,
       rfc: empresaRFC,
-      idalmacendigital: idAlmacenDigital
-    }
+      idalmacendigital: idAlmacenDigital,
+    },
   });
   const [
     {
       data: eliminarArchivosADOData,
       loading: eliminarArchivosADOLoading,
-      error: eliminarArchivosADOError
+      error: eliminarArchivosADOError,
     },
-    executeEliminarArchivos
+    executeEliminarArchivos,
   ] = useAxios(
     {
       url: API_BASE_URL + `/eliminaArchivosDigital`,
-      method: "POST"
+      method: "POST",
     },
     {
-      manual: true
+      manual: true,
     }
   );
 
@@ -1049,7 +1114,7 @@ function VerDocumentos(props) {
     return <ErrorQueryDB />;
   }
 
-  const handleOpenMenu = event => {
+  const handleOpenMenu = (event) => {
     setAnchorMenuEl(event.currentTarget);
   };
 
@@ -1057,12 +1122,14 @@ function VerDocumentos(props) {
     setAnchorMenuEl(null);
   };
 
-  const handleSelectAllClickCheckBox = event => {
+  const handleSelectAllClickCheckBox = (event) => {
     if (event.target.checked) {
       let newSelectedsRutasArchivo = [];
-      const newSelecteds = archivosADOData.archivos.map(archivo => archivo.id);
+      const newSelecteds = archivosADOData.archivos.map(
+        (archivo) => archivo.id
+      );
       setSelected(newSelecteds);
-      archivosADOData.archivos.map(archivo => {
+      archivosADOData.archivos.map((archivo) => {
         newSelectedsRutasArchivo.push(`${archivo.download}/download`);
         return newSelectedsRutasArchivo;
       });
@@ -1102,7 +1169,7 @@ function VerDocumentos(props) {
     setSelectedRutaArchivo(newRutaArchivo);
   };
 
-  const isSelected = id => selected.indexOf(id) !== -1;
+  const isSelected = (id) => selected.indexOf(id) !== -1;
 
   const getArchivosADO = () => {
     return archivosADOData.archivos.map((archivo, index) => {
@@ -1114,7 +1181,7 @@ function VerDocumentos(props) {
             <Checkbox
               checked={isItemSelected}
               inputProps={{ "aria-labelledby": labelId }}
-              onClick={e => {
+              onClick={(e) => {
                 handleClickCheckBox(
                   e,
                   archivo.id,
@@ -1126,13 +1193,13 @@ function VerDocumentos(props) {
           <TableCell component="th" scope="row">
             <Link
               to=""
-              onClick={e => {
+              onClick={(e) => {
                 e.preventDefault();
                 window.open(archivo.download);
               }}
               style={{
                 textDecoration: "none",
-                color: "#087ED7"
+                color: "#087ED7",
               }}
             >
               {archivo.documento}
@@ -1151,7 +1218,7 @@ function VerDocumentos(props) {
           </TableCell>
           <TableCell align="right">
             <IconButton
-              onClick={e => {
+              onClick={(e) => {
                 handleOpenMenu(e);
                 setRutaArchivo(archivo.download);
               }}
@@ -1170,11 +1237,11 @@ function VerDocumentos(props) {
         numSelected > 1 ? "los " + numSelected + " archivos" : "el archivo"
       }?`,
       buttons: ["No", "Sí"],
-      dangerMode: true
-    }).then(value => {
+      dangerMode: true,
+    }).then((value) => {
       if (value) {
         let archivos = [];
-        selected.map(idarchivo => {
+        selected.map((idarchivo) => {
           return archivos.push({ idarchivo: idarchivo });
         });
         executeEliminarArchivos({
@@ -1187,8 +1254,8 @@ function VerDocumentos(props) {
             idsubmenu: idSubmenu,
             usuario_storage: empresaDatos.usuario_storage,
             password_storage: empresaDatos.password_storage,
-            archivos: archivos
-          }
+            archivos: archivos,
+          },
         });
       }
     });
@@ -1199,7 +1266,7 @@ function VerDocumentos(props) {
       {numSelected > 0 ? (
         <Toolbar
           className={clsx(classes.toolbarRoot, {
-            [classes.highlight]: numSelected > 0
+            [classes.highlight]: numSelected > 0,
           })}
         >
           <Typography
@@ -1248,7 +1315,7 @@ function VerDocumentos(props) {
       )}
       <TableContainer component={Paper}>
         <Table className={classes.table} aria-label="simple table">
-          <TableHead style={{background: "#FAFAFA"}}>
+          <TableHead style={{ background: "#FAFAFA" }}>
             <TableRow>
               <TableCell padding="checkbox">
                 <Tooltip title="Seleccionar todos">
@@ -1260,10 +1327,18 @@ function VerDocumentos(props) {
                   />
                 </Tooltip>
               </TableCell>
-              <TableCell><strong>Archivo(s)</strong></TableCell>
-              <TableCell align="right"><strong>Concepto-Folio-Serie</strong></TableCell>
-              <TableCell align="right"><strong>Agente</strong></TableCell>
-              <TableCell align="right"><strong>Fecha Procesado</strong></TableCell>
+              <TableCell>
+                <strong>Archivo(s)</strong>
+              </TableCell>
+              <TableCell align="right">
+                <strong>Concepto-Folio-Serie</strong>
+              </TableCell>
+              <TableCell align="right">
+                <strong>Agente</strong>
+              </TableCell>
+              <TableCell align="right">
+                <strong>Fecha Procesado</strong>
+              </TableCell>
               <TableCell align="right">
                 <SettingsIcon />
               </TableCell>

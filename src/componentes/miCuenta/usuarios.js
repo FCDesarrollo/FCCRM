@@ -18,7 +18,7 @@ import {
   FormControlLabel,
   FormGroup,
   Checkbox,
-  useMediaQuery
+  useMediaQuery,
 } from "@material-ui/core";
 import { TreeView, TreeItem } from "@material-ui/lab";
 import {
@@ -35,29 +35,30 @@ import {
   AccountBox as AccountBoxIcon,
   Email as EmailIcon,
   Minimize as MinimizeIcon,
-  Star as StarIcon
+  Star as StarIcon,
 } from "@material-ui/icons";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
-import { keyValidation, pasteValidation } from "../../helpers/inputHelpers";
+import { keyValidation, pasteValidation, validarCorreo } from "../../helpers/inputHelpers";
 import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
 import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
 import { dataBaseErrores } from "../../helpers/erroresDB";
 import swal from "sweetalert";
 import jwt from "jsonwebtoken";
+import moment from "moment";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   card: {
     padding: "10px",
     height: "100%",
-    width: "100%"
+    width: "100%",
   },
   title: {
     marginTop: "10px",
-    marginBottom: "20px"
+    marginBottom: "20px",
   },
   textFields: {
-    width: "100%"
+    width: "100%",
   },
   buttons: {
     width: "100%",
@@ -66,16 +67,18 @@ const useStyles = makeStyles(theme => ({
     marginBottom: "5px",
     "&:hover": {
       background: "#0866C6",
-      color: "#FFFFFF"
-    }
-  }
+      color: "#FFFFFF",
+    },
+  },
 }));
 
 export default function Usuarios(props) {
   const classes = useStyles();
   const submenuContent = props.submenuContent;
   const usuarioDatos = props.usuarioDatos;
+  const idUsuario = usuarioDatos.idusuario;
   const empresaDatos = props.empresaDatos;
+  const idEmpresa = empresaDatos.idempresa;
   const usuario = usuarioDatos.correo;
   const pwd = usuarioDatos.password;
   const rfc = empresaDatos.RFC;
@@ -92,9 +95,9 @@ export default function Usuarios(props) {
     {
       data: listaUsuariosEmpresaData,
       loading: listaUsuariosEmpresaLoading,
-      error: listaUsuariosEmpresaError
+      error: listaUsuariosEmpresaError,
     },
-    executeListaUsuariosEmpresa
+    executeListaUsuariosEmpresa,
   ] = useAxios(
     {
       url: API_BASE_URL + `/listaUsuariosEmpresa`,
@@ -103,20 +106,20 @@ export default function Usuarios(props) {
         usuario: usuario,
         pwd: pwd,
         rfc: rfc,
-        idsubmenu: 21
-      }
+        idsubmenu: 21,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
 
   useEffect(() => {
-    for(let x=0 ; x<submenuContent.length ; x++) {
+    for (let x = 0; x < submenuContent.length; x++) {
       //console.log(submenuContent[x].submenu.idsubmenu, idSubmenu);
-      if(submenuContent[x].submenu.idsubmenu === idSubmenuActual) {
+      if (submenuContent[x].submenu.idsubmenu === idSubmenuActual) {
         setPermisosSubmenu(submenuContent[x].permisos);
-         /* const token = jwt.sign(
+        /* const token = jwt.sign(
           {
             menuTemporal: {
               showComponent: showComponent,
@@ -140,7 +143,7 @@ export default function Usuarios(props) {
             "mysecretpassword"
           );
           setShowComponent(decodedToken.menuTemporal.showComponent);
-           if (permisosSubmenu === -1) {
+          if (permisosSubmenu === -1) {
             setPermisosSubmenu(decodedToken.menuTemporal.permisosSubmenu);
           }
           setIdUsuarioEditar(
@@ -244,8 +247,8 @@ export default function Usuarios(props) {
                               ? 2
                               : 3,
                           permisosSubmenu: content.permisos,
-                          idSubmenuActual: content.submenu.idsubmenu
-                        }
+                          idSubmenuActual: content.submenu.idsubmenu,
+                        },
                       },
                       "mysecretpassword"
                     );
@@ -276,7 +279,16 @@ export default function Usuarios(props) {
                 executeListaUsuariosEmpresa={executeListaUsuariosEmpresa}
               />
             ) : showComponent === 3 ? (
-              <VincularUsuario setShowComponent={setShowComponent} />
+              <VincularUsuario
+                setShowComponent={setShowComponent}
+                usuario={usuario}
+                idUsuario={idUsuario}
+                pwd={pwd}
+                rfc={rfc}
+                idEmpresa={idEmpresa}
+                idSubmenu={idSubmenuActual}
+                setLoading={setLoading}
+              />
             ) : showComponent === 4 ? (
               <EditarPermisosUsuario
                 permisosSubmenu={permisosSubmenu}
@@ -334,8 +346,8 @@ function ListaUsuarios(props) {
                             showComponent: 4,
                             idUsuarioEditar: usuario.idusuario,
                             permisosSubmenu: permisosSubmenu,
-                            idSubmenuActual: idSubmenuActual
-                          }
+                            idSubmenuActual: idSubmenuActual,
+                          },
                         },
                         "mysecretpassword"
                       );
@@ -423,13 +435,13 @@ function ListaUsuarios(props) {
   );
 }
 
-const useTreeItemStyles = makeStyles(theme => ({
+const useTreeItemStyles = makeStyles((theme) => ({
   root: {
     color: theme.palette.text.secondary,
     "&:focus > $content": {
       backgroundColor: `var(--tree-view-bg-color, ${theme.palette.grey[400]})`,
-      color: "var(--tree-view-color)"
-    }
+      color: "var(--tree-view-color)",
+    },
   },
   content: {
     color: theme.palette.text.secondary,
@@ -438,38 +450,38 @@ const useTreeItemStyles = makeStyles(theme => ({
     paddingRight: theme.spacing(1),
     fontWeight: theme.typography.fontWeightMedium,
     "$expanded > &": {
-      fontWeight: theme.typography.fontWeightRegular
-    }
+      fontWeight: theme.typography.fontWeightRegular,
+    },
   },
   group: {
     marginLeft: 0,
     "& $content": {
-      paddingLeft: theme.spacing(2)
-    }
+      paddingLeft: theme.spacing(2),
+    },
   },
   expanded: {},
   label: {
     fontWeight: "inherit",
-    color: "inherit"
+    color: "inherit",
   },
   labelRoot: {
     alignItems: "center",
-    padding: theme.spacing(0.5, 0)
+    padding: theme.spacing(0.5, 0),
   },
   labelIcon: {
-    marginRight: theme.spacing(1)
+    marginRight: theme.spacing(1),
   },
   labelText: {
     fontWeight: "inherit",
-    flexGrow: 1
+    flexGrow: 1,
   },
   treeView: {
     color: theme.palette.text.secondary,
     "&:focus > $content": {
       backgroundColor: `var(--tree-view-bg-color, ${theme.palette.grey[400]})`,
-      color: "var(--tree-view-color)"
-    }
-  }
+      color: "var(--tree-view-color)",
+    },
+  },
 }));
 
 function StyledTreeItem(props) {
@@ -493,7 +505,7 @@ function StyledTreeItem(props) {
           className={classes.labelRoot}
           style={{
             alignItems: isMenu ? "baseline" : "",
-            display: matches ? "flex" : "block"
+            display: matches ? "flex" : "block",
           }}
         >
           <LabelIcon
@@ -515,14 +527,14 @@ function StyledTreeItem(props) {
       }
       style={{
         "--tree-view-color": color,
-        "--tree-view-bg-color": bgColor
+        "--tree-view-bg-color": bgColor,
       }}
       classes={{
         root: classes.root,
         content: classes.content,
         expanded: classes.expanded,
         group: classes.group,
-        label: classes.label
+        label: classes.label,
       }}
       {...other}
     />
@@ -555,16 +567,16 @@ function EditarPermisosUsuario(props) {
       method: "GET",
       params: {
         usuario: usuario,
-        pwd: pwd
-      }
+        pwd: pwd,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
   const [
     { data: permisosData, loading: permisosLoading, error: permisosError },
-    executePermisos
+    executePermisos,
   ] = useAxios(
     {
       url: API_BASE_URL + `/permisosUsuarioGeneral`,
@@ -574,75 +586,75 @@ function EditarPermisosUsuario(props) {
         pwd: pwd,
         rfc: rfc,
         idusuario: idUsuarioEditar,
-        idsubmenu: 21
-      }
+        idsubmenu: 21,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
   const [
     {
       data: modificaPermisosModuloData,
       loading: modificaPermisosModuloLoading,
-      error: modificaPermisosModuloError
+      error: modificaPermisosModuloError,
     },
-    executeModificaPermisosModulo
+    executeModificaPermisosModulo,
   ] = useAxios(
     {
       url: API_BASE_URL + `/modificaPermisoModulo`,
-      method: "PUT"
+      method: "PUT",
     },
     {
-      manual: true
+      manual: true,
     }
   );
   const [
     {
       data: modificaPermisosMenuData,
       loading: modificaPermisosMenuLoading,
-      error: modificaPermisosMenuError
+      error: modificaPermisosMenuError,
     },
-    executeModificaPermisosMenu
+    executeModificaPermisosMenu,
   ] = useAxios(
     {
       url: API_BASE_URL + `/modificaPermisoMenu`,
-      method: "PUT"
+      method: "PUT",
     },
     {
-      manual: true
+      manual: true,
     }
   );
   const [
     {
       data: modificaPermisosSubmenuData,
       loading: modificaPermisosSubmenuLoading,
-      error: modificaPermisosSubmenuError
+      error: modificaPermisosSubmenuError,
     },
-    executeModificaPermisosSubmenu
+    executeModificaPermisosSubmenu,
   ] = useAxios(
     {
       url: API_BASE_URL + `/modificaPermisoSubmenu`,
-      method: "PUT"
+      method: "PUT",
     },
     {
-      manual: true
+      manual: true,
     }
   );
   const [
     {
       data: modificaNotificacionesSubmenuData,
       loading: modificaNotificacionesSubmenuLoading,
-      error: modificaNotificacionesSubmenuError
+      error: modificaNotificacionesSubmenuError,
     },
-    executeModificaNotificacionesSubmenu
+    executeModificaNotificacionesSubmenu,
   ] = useAxios(
     {
       url: API_BASE_URL + `/editaNotificacion`,
-      method: "POST"
+      method: "POST",
     },
     {
-      manual: true
+      manual: true,
     }
   );
 
@@ -656,8 +668,8 @@ function EditarPermisosUsuario(props) {
           idusuario: idUsuarioEditar,
           idsubmenu: 21,
           permiso: permiso,
-          idmodulo: idModulo
-        }
+          idmodulo: idModulo,
+        },
       });
       setIdModulo(0);
       setPermiso(-1);
@@ -669,7 +681,7 @@ function EditarPermisosUsuario(props) {
     pwd,
     rfc,
     idUsuarioEditar,
-    executeModificaPermisosModulo
+    executeModificaPermisosModulo,
   ]);
 
   useEffect(() => {
@@ -679,7 +691,7 @@ function EditarPermisosUsuario(props) {
           swal(
             "Error al cambiar permisos",
             dataBaseErrores(modificaPermisosModuloData.error),
-            "error"
+            "warning"
           );
         } else {
           swal(
@@ -706,8 +718,8 @@ function EditarPermisosUsuario(props) {
           idusuario: idUsuarioEditar,
           idsubmenu: 21,
           permiso: permiso,
-          idmenu: idMenu
-        }
+          idmenu: idMenu,
+        },
       });
       setIdMenu(0);
       setPermiso(-1);
@@ -719,7 +731,7 @@ function EditarPermisosUsuario(props) {
     pwd,
     rfc,
     idUsuarioEditar,
-    executeModificaPermisosMenu
+    executeModificaPermisosMenu,
   ]);
 
   useEffect(() => {
@@ -729,7 +741,7 @@ function EditarPermisosUsuario(props) {
           swal(
             "Error al cambiar permisos",
             dataBaseErrores(modificaPermisosMenuData.error),
-            "error"
+            "warning"
           );
         } else {
           swal(
@@ -755,8 +767,8 @@ function EditarPermisosUsuario(props) {
           idusuario: idUsuarioEditar,
           idsubmenu: 21,
           permiso: permiso,
-          modidsubmenu: idSubmenu
-        }
+          modidsubmenu: idSubmenu,
+        },
       });
       setIdSubmenu(0);
     }
@@ -767,7 +779,7 @@ function EditarPermisosUsuario(props) {
     pwd,
     rfc,
     idUsuarioEditar,
-    executeModificaPermisosSubmenu
+    executeModificaPermisosSubmenu,
   ]);
 
   useEffect(() => {
@@ -777,7 +789,7 @@ function EditarPermisosUsuario(props) {
           swal(
             "Error al cambiar permisos",
             dataBaseErrores(modificaPermisosSubmenuData.error),
-            "error"
+            "warning"
           );
         } else {
           swal(
@@ -792,8 +804,8 @@ function EditarPermisosUsuario(props) {
                 idUsuarioEditar: idUsuarioEditar,
                 permisosSubmenu: permiso,
                 treeNodes: expanded,
-                idSubmenuActual: idSubmenuActual
-              }
+                idSubmenuActual: idSubmenuActual,
+              },
             },
             "mysecretpassword"
           );
@@ -810,7 +822,7 @@ function EditarPermisosUsuario(props) {
     permiso,
     idUsuarioEditar,
     expanded,
-    idSubmenuActual
+    idSubmenuActual,
   ]);
 
   useEffect(() => {
@@ -823,8 +835,8 @@ function EditarPermisosUsuario(props) {
           idusuario: idUsuarioEditar,
           idsubmenu: 21,
           notificacion: sumaSubmenuNotificacion,
-          idsubmenuMod: idSubmenu
-        }
+          idsubmenuMod: idSubmenu,
+        },
       });
       setIdSubmenu(0);
     }
@@ -835,7 +847,7 @@ function EditarPermisosUsuario(props) {
     idUsuarioEditar,
     pwd,
     rfc,
-    usuario
+    usuario,
   ]);
 
   useEffect(() => {
@@ -845,7 +857,7 @@ function EditarPermisosUsuario(props) {
           swal(
             "Error al cambiar permisos de notificación",
             dataBaseErrores(modificaNotificacionesSubmenuData.error),
-            "error"
+            "warning"
           );
         } else {
           swal(
@@ -860,8 +872,8 @@ function EditarPermisosUsuario(props) {
                 idUsuarioEditar: idUsuarioEditar,
                 permisosSubmenu: permisosSubmenu,
                 treeNodes: expanded,
-                idSubmenuActual: idSubmenuActual
-              }
+                idSubmenuActual: idSubmenuActual,
+              },
             },
             "mysecretpassword"
           );
@@ -880,7 +892,7 @@ function EditarPermisosUsuario(props) {
     setPermisosSubmenu,
     idUsuarioEditar,
     expanded,
-    idSubmenuActual
+    idSubmenuActual,
   ]);
 
   if (
@@ -940,7 +952,7 @@ function EditarPermisosUsuario(props) {
     return 0;
   };
 
-  const getSubMenus = menu => {
+  const getSubMenus = (menu) => {
     return menu.submenus.map((submenu, index) => {
       let permisoNotificacion = getPermisosSubMenus(submenu.idsubmenu, true);
       return submenu.orden !== 0 ? (
@@ -955,20 +967,20 @@ function EditarPermisosUsuario(props) {
               <TextField
                 select
                 SelectProps={{
-                  native: true
+                  native: true,
                 }}
                 variant="outlined"
                 label="Permisos"
                 type="text"
                 value={getPermisosSubMenus(submenu.idsubmenu, false)}
                 InputLabelProps={{
-                  shrink: true
+                  shrink: true,
                 }}
                 margin="normal"
-                onClick={e => {
+                onClick={(e) => {
                   e.stopPropagation();
                 }}
-                onChange={e => {
+                onChange={(e) => {
                   setIdSubmenu(submenu.idsubmenu);
                   //console.log(parseInt(e.target.value));
                   setPermiso(parseInt(e.target.value));
@@ -983,7 +995,7 @@ function EditarPermisosUsuario(props) {
                 Notificaciones
               </Typography>
               <FormGroup
-                onClick={e => {
+                onClick={(e) => {
                   e.stopPropagation();
                 }}
               >
@@ -995,7 +1007,7 @@ function EditarPermisosUsuario(props) {
                         permisoNotificacion === 5 ||
                         permisoNotificacion === 6
                       }
-                      onClick={e => {
+                      onClick={(e) => {
                         setSumaSubmenuNotificacion(
                           e.target.checked
                             ? permisoNotificacion + 4
@@ -1016,7 +1028,7 @@ function EditarPermisosUsuario(props) {
                         permisoNotificacion === 3 ||
                         permisoNotificacion === 5
                       }
-                      onClick={e => {
+                      onClick={(e) => {
                         setSumaSubmenuNotificacion(
                           e.target.checked
                             ? permisoNotificacion + 1
@@ -1037,7 +1049,7 @@ function EditarPermisosUsuario(props) {
                         permisoNotificacion === 3 ||
                         permisoNotificacion === 6
                       }
-                      onClick={e => {
+                      onClick={(e) => {
                         setSumaSubmenuNotificacion(
                           e.target.checked
                             ? permisoNotificacion + 2
@@ -1062,7 +1074,7 @@ function EditarPermisosUsuario(props) {
     });
   };
 
-  const getPermisosMenus = idMenu => {
+  const getPermisosMenus = (idMenu) => {
     if (permisosData.permisomodulos) {
       for (let x = 0; x < permisosData.permisomodulos.length; x++) {
         for (
@@ -1083,7 +1095,7 @@ function EditarPermisosUsuario(props) {
     return false;
   };
 
-  const getMenus = modulo => {
+  const getMenus = (modulo) => {
     return modulo.menus.map((menu, index) => {
       let permisoMenu = getPermisosMenus(menu.idmenu);
       return menu.orden !== 0 ? (
@@ -1099,7 +1111,7 @@ function EditarPermisosUsuario(props) {
               name="permisos"
               style={{ display: "block" }}
               value={permisoMenu}
-              onClick={e => {
+              onClick={(e) => {
                 e.stopPropagation();
                 if (
                   e.target.value &&
@@ -1125,7 +1137,7 @@ function EditarPermisosUsuario(props) {
     });
   };
 
-  const getPermisosModulos = idmodulo => {
+  const getPermisosModulos = (idmodulo) => {
     if (permisosData.permisomodulos) {
       for (let x = 0; x < permisosData.permisomodulos.length; x++) {
         if (idmodulo === permisosData.permisomodulos[x].idmodulo) {
@@ -1138,8 +1150,8 @@ function EditarPermisosUsuario(props) {
         {
           menuTemporal: {
             showComponent: 1,
-            permisosSubmenu: permisosSubmenu
-          }
+            permisosSubmenu: permisosSubmenu,
+          },
         },
         "mysecretpassword"
       );
@@ -1174,7 +1186,7 @@ function EditarPermisosUsuario(props) {
               name="permisos"
               row
               value={getPermisosModulos(modulo.idmodulo)}
-              onClick={e => {
+              onClick={(e) => {
                 e.stopPropagation();
                 if (
                   e.target.value &&
@@ -1208,8 +1220,8 @@ function EditarPermisosUsuario(props) {
           idUsuarioEditar: idUsuarioEditar,
           permisosSubmenu: permisosSubmenu,
           treeNodes: nodes,
-          idSubmenuActual: idSubmenuActual
-        }
+          idSubmenuActual: idSubmenuActual,
+        },
       },
       "mysecretpassword"
     );
@@ -1231,8 +1243,8 @@ function EditarPermisosUsuario(props) {
                     menuTemporal: {
                       showComponent: 1,
                       permisosSubmenu: permisosSubmenu,
-                      idSubmenuActual: idSubmenuActual
-                    }
+                      idSubmenuActual: idSubmenuActual,
+                    },
                   },
                   "mysecretpassword"
                 );
@@ -1294,10 +1306,10 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
-          onKeyPress={e => {
+          onKeyPress={(e) => {
             keyValidation(e, 2);
           }}
-          onChange={e => {
+          onChange={(e) => {
             pasteValidation(e, 2);
           }}
         />
@@ -1310,10 +1322,10 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
-          onKeyPress={e => {
+          onKeyPress={(e) => {
             keyValidation(e, 2);
           }}
-          onChange={e => {
+          onChange={(e) => {
             pasteValidation(e, 2);
           }}
         />
@@ -1326,10 +1338,10 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
-          onKeyPress={e => {
+          onKeyPress={(e) => {
             keyValidation(e, 2);
           }}
-          onChange={e => {
+          onChange={(e) => {
             pasteValidation(e, 2);
           }}
         />
@@ -1342,10 +1354,10 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
-          onKeyPress={e => {
+          onKeyPress={(e) => {
             keyValidation(e, 2);
           }}
-          onChange={e => {
+          onChange={(e) => {
             pasteValidation(e, 2);
           }}
         />
@@ -1358,10 +1370,10 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
-          onKeyPress={e => {
+          onKeyPress={(e) => {
             keyValidation(e, 2);
           }}
-          onChange={e => {
+          onChange={(e) => {
             pasteValidation(e, 2);
           }}
         />
@@ -1374,10 +1386,10 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
-          onKeyPress={e => {
+          onKeyPress={(e) => {
             keyValidation(e, 2);
           }}
-          onChange={e => {
+          onChange={(e) => {
             pasteValidation(e, 2);
           }}
         />
@@ -1397,6 +1409,118 @@ function CrearUsuario(props) {
 function VincularUsuario(props) {
   const classes = useStyles();
   const setShowComponent = props.setShowComponent;
+  const idUsuario = props.idUsuario;
+  const usuario = props.usuario;
+  const pwd = props.pwd;
+  const rfc = props.rfc;
+  const idEmpresa = props.idEmpresa;
+  const idSubmenu = props.idSubmenu;
+  const setLoading = props.setLoading;
+  const [correo, setCorreo] = useState("");
+  const [perfil, setPerfil] = useState("0");
+  const [
+    { data: perfilesData, loading: perfilesLoading, error: perfilesError },
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/listaPerfiles`,
+      method: "GET",
+      params: {
+        usuario: usuario,
+        pwd: pwd,
+        rfc: rfc,
+        idsubmenu: idSubmenu,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+  const [
+    { data: vincularUsuarioData, loading: vincularUsuarioLoading, error: vincularUsuarioError }, executeVincularUsuario,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/vincularUsuario`,
+      method: "POST"
+    },
+    {
+      manual: true
+    }
+  );
+
+  useEffect(() => {
+    function checkData() {
+      if (perfilesData) {
+        if (perfilesData.error !== 0) {
+          swal("Error", dataBaseErrores(perfilesData.error), "warning");
+        }
+      }
+    }
+
+    checkData();
+  }, [perfilesData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (vincularUsuarioData) {
+        if (vincularUsuarioData.error !== 0) {
+          swal("Error", dataBaseErrores(vincularUsuarioData.error), "warning");
+        }
+        else {
+          swal("Usuario vinculado", "Usuario vinculado con éxito", "success");
+        }
+      }
+    }
+
+    checkData();
+  }, [vincularUsuarioData]);
+
+  if (perfilesLoading || vincularUsuarioLoading) {
+    setLoading(true);
+  } else {
+    setLoading(false);
+  }
+
+  if (perfilesError || vincularUsuarioError) {
+    return <ErrorQueryDB />;
+  }
+
+  const getPerfiles = () => {
+    return perfilesData.perfiles.map((perfil, index) => {
+      return (
+        <option key={index} value={perfil.idperfil}>
+          {perfil.nombre}
+        </option>
+      );
+    });
+  };
+
+  const vincularUsuario = () => {
+    if(correo.trim() === "") {
+      swal("Error", "Ingrese un correo", "warning");
+    }
+    else if(!validarCorreo(correo.trim())) {
+      swal("Error", "Ingrese un correo valido", "warning");
+    }
+    else if(perfil === "0") {
+      swal("Error", "Seleccione un perfil", "warning");
+    }
+    else {
+      executeVincularUsuario({
+        data: {
+          usuario: usuario,
+          pwd: pwd,
+          rfc: rfc,
+          idsubmenu: idSubmenu,
+          correo: correo,
+          perfil: parseInt(perfil),
+          idempresa: idEmpresa,
+          fecha_vinculacion: moment().format("YYYY-MM-DD"),
+          idusuario_vinculador: idUsuario
+        }
+      });
+    }
+  }
+
   return (
     <Grid container justify="center" spacing={3}>
       <Grid item xs={12}>
@@ -1422,11 +1546,16 @@ function VincularUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
-          onKeyPress={e => {
-            keyValidation(e, 2);
+          value={correo}
+          inputProps={{
+            maxLength: 70,
           }}
-          onChange={e => {
-            pasteValidation(e, 2);
+          onKeyPress={(e) => {
+            keyValidation(e, 4);
+          }}
+          onChange={(e) => {
+            pasteValidation(e, 4);
+            setCorreo(e.target.value);
           }}
         />
       </Grid>
@@ -1436,20 +1565,35 @@ function VincularUsuario(props) {
           id="asignarPerfil"
           label="Asignar Perfil"
           variant="outlined"
-          type="text"
+          select
+          SelectProps={{
+            native: true,
+          }}
+          InputLabelProps={{
+            shrink: true,
+          }}
           margin="normal"
-          onKeyPress={e => {
-            keyValidation(e, 2);
+          value={perfil}
+          onChange={(e) => {
+            setPerfil(e.target.value);
           }}
-          onChange={e => {
-            pasteValidation(e, 2);
-          }}
-        />
+        >
+          <option value="0">Selecciona un perfil</option>
+          {perfilesData ? getPerfiles() : null}
+        </TextField>
       </Grid>
       <Grid item xs={12}>
         <Button
           variant="contained"
-          style={{ background: "#17A2B8", color: "#FFFFFF", float: "right" }}
+          style={{
+            background: "#17A2B8",
+            color: "#FFFFFF",
+            float: "right",
+            marginBottom: "10px",
+          }}
+          onClick={() => {
+            vincularUsuario();
+          }}
         >
           Vincular Usuario
         </Button>

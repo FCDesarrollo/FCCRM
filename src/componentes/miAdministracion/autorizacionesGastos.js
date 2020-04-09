@@ -37,7 +37,7 @@ import {
   FormControlLabel,
   FormGroup,
   RadioGroup,
-  Radio
+  Radio,
 } from "@material-ui/core";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import {
@@ -51,7 +51,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Error as ErrorIcon,
-  SettingsEthernet as SettingsEthernetIcon
+  SettingsEthernet as SettingsEthernetIcon,
 } from "@material-ui/icons";
 import swal from "sweetalert";
 import swalReact from "@sweetalert/with-react";
@@ -65,23 +65,23 @@ import {
   keyValidation,
   pasteValidation,
   doubleKeyValidation,
-  doublePasteValidation
+  doublePasteValidation,
 } from "../../helpers/inputHelpers";
 import { Fragment } from "react";
 import { verificarExtensionArchivo } from "../../helpers/extensionesArchivos";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   card: {
     width: "100%",
     padding: "10px",
-    marginBottom: "20px"
+    marginBottom: "20px",
   },
   title: {
     marginTop: "10px",
-    marginBottom: "20px"
+    marginBottom: "20px",
   },
   titleTable: {
-    flex: "1 1 100%"
+    flex: "1 1 100%",
   },
   buttons: {
     width: "100%",
@@ -90,20 +90,20 @@ const useStyles = makeStyles(theme => ({
     marginBottom: "5px",
     "&:hover": {
       background: "#0866C6",
-      color: "#FFFFFF"
-    }
+      color: "#FFFFFF",
+    },
   },
   root: {
-    maxWidth: "100%"
+    maxWidth: "100%",
   },
   paper: {
-    width: "100%"
+    width: "100%",
   },
   table: {
-    minWidth: 750
+    minWidth: 750,
   },
   tableWrapper: {
-    overflowX: "auto"
+    overflowX: "auto",
   },
   visuallyHidden: {
     border: 0,
@@ -114,14 +114,14 @@ const useStyles = makeStyles(theme => ({
     padding: 0,
     position: "absolute",
     top: 20,
-    width: 1
+    width: 1,
   },
   textFields: {
-    width: "100%"
+    width: "100%",
   },
   formButtons: {
-    width: "100%"
-  }
+    width: "100%",
+  },
 }));
 
 function createData(
@@ -132,6 +132,7 @@ function createData(
   detalle,
   importe,
   status,
+  statusEscrito,
   idUsuario,
   requerimientoGasto,
   gastoRequerimiento,
@@ -147,16 +148,18 @@ function createData(
     detalle,
     importe,
     status,
+    statusEscrito,
     idUsuario,
     requerimientoGasto,
     gastoRequerimiento,
     gastoSurtido,
     gasto,
-    requerimiento
+    requerimiento,
   };
 }
 
-let rows = [];
+//let rows = [];
+let filterRows = [];
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -181,7 +184,7 @@ function stableSort(array, comparator) {
     if (order !== 0) return order;
     return a[1] - b[1];
   });
-  return stabilizedThis.map(el => el[0]);
+  return stabilizedThis.map((el) => el[0]);
 }
 
 const headCells = [
@@ -190,55 +193,55 @@ const headCells = [
     align: "left",
     sortHeadCell: true,
     disablePadding: true,
-    label: "Fecha"
+    label: "Fecha",
   },
   {
     id: "usuario",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
-    label: "Usuario"
+    label: "Usuario",
   },
   {
     id: "sucursal",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
-    label: "Sucursal"
+    label: "Sucursal",
   },
   {
     id: "detalle",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
-    label: "Detalle"
+    label: "Detalle",
   },
   {
     id: "importe",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
-    label: "Importe"
+    label: "Importe",
   },
   {
     id: "status",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
-    label: "Status"
+    label: "Status",
   },
   {
     id: "acciones",
     align: "right",
     sortHeadCell: false,
     disablePadding: false,
-    label: <SettingsIcon style={{ color: "black" }} />
-  }
+    label: <SettingsIcon style={{ color: "black" }} />,
+  },
 ];
 
 function EnhancedTableHead(props) {
   const { classes, order, orderBy, onRequestSort } = props;
-  const createSortHandler = property => event => {
+  const createSortHandler = (property) => (event) => {
     onRequestSort(event, property);
   };
 
@@ -246,7 +249,7 @@ function EnhancedTableHead(props) {
     <TableHead>
       <TableRow>
         <TableCell padding="checkbox" />
-        {headCells.map(headCell => (
+        {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
             align={headCell.align}
@@ -283,7 +286,7 @@ EnhancedTableHead.propTypes = {
   onRequestSort: PropTypes.func.isRequired,
   order: PropTypes.oneOf(["asc", "desc"]).isRequired,
   orderBy: PropTypes.string.isRequired,
-  rowCount: PropTypes.number.isRequired
+  rowCount: PropTypes.number.isRequired,
 };
 
 export default function AutorizacionesGastos(props) {
@@ -296,6 +299,8 @@ export default function AutorizacionesGastos(props) {
   const usuarioPassword = usuarioDatos.password;
   const rfcEmpresa = empresaDatos.RFC;
   const sucursales = empresaDatos.sucursales;
+  const [rows, setRows] = useState([]);
+  const [page, setPage] = useState(0);
   const [permisosSubmenu, setPermisosSubmenu] = useState(-1);
   const [showComponent, setShowComponent] = useState(0);
   const [tittleTableComponent, setTittleTableComponent] = useState("");
@@ -310,9 +315,9 @@ export default function AutorizacionesGastos(props) {
     {
       data: listaRequerimientosData,
       loading: listaRequerimientosLoading,
-      error: listaRequerimientosError
+      error: listaRequerimientosError,
     },
-    executeListaRequerimientos
+    executeListaRequerimientos,
   ] = useAxios(
     {
       url: API_BASE_URL + `/listaRequerimientos`,
@@ -322,11 +327,11 @@ export default function AutorizacionesGastos(props) {
         pwd: usuarioPassword,
         rfc: rfcEmpresa,
         idsubmenu: idSubmenu,
-        estatus: estatusRequerimiento
-      }
+        estatus: estatusRequerimiento,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
 
@@ -365,6 +370,7 @@ export default function AutorizacionesGastos(props) {
                 : "gastos"
               : "requerimientos"
           );
+          setPage(decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0);
         } catch (err) {
           localStorage.removeItem("menuTemporal");
         }
@@ -418,9 +424,10 @@ export default function AutorizacionesGastos(props) {
             </Typography>
           );
         } else {
-          rows = [];
-          listaRequerimientosData.requerimientos.map(requerimiento => {
-            return rows.push(
+          //rows = [];
+          filterRows = [];
+          listaRequerimientosData.requerimientos.map((requerimiento) => {
+            return filterRows.push(
               createData(
                 requerimiento.idReq,
                 requerimiento.fecha_req,
@@ -429,6 +436,27 @@ export default function AutorizacionesGastos(props) {
                 `Concepto: ${requerimiento.id_concepto} Folio: ${requerimiento.folio} Serie: ${requerimiento.serie}`,
                 requerimiento.importe_estimado,
                 requerimiento.estado_documento,
+                requerimiento.estado_documento !== 2
+                  ? requerimiento.estado_documento === 1
+                    ? "Pendiente"
+                    : requerimiento.estado_documento === 2
+                    ? "Cancelado"
+                    : requerimiento.estado_documento === 3
+                    ? "Autorizado"
+                    : requerimiento.estado_documento === 4
+                    ? "Surtido"
+                    : requerimiento.estado_documento === 5
+                    ? "Surtido Parcial"
+                    : requerimiento.estado_documento === 6
+                    ? "Sin Surtir"
+                    : requerimiento.estado_documento === 7
+                    ? "No autorizado"
+                    : ""
+                  : requerimiento.estado_documento === 1
+                  ? "Pendiente"
+                  : requerimiento.estado_documento === 3
+                  ? "Autorizado"
+                  : "No autorizado",
                 requerimiento.id_usuario,
                 requerimiento.requerimiento_gasto,
                 requerimiento.gasto_requerimiento,
@@ -438,6 +466,8 @@ export default function AutorizacionesGastos(props) {
               )
             );
           });
+          //filterRows = rows;
+          setRows(filterRows);
         }
       }
     }
@@ -455,7 +485,7 @@ export default function AutorizacionesGastos(props) {
     return <ErrorQueryDB />;
   }
 
-  const getSubmenuPorOrden = orden => {
+  const getSubmenuPorOrden = (orden) => {
     return submenuContent.map((content, index) => {
       return content.submenu.orden === orden ? (
         <Tooltip
@@ -467,7 +497,7 @@ export default function AutorizacionesGastos(props) {
             <Link
               to="/configuracionesPermisos"
               style={{ cursor: content.permisos === 0 ? "default" : "" }}
-              onClick={e => {
+              onClick={(e) => {
                 if (content.permisos === 0) {
                   e.preventDefault();
                 }
@@ -480,8 +510,8 @@ export default function AutorizacionesGastos(props) {
                     {
                       idMenuTemporal: {
                         idMenu: submenuContent[0].submenu.idmenu,
-                        permisos: submenuContent[0].permisos
-                      }
+                        permisos: submenuContent[0].permisos,
+                      },
                     },
                     "mysecretpassword"
                   );
@@ -523,17 +553,17 @@ export default function AutorizacionesGastos(props) {
                   disabled={content.permisos === 0}
                   className={classes.buttons}
                   onClick={() => {
-                    if (showComponent === 2) {
-                      executeListaRequerimientos({
-                        data: {
-                          usuario: usuario,
-                          pwd: usuarioPassword,
-                          rfc: rfcEmpresa,
-                          idsubmenu: content.submenu.idsubmenu,
-                          idRequerimiento: idRequerimiento
-                        }
-                      });
-                    }
+                    //if (showComponent === 2) {
+                    executeListaRequerimientos({
+                      data: {
+                        usuario: usuario,
+                        pwd: usuarioPassword,
+                        rfc: rfcEmpresa,
+                        idsubmenu: content.submenu.idsubmenu,
+                        idRequerimiento: idRequerimiento,
+                      },
+                    });
+                    //}
                     setIdRequerimiento(0);
                     setShowComponent(1);
                     setTittleTableComponent(content.submenu.nombre_submenu);
@@ -550,8 +580,9 @@ export default function AutorizacionesGastos(props) {
                           idModulo: content.idModulo,
                           idMenu: content.submenu.idmenu,
                           idSubmenu: content.submenu.idsubmenu,
-                          estatusRequerimiento: 1
-                        }
+                          estatusRequerimiento: 1,
+                          page: 0
+                        },
                       },
                       "mysecretpassword"
                     );
@@ -569,6 +600,10 @@ export default function AutorizacionesGastos(props) {
       <Card>
         {showComponent === 1 ? (
           <TablaAYG
+            rows={rows}
+            setRows={setRows}
+            page={page}
+            setPage={setPage}
             tittle={tittleTableComponent}
             setShowComponent={setShowComponent}
             setLoading={setLoading}
@@ -589,6 +624,7 @@ export default function AutorizacionesGastos(props) {
         ) : showComponent === 2 ? (
           <FormularioAYG
             tittle={tittleTableComponent}
+            page={page}
             setShowComponent={setShowComponent}
             sucursales={sucursales}
             setLoading={setLoading}
@@ -616,6 +652,10 @@ function TablaAYG(props) {
   const classes = useStyles();
   const theme = useTheme();
   const xsScreen = useMediaQuery(theme.breakpoints.down("xs"));
+  const rows = props.rows;
+  const setRows = props.setRows;
+  const page = props.page;
+  const setPage = props.setPage;
   const tableTittle = props.tittle;
   const setShowComponent = props.setShowComponent;
   const setLoading = props.setLoading;
@@ -640,24 +680,61 @@ function TablaAYG(props) {
   //const estatusRequerimiento = props.estatusRequerimiento;
   const [order, setOrder] = useState("desc");
   const [orderBy, setOrderBy] = useState("fecha");
-  const [page, setPage] = useState(0);
+  //const [page, setPage] = useState(0);
+
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  //const [filterRows, setFilterRows] = useState([]);
+  const [busquedaFiltro, setBusquedaFiltro] = useState("");
   const [
     {
       data: eliminaRequerimientoData,
       loading: eliminaRequerimientoLoading,
-      error: eliminaRequerimientoError
+      error: eliminaRequerimientoError,
     },
-    executeEliminaRequerimiento
+    executeEliminaRequerimiento,
   ] = useAxios(
     {
       url: API_BASE_URL + `/eliminaRequerimiento`,
-      method: "DELETE"
+      method: "DELETE",
     },
     {
-      manual: true
+      manual: true,
     }
   );
+
+  useEffect(() => {
+    function getFilterRows() {
+      let dataFilter = [];
+      for (let x = 0; x < filterRows.length; x++) {
+        if (
+          filterRows[x].fecha
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
+          moment(filterRows[x].fecha)
+            .format("DD/MM/YYYY")
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
+          filterRows[x].usuario
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
+          filterRows[x].sucursal
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
+          filterRows[x].detalle
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
+          filterRows[x].importe.toString().indexOf(busquedaFiltro) !== -1 ||
+          filterRows[x].statusEscrito
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1
+        ) {
+          dataFilter.push(filterRows[x]);
+        }
+      }
+      return dataFilter;
+    }
+
+    setRows(busquedaFiltro !== "" ? getFilterRows() : filterRows);
+  }, [busquedaFiltro, setRows]);
 
   useEffect(() => {
     function checkData() {
@@ -704,19 +781,6 @@ function TablaAYG(props) {
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = event => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleChangeRadioTipo = event => {
-    setRadioTipo(event.target.value);
-    /* if(idSubmenu === 44) {
-      setIdSubmenu(event.target.value !== "gastos" ? 444 : 44)
-    }
-    console.log(event.target.value); */
     const token = jwt.sign(
       {
         menuTemporal: {
@@ -725,8 +789,40 @@ function TablaAYG(props) {
           idModulo: idModulo,
           idMenu: idMenu,
           idSubmenu: idSubmenu,
-          estatusRequerimiento: event.target.value === "requerimientos" ? 1 : 2
-        }
+          accionAG: 0,
+          idRequerimiento: 0,
+          estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+          page: newPage
+        },
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("menuTemporal", token);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleChangeRadioTipo = (event) => {
+    setRadioTipo(event.target.value);
+    /* if(idSubmenu === 44) {
+      setIdSubmenu(event.target.value !== "gastos" ? 444 : 44)
+    }
+    console.log(event.target.value); */
+    setPage(0);
+    const token = jwt.sign(
+      {
+        menuTemporal: {
+          tableTittle: tableTittle,
+          showComponent: 1,
+          idModulo: idModulo,
+          idMenu: idMenu,
+          idSubmenu: idSubmenu,
+          estatusRequerimiento: event.target.value === "requerimientos" ? 1 : 2,
+          page: 0
+        },
       },
       "mysecretpassword"
     );
@@ -772,8 +868,8 @@ function TablaAYG(props) {
           radioTipo !== "gastos" ? "requerimiento" : "gasto"
         }?`,
         buttons: ["No", "Sí"],
-        dangerMode: true
-      }).then(value => {
+        dangerMode: true,
+      }).then((value) => {
         if (value) {
           executeEliminaRequerimiento({
             data: {
@@ -786,8 +882,8 @@ function TablaAYG(props) {
               password_storage: passwordStorage,
               idrequerimiento: idRequerimiento,
               estatus: radioTipo !== "gastos" ? 1 : 2,
-              gastoRequerimiento: gastoRequerimiento
-            }
+              gastoRequerimiento: gastoRequerimiento,
+            },
           });
         }
       });
@@ -800,7 +896,7 @@ function TablaAYG(props) {
         <Toolbar
           style={{
             marginTop: xsScreen ? "10px" : "0px",
-            marginBottom: xsScreen ? "10px" : "0px"
+            marginBottom: xsScreen ? "10px" : "0px",
           }}
         >
           <Grid container>
@@ -853,8 +949,9 @@ function TablaAYG(props) {
                                 accionAG: 1,
                                 idRequerimiento: 0,
                                 estatusRequerimiento:
-                                  radioTipo !== "gastos" ? 1 : 2
-                              }
+                                  radioTipo !== "gastos" ? 1 : 2,
+                                page: page
+                              },
                             },
                             "mysecretpassword"
                           );
@@ -863,7 +960,7 @@ function TablaAYG(props) {
                       >
                         <AddCircleIcon
                           style={{
-                            color: permisosSubmenu >= 2 ? "#4caf50" : ""
+                            color: permisosSubmenu >= 2 ? "#4caf50" : "",
                           }}
                         />
                       </IconButton>
@@ -883,8 +980,12 @@ function TablaAYG(props) {
                     label="Escriba algo para filtrar"
                     type="text"
                     margin="normal"
+                    value={busquedaFiltro}
                     inputProps={{
-                      maxLength: 20
+                      maxLength: 20,
+                    }}
+                    onChange={(e) => {
+                      setBusquedaFiltro(e.target.value);
                     }}
                   />
                 </Grid>
@@ -934,7 +1035,6 @@ function TablaAYG(props) {
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((row, index) => {
                     const labelId = `enhanced-table-checkbox-${index}`;
-
                     return (
                       <TableRow hover role="checkbox" tabIndex={-1} key={index}>
                         <TableCell padding="checkbox" />
@@ -989,8 +1089,9 @@ function TablaAYG(props) {
                                           accionAG: 2,
                                           idRequerimiento: row.id,
                                           estatusRequerimiento:
-                                            radioTipo !== "gastos" ? 1 : 2
-                                        }
+                                            radioTipo !== "gastos" ? 1 : 2,
+                                          page: page
+                                        },
                                       },
                                       "mysecretpassword"
                                     );
@@ -999,7 +1100,8 @@ function TablaAYG(props) {
                                 >
                                   <EditIcon
                                     style={{
-                                      color: permisosSubmenu >= 2 ? "black" : ""
+                                      color:
+                                        permisosSubmenu >= 2 ? "black" : "",
                                     }}
                                   />
                                 </IconButton>
@@ -1053,12 +1155,12 @@ function TablaAYG(props) {
           rowsPerPageOptions={[10, 25, 50]}
           component="div"
           labelRowsPerPage="Filas por página"
-          labelDisplayedRows={e => {
+          labelDisplayedRows={(e) => {
             return `${e.from}-${e.to} de ${e.count}`;
           }}
           count={rows.length}
           rowsPerPage={rowsPerPage}
-          page={page}
+          page={rows.length > 0 ? page : 0}
           onChangePage={handleChangePage}
           onChangeRowsPerPage={handleChangeRowsPerPage}
         />
@@ -1069,19 +1171,19 @@ function TablaAYG(props) {
 
 const StyledMenu = withStyles({
   paper: {
-    border: "1px solid #d3d4d5"
-  }
-})(props => (
+    border: "1px solid #d3d4d5",
+  },
+})((props) => (
   <Menu
     elevation={0}
     getContentAnchorEl={null}
     anchorOrigin={{
       vertical: "bottom",
-      horizontal: "center"
+      horizontal: "center",
     }}
     transformOrigin={{
       vertical: "top",
-      horizontal: "center"
+      horizontal: "center",
     }}
     {...props}
   />
@@ -1092,6 +1194,7 @@ function FormularioAYG(props) {
   const theme = useTheme();
   const [proveedores, setProveedores] = useState([]);
   const tableTittle = props.tittle;
+  const page = props.page;
   const setShowComponent = props.setShowComponent;
   const usuarioDatos = props.usuarioDatos;
   const idUsuarioLogueado = usuarioDatos.idusuario;
@@ -1123,7 +1226,7 @@ function FormularioAYG(props) {
     concepto: "0",
     serie: "",
     folio: "",
-    descripcion: ""
+    descripcion: "",
   });
   const [rfcGasto, setRfcGasto] = useState("");
   const [nombreGasto, setNombreGasto] = useState("");
@@ -1155,7 +1258,7 @@ function FormularioAYG(props) {
   const [estatusRequerimiento, setEstatusRequerimiento] = useState(0);
   const [
     idUsuarioEstatusRequerimiento,
-    setIdUsuarioEstatusRequerimiento
+    setIdUsuarioEstatusRequerimiento,
   ] = useState(0);
   const [observacionesHistorial, setObservacionesHistorial] = useState("");
   const [estatusActualRequerimiento, setEstatusActualRequerimiento] = useState(
@@ -1163,7 +1266,7 @@ function FormularioAYG(props) {
   );
   const [
     estatusAnteriorRequerimiento,
-    setEstatusAnteriorRequerimiento
+    setEstatusAnteriorRequerimiento,
   ] = useState(0);
   const [sumaActualGasto, setSumaActualGasto] = useState(0);
   const [idHistorialSelected, setIdHistorialSelected] = useState(0);
@@ -1171,7 +1274,7 @@ function FormularioAYG(props) {
   const [anchorMenuEl, setAnchorMenuEl] = useState(null);
   const [
     openMenuReenviarNotificacion,
-    setOpenMenuReenviarNotificacion
+    setOpenMenuReenviarNotificacion,
   ] = useState(false);
   const [conceptoRequerimientoGasto, setConceptoRequerimientoGasto] = useState(
     "0"
@@ -1179,7 +1282,7 @@ function FormularioAYG(props) {
   const fullScreenDialog = useMediaQuery(theme.breakpoints.down("xs"));
   const [
     usuariosNotificacionesSelected,
-    setUsuariosNotificacionesSelected
+    setUsuariosNotificacionesSelected,
   ] = useState([]);
   const [limiteImporteGasto, setLimiteImporteGasto] = useState(0);
   const [gastoRequiereAutorizacion, setGastoRequiereAutorizacion] = useState(
@@ -1191,8 +1294,8 @@ function FormularioAYG(props) {
     {
       data: cargaConceptosData,
       loading: cargaConceptosLoading,
-      error: cargaConceptosError
-    }
+      error: cargaConceptosError,
+    },
   ] = useAxios(
     {
       url: API_BASE_URL + `/cargaConceptos`,
@@ -1202,55 +1305,55 @@ function FormularioAYG(props) {
         pwd: usuarioPassword,
         rfc: rfcEmpresa,
         idsubmenu: idSubmenu,
-        all: 0
-      }
+        all: 0,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
   const [
     {
       data: cargaEstatusData,
       loading: cargaEstatusLoading,
-      error: cargaEstatusError
-    }
+      error: cargaEstatusError,
+    },
   ] = useAxios(
     {
       url: API_BASE_URL + `/cargaEstatus`,
       method: "GET",
       params: {
         usuario: usuario,
-        pwd: usuarioPassword
-      }
+        pwd: usuarioPassword,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
   const [
     {
       data: nuevoRequerimientoData,
       loading: nuevoRequerimientoLoading,
-      error: nuevoRequerimientoError
+      error: nuevoRequerimientoError,
     },
-    executeNuevoRequerimiento
+    executeNuevoRequerimiento,
   ] = useAxios(
     {
       url: API_BASE_URL + `/nuevoRequerimiento`,
-      method: "POST"
+      method: "POST",
     },
     {
-      manual: true
+      manual: true,
     }
   );
   const [
     {
       data: datosRequerimientoData,
       loading: datosRequerimientoLoading,
-      error: datosRequerimientoError
+      error: datosRequerimientoError,
     },
-    executeDatosRequerimiento
+    executeDatosRequerimiento,
   ] = useAxios(
     {
       url: API_BASE_URL + `/datosRequerimiento`,
@@ -1260,101 +1363,101 @@ function FormularioAYG(props) {
         pwd: usuarioPassword,
         rfc: rfcEmpresa,
         idsubmenu: idSubmenu,
-        idrequerimiento: idRequerimiento
-      }
+        idrequerimiento: idRequerimiento,
+      },
     },
     {
       manual: true,
-      useCache: false
+      useCache: false,
     }
   );
   const [
     {
       data: agregaEstatusData,
       loading: agregaEstatusLoading,
-      error: agregaEstatusError
+      error: agregaEstatusError,
     },
-    executeAgregaEstatus
+    executeAgregaEstatus,
   ] = useAxios(
     {
       url: API_BASE_URL + `/agregaEstatus`,
-      method: "PUT"
+      method: "PUT",
     },
     {
-      manual: true
+      manual: true,
     }
   );
   const [
     {
       data: eliminaEstatusData,
       loading: eliminaEstatusLoading,
-      error: eliminaEstatusError
+      error: eliminaEstatusError,
     },
-    executeEliminaEstatus
+    executeEliminaEstatus,
   ] = useAxios(
     {
       url: API_BASE_URL + `/eliminaEstatus`,
-      method: "DELETE"
+      method: "DELETE",
     },
     {
-      manual: true
+      manual: true,
     }
   );
   const [
     {
       data: editarRequerimientoData,
       loading: editarRequerimientoLoading,
-      error: editarRequerimientoError
+      error: editarRequerimientoError,
     },
-    executeEditarRequerimiento
+    executeEditarRequerimiento,
   ] = useAxios(
     {
       url: API_BASE_URL + `/editarRequerimiento`,
-      method: "POST"
+      method: "POST",
     },
     {
-      manual: true
+      manual: true,
     }
   );
   const [
     {
       data: eliminaDocumentoData,
       loading: eliminaDocumentoLoading,
-      error: eliminaDocumentoError
+      error: eliminaDocumentoError,
     },
-    executeEliminaDocumento
+    executeEliminaDocumento,
   ] = useAxios(
     {
       url: API_BASE_URL + `/eliminaDocumento`,
-      method: "DELETE"
+      method: "DELETE",
     },
     {
-      manual: true
+      manual: true,
     }
   );
   const [
     {
       data: eliminaRequerimientoData,
       loading: eliminaRequerimientoLoading,
-      error: eliminaRequerimientoError
+      error: eliminaRequerimientoError,
     },
-    executeEliminaRequerimiento
+    executeEliminaRequerimiento,
   ] = useAxios(
     {
       url: API_BASE_URL + `/eliminaRequerimiento`,
-      method: "DELETE"
+      method: "DELETE",
     },
     {
-      manual: true
+      manual: true,
     }
   );
   const [
     {
       data: usuariosNotificacionData,
       loading: usuariosNotificacionLoading,
-      error: usuariosNotificacionError
+      error: usuariosNotificacionError,
     },
-    executeUsuariosNotificacion
+    executeUsuariosNotificacion,
   ] = useAxios(
     {
       url: API_BASE_URL + `/usuariosNotificacion`,
@@ -1364,51 +1467,51 @@ function FormularioAYG(props) {
         pwd: usuarioPassword,
         rfc: rfcEmpresa,
         idsubmenu: idSubmenu,
-        idconcepto: RADatos.concepto
-      }
+        idconcepto: RADatos.concepto,
+      },
     },
     {
       manual: true,
-      useCache: false
+      useCache: false,
     }
   );
   const [
     {
       data: reenviarNotificacionData,
       loading: reenviarNotificacionLoading,
-      error: reenviarNotificacionError
+      error: reenviarNotificacionError,
     },
-    executeReenviarNotificacion
+    executeReenviarNotificacion,
   ] = useAxios(
     {
       url: API_BASE_URL + `/reenviarNotificacion`,
-      method: "POST"
+      method: "POST",
     },
     {
       manual: true,
-      useCache: false
+      useCache: false,
     }
   );
   const [
     { data: creaGastoData, loading: creaGastoLoading, error: creaGastoError },
-    executeCreaGasto
+    executeCreaGasto,
   ] = useAxios(
     {
       url: API_BASE_URL + `/creaGasto`,
-      method: "POST"
+      method: "POST",
     },
     {
       manual: true,
-      useCache: false
+      useCache: false,
     }
   );
   const [
     {
       data: getTotalImporteData,
       loading: getTotalImporteLoading,
-      error: getTotalImporteError
+      error: getTotalImporteError,
     },
-    executeGetTotalImporte
+    executeGetTotalImporte,
   ] = useAxios(
     {
       url: API_BASE_URL + `/getTotalImporte`,
@@ -1418,21 +1521,21 @@ function FormularioAYG(props) {
         pwd: usuarioPassword,
         rfc: rfcEmpresa,
         idsubmenu: idSubmenu,
-        idrequerimiento: idRequerimiento
-      }
+        idrequerimiento: idRequerimiento,
+      },
     },
     {
       manual: true,
-      useCache: false
+      useCache: false,
     }
   );
   const [
     {
       data: traerLimiteGastosUsuarioData,
       loading: traerLimiteGastosUsuarioLoading,
-      error: traerLimiteGastosUsuarioError
+      error: traerLimiteGastosUsuarioError,
     },
-    executeTraerLimiteGastosUsuario
+    executeTraerLimiteGastosUsuario,
   ] = useAxios(
     {
       url: API_BASE_URL + `/traerLimiteGastosUsuario`,
@@ -1443,20 +1546,20 @@ function FormularioAYG(props) {
         rfc: rfcEmpresa,
         idsubmenu: idSubmenu,
         idusuario: idUsuarioLogueado,
-        idconcepto: RADatos.concepto
-      }
+        idconcepto: RADatos.concepto,
+      },
     },
     {
-      manual: true
+      manual: true,
     }
   );
   const [
     {
       data: traerProveedoresData,
       loading: traerProveedoresLoading,
-      error: traerProveedoresError
+      error: traerProveedoresError,
     } /* ,
-    executeTraerProveedores */
+    executeTraerProveedores */,
   ] = useAxios(
     {
       url: API_BASE_URL + `/traerProveedores`,
@@ -1465,8 +1568,8 @@ function FormularioAYG(props) {
         usuario: usuario,
         pwd: usuarioPassword,
         rfc: rfcEmpresa,
-        idsubmenu: idSubmenu
-      }
+        idsubmenu: idSubmenu,
+      },
     } /* ,
     {
       manual: true
@@ -1498,7 +1601,7 @@ function FormularioAYG(props) {
     accionAG,
     radioTipo,
     executeDatosRequerimiento,
-    executeUsuariosNotificacion
+    executeUsuariosNotificacion,
   ]);
 
   useEffect(() => {
@@ -1528,7 +1631,7 @@ function FormularioAYG(props) {
               descripcion:
                 datosRequerimientoData.requerimiento[0].descripcion !== null
                   ? datosRequerimientoData.requerimiento[0].descripcion
-                  : ""
+                  : "",
             });
             setDescripcionAntigua(
               datosRequerimientoData.requerimiento[0].descripcion !== null
@@ -1585,8 +1688,9 @@ function FormularioAYG(props) {
                   idSubmenu: idSubmenu,
                   accionAG: 0,
                   idRequerimiento: 0,
-                  estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2
-                }
+                  estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+                  page: page
+                },
               },
               "mysecretpassword"
             );
@@ -1607,7 +1711,8 @@ function FormularioAYG(props) {
     setIdRequerimiento,
     setShowComponent,
     tableTittle,
-    radioTipo
+    radioTipo,
+    page
   ]);
 
   useEffect(() => {
@@ -1673,7 +1778,7 @@ function FormularioAYG(props) {
                 swalReact({
                   title: "Status de archivo(s)",
                   buttons: {
-                    cancel: "Cerrar"
+                    cancel: "Cerrar",
                   },
                   icon: "info",
                   content: (
@@ -1710,13 +1815,13 @@ function FormularioAYG(props) {
                         );
                       })}
                     </List>
-                  )
+                  ),
                 });
               }
               if (gastoRequiereAutorizacion) {
-                const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${nuevoRequerimientoData.idrequerimiento}&tipo=${radioTipo}`;
+                /* const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${nuevoRequerimientoData.idrequerimiento}&tipo=${radioTipo}`;
                 const encabezadoMensaje = "Nuevo gasto agregado";
-                const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`;
+                const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`; */
                 await executeCreaGasto({
                   data: {
                     usuario: usuario,
@@ -1733,9 +1838,9 @@ function FormularioAYG(props) {
                     rfcproveedor: rfcGasto,
                     nombreproveedor: nombreGasto.trim(),
                     idbitacora: 0,
-                    encabezado: encabezadoMensaje,
-                    mensaje: mensaje
-                  }
+                    /* encabezado: encabezadoMensaje,
+                    mensaje: mensaje */
+                  },
                 });
               }
               executeListaRequerimientos();
@@ -1752,8 +1857,9 @@ function FormularioAYG(props) {
                     idSubmenu: idSubmenu,
                     accionAG: 0,
                     idRequerimiento: 0,
-                    estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2
-                  }
+                    estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+                    page: page
+                  },
                 },
                 "mysecretpassword"
               );
@@ -1773,7 +1879,7 @@ function FormularioAYG(props) {
             swalReact({
               title: "Status de archivo(s)",
               buttons: {
-                cancel: "Cerrar"
+                cancel: "Cerrar",
               },
               icon: "info",
               content: (
@@ -1810,14 +1916,14 @@ function FormularioAYG(props) {
                     );
                   })}
                 </List>
-              )
+              ),
             });
           });
 
           if (gastoRequiereAutorizacion) {
-            const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${nuevoRequerimientoData.idrequerimiento}&tipo=${radioTipo}`;
+            /*  const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${nuevoRequerimientoData.idrequerimiento}&tipo=${radioTipo}`;
             const encabezadoMensaje = "Nuevo gasto agregado";
-            const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`;
+            const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`; */
             await executeCreaGasto({
               data: {
                 usuario: usuario,
@@ -1834,9 +1940,9 @@ function FormularioAYG(props) {
                 rfcproveedor: rfcGasto,
                 nombreproveedor: nombreGasto.trim(),
                 idbitacora: 0,
-                encabezado: encabezadoMensaje,
-                mensaje: mensaje
-              }
+                /* encabezado: encabezadoMensaje,
+                mensaje: mensaje */
+              },
             });
           }
 
@@ -1854,8 +1960,9 @@ function FormularioAYG(props) {
                 idSubmenu: idSubmenu,
                 accionAG: 0,
                 idRequerimiento: 0,
-                estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2
-              }
+                estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+                page: page
+              },
             },
             "mysecretpassword"
           );
@@ -1876,6 +1983,7 @@ function FormularioAYG(props) {
     setShowComponent,
     tableTittle,
     radioTipo,
+    page,
     RADatos.importe,
     limiteImporteGasto,
     RADatos.concepto,
@@ -1890,7 +1998,7 @@ function FormularioAYG(props) {
     rfcGasto,
     usuario,
     usuarioNombreCompleto,
-    usuarioPassword
+    usuarioPassword,
   ]);
 
   useEffect(() => {
@@ -1912,9 +2020,9 @@ function FormularioAYG(props) {
               (estatusRequerimiento === "4" || estatusRequerimiento === "5") &&
               idSubmenu === 44
             ) {
-              const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
+              /* const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
               const encabezadoMensaje = "Nuevo gasto agregado";
-              const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`;
+              const mensaje = `${usuarioNombreCompleto} ha agregado un nuevo gasto en ${nombreEmpresa}: \n ${linkMensaje}`; */
               executeCreaGasto({
                 data: {
                   usuario: usuario,
@@ -1931,9 +2039,9 @@ function FormularioAYG(props) {
                   rfcproveedor: rfcEstatus,
                   nombreproveedor: nombreLargoEstatus.trim(),
                   idbitacora: agregaEstatusData.idbitacora,
-                  encabezado: encabezadoMensaje,
-                  mensaje: mensaje
-                }
+                  /* encabezado: encabezadoMensaje,
+                  mensaje: mensaje */
+                },
               });
             } else {
               executeDatosRequerimiento();
@@ -1965,7 +2073,7 @@ function FormularioAYG(props) {
     idModulo,
     nombreEmpresa,
     usuarioNombreCompleto,
-    radioTipo
+    radioTipo,
   ]);
 
   useEffect(() => {
@@ -1992,7 +2100,7 @@ function FormularioAYG(props) {
     creaGastoData,
     executeDatosRequerimiento,
     executeListaRequerimientos,
-    gastoRequiereAutorizacion
+    gastoRequiereAutorizacion,
   ]);
 
   useEffect(() => {
@@ -2043,7 +2151,7 @@ function FormularioAYG(props) {
   }, [
     eliminaEstatusData,
     executeDatosRequerimiento,
-    executeListaRequerimientos
+    executeListaRequerimientos,
   ]);
 
   useEffect(() => {
@@ -2067,7 +2175,7 @@ function FormularioAYG(props) {
               swalReact({
                 title: "Status de archivo(s)",
                 buttons: {
-                  cancel: "Cerrar"
+                  cancel: "Cerrar",
                 },
                 icon: "info",
                 content: (
@@ -2104,7 +2212,7 @@ function FormularioAYG(props) {
                       );
                     })}
                   </List>
-                )
+                ),
               });
             }
           });
@@ -2121,7 +2229,7 @@ function FormularioAYG(props) {
     editarRequerimientoData,
     executeDatosRequerimiento,
     executeListaRequerimientos,
-    radioTipo
+    radioTipo,
   ]);
 
   useEffect(() => {
@@ -2182,8 +2290,9 @@ function FormularioAYG(props) {
                 idSubmenu: idSubmenu,
                 accionAG: 0,
                 idRequerimiento: 0,
-                estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2
-              }
+                estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+                page: page
+              },
             },
             "mysecretpassword"
           );
@@ -2203,7 +2312,8 @@ function FormularioAYG(props) {
     setIdRequerimiento,
     setShowComponent,
     tableTittle,
-    radioTipo
+    radioTipo,
+    page
   ]);
 
   useEffect(() => {
@@ -2300,8 +2410,9 @@ function FormularioAYG(props) {
             idModulo: idModulo,
             idMenu: idMenu,
             idSubmenu: idSubmenu,
-            estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2
-          }
+            estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+            page: page
+          },
         },
         "mysecretpassword"
       );
@@ -2332,7 +2443,7 @@ function FormularioAYG(props) {
     });
   };
 
-  const getEstatusPermitidos = idEstatus => {
+  const getEstatusPermitidos = (idEstatus) => {
     if (idUsuarioLogueado === idUsuarioRequerimiento) {
       switch (estatusActualRequerimiento) {
         case 1:
@@ -2382,7 +2493,7 @@ function FormularioAYG(props) {
     setIdDocumentoSecundario(idDocumento);
   };
 
-  const handleCheckNoRFCEstatus = event => {
+  const handleCheckNoRFCEstatus = (event) => {
     setCheckNoRFCEstatus(!checkNoRFCEstatus);
     if (event.target.checked) {
       setRfcEstatus("");
@@ -2390,7 +2501,7 @@ function FormularioAYG(props) {
     }
   };
 
-  const handleCheckNoRFC = event => {
+  const handleCheckNoRFC = (event) => {
     setCheckNoRFC(!checkNoRFC);
     if (event.target.checked) {
       setRfcGasto("");
@@ -2416,7 +2527,7 @@ function FormularioAYG(props) {
       concepto,
       serie,
       folio,
-      descripcion
+      descripcion,
     } = RADatos;
     if (archivosPrincipal === null || archivosPrincipal.length === 0) {
       swal(
@@ -2470,7 +2581,7 @@ function FormularioAYG(props) {
       !checkNoRFC &&
       nombreGasto.trim() === ""
     ) {
-      swal("Error en campos", "Ingrese un nombre largo", "warning");
+      swal("Error en campos", "Ingrese una razón social", "warning");
     } else if (
       radioTipo === "gastos" &&
       checkNoRFC &&
@@ -2482,7 +2593,7 @@ function FormularioAYG(props) {
       checkNoRFC &&
       nombreGastoNoRFC.trim() === ""
     ) {
-      swal("Error en campos", "Ingrese un nombre largo", "warning");
+      swal("Error en campos", "Ingrese una razón social", "warning");
     } else if (
       radioTipo === "gastos" &&
       importe > limiteImporteGasto &&
@@ -2572,8 +2683,8 @@ function FormularioAYG(props) {
       executeNuevoRequerimiento({
         data: formData,
         headers: {
-          "Content-Type": "multipart/form-data"
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
     }
   };
@@ -2667,13 +2778,13 @@ function FormularioAYG(props) {
       executeEditarRequerimiento({
         data: formData,
         headers: {
-          "Content-Type": "multipart/form-data"
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
     }
   };
 
-  const getDocumentosGuardados = tipoDoc => {
+  const getDocumentosGuardados = (tipoDoc) => {
     let documentoPrincipal = 0;
     let documentoAccesorio = 0;
     return documentosGuardados.length > 0 ? (
@@ -2688,7 +2799,7 @@ function FormularioAYG(props) {
                 ? selectedListItem1Index === index
                 : selectedListItem2Index === index
             }
-            onClick={e => {
+            onClick={(e) => {
               if (tipoDoc === 1) {
                 handleListItem1Click(e, index, documento.id);
               } else {
@@ -2704,7 +2815,7 @@ function FormularioAYG(props) {
               <Tooltip title="Opciones">
                 <IconButton
                   edge="end"
-                  onClick={e => {
+                  onClick={(e) => {
                     setRutaDocumento(documento.download);
                     handleOpenMenu(e);
                   }}
@@ -2740,7 +2851,7 @@ function FormularioAYG(props) {
     );
   };
 
-  const getEstatus = idEstatus => {
+  const getEstatus = (idEstatus) => {
     for (let x = 0; x < cargaEstatusData.estatus.length; x++) {
       if (cargaEstatusData.estatus[x].id === idEstatus) {
         return cargaEstatusData.estatus[x].nombre_estado;
@@ -2773,7 +2884,7 @@ function FormularioAYG(props) {
           <TableCell padding="checkbox">
             {historial.length !== 1 && historial.length === index + 1 ? (
               <Checkbox
-                onChange={e => {
+                onChange={(e) => {
                   handleClickCheckBox(
                     e,
                     item.id_bit,
@@ -2837,7 +2948,7 @@ function FormularioAYG(props) {
       !checkNoRFCEstatus &&
       nombreLargoEstatus.trim() === ""
     ) {
-      swal("Error", "Ingrese un nombre largo", "warning");
+      swal("Error", "Ingrese una razón social", "warning");
     } else if (
       (estatusRequerimiento === "4" || estatusRequerimiento === "5") &&
       idSubmenu === 44 &&
@@ -2851,7 +2962,7 @@ function FormularioAYG(props) {
       checkNoRFCEstatus &&
       nombreLargoEstatusNoRFC.trim() === ""
     ) {
-      swal("Error", "Ingrese un nombre largo", "warning");
+      swal("Error", "Ingrese una razón social", "warning");
     } else {
       let cambioEstatus = false;
       if (idUsuarioLogueado === idUsuarioRequerimiento) {
@@ -2999,8 +3110,8 @@ function FormularioAYG(props) {
                 : parseInt(estatusRequerimiento),
             observaciones: observacionesHistorial,
             encabezado: encabezadoMensaje,
-            mensaje: mensaje
-          }
+            mensaje: mensaje,
+          },
         });
       }
     }
@@ -3028,8 +3139,8 @@ function FormularioAYG(props) {
       swal({
         text: "¿Está seguro de eliminar este estatus?",
         buttons: ["No", "Sí"],
-        dangerMode: true
-      }).then(value => {
+        dangerMode: true,
+      }).then((value) => {
         if (value) {
           executeEliminaEstatus({
             data: {
@@ -3039,8 +3150,8 @@ function FormularioAYG(props) {
               idsubmenu: idSubmenu,
               idbitacora: idHistorialSelected,
               idrequerimiento: idRequerimiento,
-              estatus: estatusAnteriorRequerimiento
-            }
+              estatus: estatusAnteriorRequerimiento,
+            },
           });
         }
       });
@@ -3083,8 +3194,8 @@ function FormularioAYG(props) {
       swal({
         text: "¿Está seguro de eliminar el documento?",
         buttons: ["No", "Sí"],
-        dangerMode: true
-      }).then(value => {
+        dangerMode: true,
+      }).then((value) => {
         if (value) {
           executeEliminaDocumento({
             data: {
@@ -3096,8 +3207,8 @@ function FormularioAYG(props) {
               usuario_storage: usuarioStorage,
               password_storage: passwordStorage,
               idarchivo: idDocumentoPrincipal,
-              idrequerimiento: idRequerimiento
-            }
+              idrequerimiento: idRequerimiento,
+            },
           });
         }
       });
@@ -3124,8 +3235,8 @@ function FormularioAYG(props) {
       swal({
         text: "¿Está seguro de eliminar el documento?",
         buttons: ["No", "Sí"],
-        dangerMode: true
-      }).then(value => {
+        dangerMode: true,
+      }).then((value) => {
         if (value) {
           executeEliminaDocumento({
             data: {
@@ -3137,8 +3248,8 @@ function FormularioAYG(props) {
               usuario_storage: usuarioStorage,
               password_storage: passwordStorage,
               idarchivo: idDocumentoSecundario,
-              idrequerimiento: idRequerimiento
-            }
+              idrequerimiento: idRequerimiento,
+            },
           });
         }
       });
@@ -3164,7 +3275,8 @@ function FormularioAYG(props) {
       datosRequerimientoData.requerimiento[0].estado_documento !== 1 &&
       radioTipo === "gastos" &&
       datosRequerimientoData.requerimiento[0].requerimiento.length > 0 &&
-      datosRequerimientoData.requerimiento[0].requerimiento[0].gasto_requerimiento === 1
+      datosRequerimientoData.requerimiento[0].requerimiento[0]
+        .gasto_requerimiento === 1
     ) {
       swal(
         "Error",
@@ -3183,8 +3295,8 @@ function FormularioAYG(props) {
           radioTipo !== "gastos" ? "requerimiento" : "gasto"
         }?`,
         buttons: ["No", "Sí"],
-        dangerMode: true
-      }).then(value => {
+        dangerMode: true,
+      }).then((value) => {
         if (value) {
           executeEliminaRequerimiento({
             data: {
@@ -3202,8 +3314,8 @@ function FormularioAYG(props) {
                 requerimiento.length > 0 &&
                 requerimiento[0].gasto_requerimiento === 1
                   ? 1
-                  : 0
-            }
+                  : 0,
+            },
           });
         }
       });
@@ -3222,10 +3334,10 @@ function FormularioAYG(props) {
         idmenu: idMenu,
         encabezado: `Tiene una nueva notificación de un requerimiento de ${tableTittle.toLowerCase()}`,
         mensaje: `Mensaje reenviado del requerimiento de ${tableTittle.toLowerCase()} en ${nombreEmpresa}: ${linkMensaje}`,
-        usuarios: usuariosNotificacionesSelected
+        usuarios: usuariosNotificacionesSelected,
       };
       executeReenviarNotificacion({
-        data: reenviarNotificacionDatos
+        data: reenviarNotificacionDatos,
       });
     } else {
       swal("Error", "Seleccione al menos un usuario", "warning");
@@ -3242,7 +3354,7 @@ function FormularioAYG(props) {
               <FormControlLabel
                 control={
                   <Checkbox
-                    onClick={e => {
+                    onClick={(e) => {
                       handleClickCheckBoxUsuariosNotificacion(
                         e,
                         usuario.id_usuario,
@@ -3261,7 +3373,7 @@ function FormularioAYG(props) {
                 <FormControlLabel
                   control={
                     <Checkbox
-                      onClick={e => {
+                      onClick={(e) => {
                         handleClickCheckBoxUsuariosNotificacion(
                           e,
                           usuario.id_usuario,
@@ -3280,7 +3392,7 @@ function FormularioAYG(props) {
                 <FormControlLabel
                   control={
                     <Checkbox
-                      onClick={e => {
+                      onClick={(e) => {
                         handleClickCheckBoxUsuariosNotificacion(
                           e,
                           usuario.id_usuario,
@@ -3302,7 +3414,7 @@ function FormularioAYG(props) {
     });
   };
 
-  const handleOpenMenu = event => {
+  const handleOpenMenu = (event) => {
     setAnchorMenuEl(event.currentTarget);
   };
 
@@ -3323,8 +3435,8 @@ function FormularioAYG(props) {
         id_usuario,
         correo,
         cel,
-        notificaciones
-      }
+        notificaciones,
+      },
     ];
     let pos = -1;
     if (usuariosNotificacionesSelected.length === 0) {
@@ -3389,8 +3501,9 @@ function FormularioAYG(props) {
                       idSubmenu: idSubmenu,
                       accionAG: 0,
                       idRequerimiento: 0,
-                      estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2
-                    }
+                      estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+                      page: page
+                    },
                   },
                   "mysecretpassword"
                 );
@@ -3404,7 +3517,7 @@ function FormularioAYG(props) {
           {radioTipo !== "gastos"
             ? gastoAutorizacion
               ? "Autorización de Gasto"
-              : " Requerimiento de Autorización"
+              : " Requerimiento de " + tableTittle
             : "Gasto"}
         </Typography>
       </Grid>
@@ -3428,7 +3541,7 @@ function FormularioAYG(props) {
               disabled={accionAG !== 2}
               style={{
                 background: accionAG === 2 ? "#4caf50" : "",
-                color: accionAG === 2 ? "#ffffff" : ""
+                color: accionAG === 2 ? "#ffffff" : "",
               }}
               variant="contained"
               onClick={() => {
@@ -3445,8 +3558,9 @@ function FormularioAYG(props) {
                       idSubmenu: idSubmenu,
                       accionAG: 1,
                       idRequerimiento: 0,
-                      estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2
-                    }
+                      estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+                      page: page
+                    },
                   },
                   "mysecretpassword"
                 );
@@ -3529,20 +3643,20 @@ function FormularioAYG(props) {
               className={classes.textFields}
               select
               SelectProps={{
-                native: true
+                native: true,
               }}
               variant="outlined"
               label="Sucursal"
               type="text"
               inputProps={{
-                maxLength: 20
+                maxLength: 20,
               }}
               value={RADatos.sucursal}
               disabled={accionAG === 2}
-              onChange={e => {
+              onChange={(e) => {
                 setRADatos({
                   ...RADatos,
-                  sucursal: e.target.value
+                  sucursal: e.target.value,
                 });
               }}
             >
@@ -3557,14 +3671,14 @@ function FormularioAYG(props) {
               label="Fecha"
               type="date"
               InputLabelProps={{
-                shrink: true
+                shrink: true,
               }}
               value={RADatos.fecha}
               disabled={accionAG === 2 && radioTipo !== "gastos"}
-              onChange={e => {
+              onChange={(e) => {
                 setRADatos({
                   ...RADatos,
-                  fecha: e.target.value
+                  fecha: e.target.value,
                 });
               }}
             />
@@ -3577,18 +3691,18 @@ function FormularioAYG(props) {
               label="Importe"
               type="text"
               inputProps={{
-                maxLength: 20
+                maxLength: 20,
               }}
               value={RADatos.importe}
               disabled={accionAG === 2 && radioTipo !== "gastos"}
-              onKeyPress={e => {
+              onKeyPress={(e) => {
                 doubleKeyValidation(e, 2);
               }}
-              onChange={e => {
+              onChange={(e) => {
                 doublePasteValidation(e, 2);
                 setRADatos({
                   ...RADatos,
-                  importe: e.target.value
+                  importe: e.target.value,
                 });
               }}
             />
@@ -3598,17 +3712,17 @@ function FormularioAYG(props) {
               className={classes.textFields}
               select
               SelectProps={{
-                native: true
+                native: true,
               }}
               variant="outlined"
               label="Concepto"
               type="text"
               value={RADatos.concepto}
               disabled={accionAG === 2}
-              onChange={e => {
+              onChange={(e) => {
                 setRADatos({
                   ...RADatos,
-                  concepto: e.target.value
+                  concepto: e.target.value,
                 });
               }}
             >
@@ -3624,18 +3738,18 @@ function FormularioAYG(props) {
               label="Serie"
               type="text"
               inputProps={{
-                maxLength: 20
+                maxLength: 20,
               }}
               value={RADatos.serie}
               disabled={accionAG === 2}
-              onKeyPress={e => {
+              onKeyPress={(e) => {
                 keyValidation(e, 5);
               }}
-              onChange={e => {
+              onChange={(e) => {
                 pasteValidation(e, 5);
                 setRADatos({
                   ...RADatos,
-                  serie: e.target.value
+                  serie: e.target.value,
                 });
               }}
             />
@@ -3648,18 +3762,18 @@ function FormularioAYG(props) {
               label="Folio"
               type="text"
               inputProps={{
-                maxLength: 30
+                maxLength: 30,
               }}
               value={RADatos.folio}
               disabled={accionAG === 2}
-              onKeyPress={e => {
+              onKeyPress={(e) => {
                 keyValidation(e, 2);
               }}
-              onChange={e => {
+              onChange={(e) => {
                 pasteValidation(e, 2);
                 setRADatos({
                   ...RADatos,
-                  folio: e.target.value
+                  folio: e.target.value,
                 });
               }}
             />
@@ -3673,14 +3787,14 @@ function FormularioAYG(props) {
               rows="5"
               variant="outlined"
               value={RADatos.descripcion}
-              onKeyPress={e => {
+              onKeyPress={(e) => {
                 keyValidation(e, 3);
               }}
-              onChange={e => {
+              onChange={(e) => {
                 pasteValidation(e, 3);
                 setRADatos({
                   ...RADatos,
-                  descripcion: e.target.value
+                  descripcion: e.target.value,
                 });
               }}
             />
@@ -3702,7 +3816,7 @@ function FormularioAYG(props) {
                 style={{ marginTop: 0 }}
                 select
                 SelectProps={{
-                  native: true
+                  native: true,
                 }}
                 variant="outlined"
                 label="Estatus"
@@ -3710,10 +3824,10 @@ function FormularioAYG(props) {
                 margin="normal"
                 value={estatusRequerimiento}
                 inputProps={{
-                  maxLength: 20
+                  maxLength: 20,
                 }}
                 disabled={accionAG !== 2}
-                onChange={e => {
+                onChange={(e) => {
                   if (e.target.value === "4" || e.target.value === "5") {
                     executeGetTotalImporte();
                   }
@@ -3729,7 +3843,7 @@ function FormularioAYG(props) {
                 className={classes.formButtons}
                 style={{
                   background: accionAG === 2 ? "#4caf50" : "",
-                  color: accionAG === 2 ? "#ffffff" : ""
+                  color: accionAG === 2 ? "#ffffff" : "",
                 }}
                 variant="contained"
                 disabled={accionAG !== 2}
@@ -3762,7 +3876,9 @@ function FormularioAYG(props) {
             idSubmenu === 44 ? (
               <Fragment>
                 <Grid item xs={12}>
-                  <Typography>{`Suma actual: ${sumaActualGasto}`}</Typography>
+                  <Typography>{`Suma pendiente: ${
+                    parseFloat(RADatos.importe) - sumaActualGasto
+                  }`}</Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -3770,15 +3886,15 @@ function FormularioAYG(props) {
                     id="importeEstatus"
                     type="text"
                     inputProps={{
-                      maxLength: 20
+                      maxLength: 20,
                     }}
                     label="Importe de Gasto"
                     variant="outlined"
                     value={importeEstatus}
-                    onKeyPress={e => {
+                    onKeyPress={(e) => {
                       doubleKeyValidation(e, 2);
                     }}
-                    onChange={e => {
+                    onChange={(e) => {
                       doublePasteValidation(e, 2);
                       setImporteEstatus(e.target.value);
                     }}
@@ -3791,10 +3907,10 @@ function FormularioAYG(props) {
                     label="Fecha de Gasto"
                     type="date"
                     InputLabelProps={{
-                      shrink: true
+                      shrink: true,
                     }}
                     value={fechaEstatus}
-                    onChange={e => {
+                    onChange={(e) => {
                       setFechaEstatus(e.target.value);
                     }}
                   />
@@ -3837,7 +3953,7 @@ function FormularioAYG(props) {
                     <Grid item xs={12}>
                       <Autocomplete
                         options={proveedores}
-                        getOptionLabel={option =>
+                        getOptionLabel={(option) =>
                           `${option.rfc}-${option.razonsocial}`
                         }
                         id="debug"
@@ -3853,16 +3969,16 @@ function FormularioAYG(props) {
                             setNombreLargoEstatus("");
                           }
                         }}
-                        renderInput={params => (
+                        renderInput={(params) => (
                           <TextField
                             {...params}
                             id="rfcAutocompleteStatus"
                             style={{ width: "100%" }}
                             value={rfcEstatus}
-                            onKeyPress={e => {
+                            onKeyPress={(e) => {
                               keyValidation(e, 5);
                             }}
-                            onChange={e => {
+                            onChange={(e) => {
                               pasteValidation(e, 5);
                             }}
                             label="RFC"
@@ -3875,21 +3991,21 @@ function FormularioAYG(props) {
                     <Grid item xs={12}>
                       <TextField
                         style={{
-                          width: "100%"
+                          width: "100%",
                         }}
                         disabled
                         id="nombreLargoEstatus"
                         type="text"
-                        label="Nombre Largo"
+                        label="Razón social"
                         variant="outlined"
                         value={nombreLargoEstatus}
                         inputProps={{
-                          maxLength: 100
+                          maxLength: 100,
                         }}
-                        onKeyPress={e => {
+                        onKeyPress={(e) => {
                           keyValidation(e, 1);
                         }}
-                        onChange={e => {
+                        onChange={(e) => {
                           pasteValidation(e, 1);
                           setNombreLargoEstatus(e.target.value);
                         }}
@@ -3903,10 +4019,10 @@ function FormularioAYG(props) {
                         id="rfcEstatusNoRFC"
                         style={{ width: "100%" }}
                         value={rfcEstatusNoRFC}
-                        onKeyPress={e => {
+                        onKeyPress={(e) => {
                           keyValidation(e, 5);
                         }}
-                        onChange={e => {
+                        onChange={(e) => {
                           pasteValidation(e, 5);
                           setRfcEstatusNoRFC(e.target.value);
                         }}
@@ -3918,21 +4034,21 @@ function FormularioAYG(props) {
                     <Grid item xs={12}>
                       <TextField
                         style={{
-                          width: "100%"
+                          width: "100%",
                         }}
                         disabled
                         id="nombreLargoEstatusNoRFC"
                         type="text"
-                        label="Nombre Largo"
+                        label="Razón social"
                         variant="outlined"
                         value={nombreLargoEstatusNoRFC}
                         inputProps={{
-                          maxLength: 100
+                          maxLength: 100,
                         }}
-                        onKeyPress={e => {
+                        onKeyPress={(e) => {
                           keyValidation(e, 1);
                         }}
-                        onChange={e => {
+                        onChange={(e) => {
                           pasteValidation(e, 1);
                           setNombreLargoEstatusNoRFC(e.target.value);
                         }}
@@ -3950,10 +4066,10 @@ function FormularioAYG(props) {
                 variant="outlined"
                 value={observacionesHistorial}
                 disabled={accionAG !== 2}
-                onKeyPress={e => {
+                onKeyPress={(e) => {
                   keyValidation(e, 3);
                 }}
-                onChange={e => {
+                onChange={(e) => {
                   pasteValidation(e, 3);
                   setObservacionesHistorial(e.target.value);
                 }}
@@ -4023,7 +4139,7 @@ function FormularioAYG(props) {
                 <Grid item xs={12}>
                   <Autocomplete
                     options={proveedores}
-                    getOptionLabel={option =>
+                    getOptionLabel={(option) =>
                       `${option.rfc}-${option.razonsocial}`
                     }
                     disabled={accionAG === 2}
@@ -4047,15 +4163,15 @@ function FormularioAYG(props) {
                         }
                       } */
                     }}
-                    renderInput={params => (
+                    renderInput={(params) => (
                       <TextField
                         {...params}
                         id="rfcAutocomplete"
                         style={{ width: "100%" }}
-                        onKeyPress={e => {
+                        onKeyPress={(e) => {
                           keyValidation(e, 5);
                         }}
-                        onChange={e => {
+                        onChange={(e) => {
                           pasteValidation(e, 5);
                         }}
                         label="RFC"
@@ -4068,20 +4184,20 @@ function FormularioAYG(props) {
                 <Grid item xs={12}>
                   <TextField
                     style={{
-                      width: "100%"
+                      width: "100%",
                     }}
                     id="nombreGasto"
-                    label="Nombre Largo"
+                    label="Razón social"
                     disabled
                     variant="outlined"
                     value={nombreGasto}
                     inputProps={{
-                      maxLength: 100
+                      maxLength: 100,
                     }}
-                    onKeyPress={e => {
+                    onKeyPress={(e) => {
                       keyValidation(e, 1);
                     }}
-                    onChange={e => {
+                    onChange={(e) => {
                       pasteValidation(e, 1);
                       setNombreGasto(e.target.value);
                     }}
@@ -4097,12 +4213,12 @@ function FormularioAYG(props) {
                     disabled={accionAG === 2}
                     value={rfcGastoNoRFC}
                     inputProps={{
-                      maxLength: 20
+                      maxLength: 20,
                     }}
-                    onKeyPress={e => {
+                    onKeyPress={(e) => {
                       keyValidation(e, 5);
                     }}
-                    onChange={e => {
+                    onChange={(e) => {
                       pasteValidation(e, 5);
                       setRfcGastoNoRFC(e.target.value);
                     }}
@@ -4114,20 +4230,20 @@ function FormularioAYG(props) {
                 <Grid item xs={12}>
                   <TextField
                     style={{
-                      width: "100%"
+                      width: "100%",
                     }}
                     id="nombreGastoNoRFC"
-                    label="Nombre Largo"
+                    label="Razón social"
                     variant="outlined"
                     disabled={accionAG === 2}
                     value={nombreGastoNoRFC}
                     inputProps={{
-                      maxLength: 100
+                      maxLength: 100,
                     }}
-                    onKeyPress={e => {
+                    onKeyPress={(e) => {
                       keyValidation(e, 1);
                     }}
-                    onChange={e => {
+                    onChange={(e) => {
                       pasteValidation(e, 1);
                       setNombreGastoNoRFC(e.target.value);
                     }}
@@ -4143,13 +4259,13 @@ function FormularioAYG(props) {
                   className={classes.textFields}
                   select
                   SelectProps={{
-                    native: true
+                    native: true,
                   }}
                   variant="outlined"
                   label="Concepto Del Requerimiento"
                   type="text"
                   value={conceptoRequerimientoGasto}
-                  onChange={e => {
+                  onChange={(e) => {
                     setConceptoRequerimientoGasto(e.target.value);
                   }}
                 >
@@ -4221,6 +4337,12 @@ function FormularioAYG(props) {
                           <Typography variant="subtitle1">
                             <strong>Serie: </strong>
                             {requerimiento[0].serie}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle1">
+                            <strong>Responsable: </strong>
+                            {requerimiento[0].usuario}
                           </Typography>
                         </Grid>
                       </Grid>
@@ -4303,10 +4425,10 @@ function FormularioAYG(props) {
                   id="documentosPrincipales"
                   type="file"
                   inputProps={{
-                    multiple: true
+                    multiple: true,
                   }}
                   margin="normal"
-                  onChange={e => {
+                  onChange={(e) => {
                     setArchivosPrincipal(e.target.files);
                   }}
                 />
@@ -4337,7 +4459,7 @@ function FormularioAYG(props) {
                 style={{
                   border: "solid black 1px",
                   padding: "10px",
-                  marginTop: "10px"
+                  marginTop: "10px",
                 }}
               >
                 <List>
@@ -4358,10 +4480,10 @@ function FormularioAYG(props) {
                   id="documentosAccesorios"
                   type="file"
                   inputProps={{
-                    multiple: true
+                    multiple: true,
                   }}
                   margin="normal"
-                  onChange={e => {
+                  onChange={(e) => {
                     setArchivosSecundario(e.target.files);
                   }}
                 />
@@ -4393,7 +4515,7 @@ function FormularioAYG(props) {
                   border: "solid black 1px",
                   padding: "10px",
                   marginTop: "10px",
-                  marginBottom: "10px"
+                  marginBottom: "10px",
                 }}
               >
                 <List>

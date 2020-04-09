@@ -192,7 +192,7 @@ export default function ConfiguracionesPermisos(props) {
   const [expanded, setExpanded] = useState([]);
   const [redirect, setRedirect] = useState(false);
   const [conceptoBusqueda, setConceptoBusqueda] = useState(0);
-  const [conceptosLimite, setConceptosLimite] = useState([]);
+  /* const [conceptosLimite, setConceptosLimite] = useState([]); */
   const [selectedConceptoLimite, setSelectedConceptoLimite] = useState("0");
   const [checkedLimite, setCheckedLimite] = useState(false);
   const [
@@ -623,7 +623,35 @@ export default function ConfiguracionesPermisos(props) {
           labelText={concepto.nombre_concepto}
           labelIcon={AccountBalanceWalletIcon}
           labelInfo={
-            <Tooltip title="Quitar concepto">
+            <Fragment>
+              <Tooltip title="Máximo importe de gastos">
+                <span>
+                  <IconButton
+                    disabled={permisos < 1}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setSelectedConceptoLimite(concepto.id);
+                      setIdUsuario(idUsuario);
+                      handleOpenDialogLimiteImporteGastos();
+                      executeTraerLimiteGastosUsuario({
+                        params: {
+                          usuario: usuario,
+                          pwd: pwd,
+                          rfc: rfc,
+                          idsubmenu: 45,
+                          idusuario: idUsuario,
+                          idconcepto: concepto.id
+                        }
+                      });
+                    }}
+                  >
+                    <MoneyOffIcon
+                      style={{ color: permisos >= 1 ? "black" : "" }}
+                    />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title="Quitar concepto">
               <span>
                 <IconButton
                   disabled={permisos < 3}
@@ -638,6 +666,7 @@ export default function ConfiguracionesPermisos(props) {
                 </IconButton>
               </span>
             </Tooltip>
+            </Fragment>
           }
           color="#1a73e8"
           bgColor="#e8f0fe"
@@ -668,7 +697,7 @@ export default function ConfiguracionesPermisos(props) {
           itemPadre={true}
           labelInfo={
             <Fragment>
-              <Tooltip title="Máximo importe de gastos">
+              {/* <Tooltip title="Máximo importe de gastos">
                 <span>
                   <IconButton
                     disabled={permisos < 1}
@@ -684,7 +713,7 @@ export default function ConfiguracionesPermisos(props) {
                     />
                   </IconButton>
                 </span>
-              </Tooltip>
+              </Tooltip> */}
               <Tooltip title="Agregar concepto">
                 <span>
                   <IconButton
@@ -728,13 +757,13 @@ export default function ConfiguracionesPermisos(props) {
     });
   };
 
-  const getConceptosLimite = () => {
+  /* const getConceptosLimite = () => {
     return conceptosLimite.map((concepto, index) => {
       return (
       <option key={index} value={concepto.id}>{concepto.nombre_concepto}</option>
       )
     })
-  };
+  }; */
 
   const guardarLimiteImporte = () => {
     if (checkedLimite && importeLimite === "") {
@@ -825,7 +854,7 @@ export default function ConfiguracionesPermisos(props) {
         </DialogTitle>
         <DialogContent dividers>
           <Grid container justify="center" spacing={3}>
-            <Grid item xs={12}>
+            {/* <Grid item xs={12}>
               <TextField
                 className={classes.textFields}
                 select
@@ -855,9 +884,7 @@ export default function ConfiguracionesPermisos(props) {
                 <option value={0}>Selecciona un concepto</option>
                 {getConceptosLimite()}
               </TextField>
-            </Grid>
-            {selectedConceptoLimite !== "0" ? (
-              <Fragment>
+            </Grid> */}
                 <Grid item xs={12} sm={6} style={{ alignSelf: "flex-end" }}>
               <FormControlLabel
                 control={
@@ -890,8 +917,6 @@ export default function ConfiguracionesPermisos(props) {
                 }}
               />
             </Grid>
-              </Fragment>
-            ) : null}
           </Grid>
         </DialogContent>
         <DialogActions>
@@ -904,7 +929,7 @@ export default function ConfiguracionesPermisos(props) {
           </Button>
           <Button
             variant="contained"
-            disabled={permisos < 2 || selectedConceptoLimite === "0"}
+            disabled={permisos < 2}
             color="primary"
             onClick={() => {
               guardarLimiteImporte();
