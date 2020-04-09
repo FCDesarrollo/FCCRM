@@ -560,7 +560,12 @@ function TablaADO(props) {
     }
 
     setRows(busquedaFiltro !== "" ? getFilterRows() : filterRows);
-  }, [busquedaFiltro, setRows]);
+    const decodedToken = jwt.verify(
+      localStorage.getItem("menuTemporal"),
+      "mysecretpassword"
+    );
+    setPage(busquedaFiltro.trim() !== "" ? 0 : decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0);
+  }, [busquedaFiltro, setRows, setPage]);
 
   useEffect(() => {
     function checkData() {
