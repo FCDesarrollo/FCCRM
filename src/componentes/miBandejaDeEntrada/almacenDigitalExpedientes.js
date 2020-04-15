@@ -279,6 +279,7 @@ export default function AlmacenDigitalExpedientes(props) {
   const setLoading = props.setLoading;
   const [showComponent, setShowComponent] = useState(0);
   const [tittleTableComponent, setTittleTableComponent] = useState("");
+  const [busquedaFiltro, setBusquedaFiltro] = useState("");
   const [
     { data: ADEData, loading: ADELoading, error: ADEError },
     executeADE,
@@ -352,6 +353,11 @@ export default function AlmacenDigitalExpedientes(props) {
           setPage(
             decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0
           );
+          setBusquedaFiltro(
+            decodedToken.menuTemporal.busquedaFiltro
+              ? decodedToken.menuTemporal.busquedaFiltro
+              : ""
+          );
         } catch (err) {
           localStorage.removeItem("menuTemporal");
         }
@@ -408,6 +414,8 @@ export default function AlmacenDigitalExpedientes(props) {
                           showComponent: 1,
                           idAlmacenDigital: idAlmacenDigital,
                           idSubmenu: content.submenu.idsubmenu,
+                          page: 0,
+                          busquedaFiltro: ""
                         },
                       },
                       "mysecretpassword"
@@ -429,6 +437,8 @@ export default function AlmacenDigitalExpedientes(props) {
             setRows={setRows}
             page={page}
             setPage={setPage}
+            busquedaFiltro={busquedaFiltro}
+            setBusquedaFiltro={setBusquedaFiltro}
             idAlmacenDigital={idAlmacenDigital}
             tittle={tittleTableComponent}
             setShowComponent={setShowComponent}
@@ -472,6 +482,8 @@ function TablaADE(props) {
   const setRows = props.setRows;
   const page = props.page;
   const setPage = props.setPage;
+  const busquedaFiltro = props.busquedaFiltro;
+  const setBusquedaFiltro = props.setBusquedaFiltro;
   const userEmail = props.userEmail;
   const userPassword = props.userPassword;
   const empresaRFC = props.empresaRFC;
@@ -498,7 +510,7 @@ function TablaADE(props) {
     sucursal: "0",
     comentarios: "",
   });
-  const [busquedaFiltro, setBusquedaFiltro] = useState("");
+  //const [busquedaFiltro, setBusquedaFiltro] = useState("");
   const [
     {
       data: cargaArchivosADOData,
@@ -544,19 +556,38 @@ function TablaADE(props) {
       return dataFilter;
     }
 
-    setRows(busquedaFiltro !== "" ? getFilterRows() : filterRows);
     const decodedToken = jwt.verify(
       localStorage.getItem("menuTemporal"),
       "mysecretpassword"
     );
+    setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
     setPage(
-      busquedaFiltro.trim() !== ""
+      rows.length < rowsPerPage
         ? 0
         : decodedToken.menuTemporal.page
         ? decodedToken.menuTemporal.page
         : 0
     );
-  }, [busquedaFiltro, setRows, setPage]);
+    const token = jwt.sign(
+      {
+        menuTemporal: {
+          tableTittle: tableTittle,
+          showComponent: 1,
+          idAlmacenDigital: idAlmacenDigital,
+          idSubmenu: idSubmenu,
+          page:
+            rows.length < rowsPerPage && rows.length !== 0
+              ? 0
+              : decodedToken.menuTemporal.page
+              ? decodedToken.menuTemporal.page
+              : 0,
+          busquedaFiltro: busquedaFiltro
+        },
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("menuTemporal", token);
+  }, [busquedaFiltro, setRows, setPage, idAlmacenDigital, idSubmenu, rows.length, rowsPerPage, tableTittle]);
 
   useEffect(() => {
     function checkData() {
@@ -655,6 +686,7 @@ function TablaADE(props) {
           idAlmacenDigital: idAlmacenDigital,
           idSubmenu: idSubmenu,
           page: newPage,
+          busquedaFiltro: busquedaFiltro
         },
       },
       "mysecretpassword"
@@ -1224,7 +1256,7 @@ function VerDocumentos(props) {
             idSubmenu === 32 ||
             idSubmenu === 37 ||
             idSubmenu === 67
-              ? archivo.conceptoadw
+              ? archivo.conceptoadw !== null ? archivo.conceptoadw : "Sin Concepto - Sin Folio - Sin Serie"
               : `${
                   archivo.conceptoadw !== null
                     ? archivo.conceptoadw

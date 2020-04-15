@@ -799,36 +799,6 @@ function TablaAYG(props) {
     tableTittle,
   ]);
 
-  /* useEffect(() => {
-    const decodedToken = jwt.verify(
-      localStorage.getItem("menuTemporal"),
-      "mysecretpassword"
-    );
-    const token = jwt.sign(
-      {
-        menuTemporal: {
-          tableTittle: tableTittle,
-          showComponent: 1,
-          idModulo: idModulo,
-          idMenu: idMenu,
-          idSubmenu: idSubmenu,
-          accionAG: 0,
-          idRequerimiento: 0,
-          estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
-          page:
-            rows.length < rowsPerPage
-              ? 0
-              : decodedToken.menuTemporal.page
-              ? decodedToken.menuTemporal.page
-              : 0,
-          busquedaFiltro: busquedaFiltro,
-        },
-      },
-      "mysecretpassword"
-    );
-    localStorage.setItem("menuTemporal", token);
-  }, [busquedaFiltro]) */
-
   useEffect(() => {
     function checkData() {
       if (eliminaRequerimientoData) {
