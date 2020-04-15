@@ -33,7 +33,7 @@ import {
 } from "@material-ui/core";
 import {
   AddCircle as AddCircleIcon,
-  FilterList as FilterListIcon,
+  ClearAll as ClearAllIcon,
   Close as CloseIcon,
   Settings as SettingsIcon,
   SettingsEthernet as SettingsEthernetIcon,
@@ -770,9 +770,11 @@ function TablaADO(props) {
               md={2}
               style={{ alignSelf: "flex-end", textAlign: "center" }}
             >
-              <Tooltip title="Filtro">
-                <IconButton aria-label="filtro" style={{ float: "right" }}>
-                  <FilterListIcon style={{ color: "black" }} />
+              <Tooltip title="Limpiar Filtro">
+                <IconButton aria-label="filtro" style={{ float: "right" }} onClick={() => {
+                      setBusquedaFiltro("");
+                    }}>
+                  <ClearAllIcon style={{ color: "black" }} />
                 </IconButton>
               </Tooltip>
               {getPermisosSubmenu(idSubmenu) >= 2 ? (

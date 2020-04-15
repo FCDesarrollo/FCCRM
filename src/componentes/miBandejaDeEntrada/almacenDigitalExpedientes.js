@@ -34,7 +34,7 @@ import {
 } from "@material-ui/core";
 import {
   AddCircle as AddCircleIcon,
-  FilterList as FilterListIcon,
+  ClearAll as ClearAllIcon,
   Close as CloseIcon,
   Settings as SettingsIcon,
   SettingsEthernet as SettingsEthernetIcon,
@@ -349,7 +349,9 @@ export default function AlmacenDigitalExpedientes(props) {
           setShowComponent(decodedToken.menuTemporal.showComponent);
           setTittleTableComponent(decodedToken.menuTemporal.tableTittle);
           setIdSubmenu(decodedToken.menuTemporal.idSubmenu);
-          setPage(decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0);
+          setPage(
+            decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0
+          );
         } catch (err) {
           localStorage.removeItem("menuTemporal");
         }
@@ -392,7 +394,7 @@ export default function AlmacenDigitalExpedientes(props) {
                         pwd: userPassword,
                         rfc: empresaRFC,
                         idsubmenu: content.submenu.idsubmenu,
-                        page: 0
+                        page: 0,
                       },
                     });
                     //}
@@ -547,7 +549,13 @@ function TablaADE(props) {
       localStorage.getItem("menuTemporal"),
       "mysecretpassword"
     );
-    setPage(busquedaFiltro.trim() !== "" ? 0 : decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0);
+    setPage(
+      busquedaFiltro.trim() !== ""
+        ? 0
+        : decodedToken.menuTemporal.page
+        ? decodedToken.menuTemporal.page
+        : 0
+    );
   }, [busquedaFiltro, setRows, setPage]);
 
   useEffect(() => {
@@ -646,7 +654,7 @@ function TablaADE(props) {
           showComponent: 1,
           idAlmacenDigital: idAlmacenDigital,
           idSubmenu: idSubmenu,
-          page: newPage
+          page: newPage,
         },
       },
       "mysecretpassword"
@@ -753,9 +761,15 @@ function TablaADE(props) {
               md={2}
               style={{ alignSelf: "flex-end", textAlign: "center" }}
             >
-              <Tooltip title="Filtro">
-                <IconButton aria-label="filtro" style={{ float: "right" }}>
-                  <FilterListIcon style={{ color: "black" }} />
+              <Tooltip title="Limpiar Filtro">
+                <IconButton
+                  aria-label="filtro"
+                  style={{ float: "right" }}
+                  onClick={() => {
+                    setBusquedaFiltro("");
+                  }}
+                >
+                  <ClearAllIcon style={{ color: "black" }} />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Nuevo">
@@ -809,12 +823,7 @@ function TablaADE(props) {
                     const labelId = `enhanced-table-checkbox-${index}`;
 
                     return (
-                      <TableRow
-                        hover
-                        role="checkbox"
-                        tabIndex={-1}
-                        key={index}
-                      >
+                      <TableRow hover role="checkbox" tabIndex={-1} key={index}>
                         <TableCell padding="checkbox" />
                         <TableCell component="th" id={labelId} scope="row">
                           {row.fecha}
@@ -836,7 +845,7 @@ function TablaADE(props) {
                   })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6}>
                     <Typography variant="subtitle1">
                       <ErrorIcon
                         style={{ color: "red", verticalAlign: "sub" }}
@@ -1210,11 +1219,22 @@ function VerDocumentos(props) {
               {archivo.documento}
             </Link>
           </TableCell>
-          <TableCell align="right">{`${
-            archivo.conceptoadw !== null ? archivo.conceptoadw : "Sin Concepto"
-          } - ${archivo.folioadw !== null ? archivo.folioadw : "Sin Folio"} - ${
-            archivo.serieadw !== null ? archivo.serieadw : "Sin Serie"
-          }`}</TableCell>
+          <TableCell align="right">
+            {idSubmenu === 31 ||
+            idSubmenu === 32 ||
+            idSubmenu === 37 ||
+            idSubmenu === 67
+              ? archivo.conceptoadw
+              : `${
+                  archivo.conceptoadw !== null
+                    ? archivo.conceptoadw
+                    : "Sin Concepto"
+                } - ${
+                  archivo.folioadw !== null ? archivo.folioadw : "Sin Folio"
+                } - ${
+                  archivo.serieadw !== null ? archivo.serieadw : "Sin Serie"
+                }`}
+          </TableCell>
           <TableCell align="right">{archivo.agente}</TableCell>
           <TableCell align="right">
             {archivo.fechaprocesado !== null

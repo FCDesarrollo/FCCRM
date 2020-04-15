@@ -42,7 +42,7 @@ import {
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import {
   AddCircle as AddCircleIcon,
-  FilterList as FilterListIcon,
+  ClearAll as ClearAllIcon,
   ArrowBack as ArrowBackIcon,
   Close as CloseIcon,
   Settings as SettingsIcon,
@@ -301,6 +301,7 @@ export default function AutorizacionesGastos(props) {
   const sucursales = empresaDatos.sucursales;
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
+  const [busquedaFiltro, setBusquedaFiltro] = useState("");
   const [permisosSubmenu, setPermisosSubmenu] = useState(-1);
   const [showComponent, setShowComponent] = useState(0);
   const [tittleTableComponent, setTittleTableComponent] = useState("");
@@ -370,7 +371,14 @@ export default function AutorizacionesGastos(props) {
                 : "gastos"
               : "requerimientos"
           );
-          setPage(decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0);
+          setPage(
+            decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0
+          );
+          setBusquedaFiltro(
+            decodedToken.menuTemporal.busquedaFiltro
+              ? decodedToken.menuTemporal.busquedaFiltro
+              : ""
+          );
         } catch (err) {
           localStorage.removeItem("menuTemporal");
         }
@@ -581,7 +589,8 @@ export default function AutorizacionesGastos(props) {
                           idMenu: content.submenu.idmenu,
                           idSubmenu: content.submenu.idsubmenu,
                           estatusRequerimiento: 1,
-                          page: 0
+                          page: 0,
+                          busquedaFiltro: "",
                         },
                       },
                       "mysecretpassword"
@@ -604,6 +613,8 @@ export default function AutorizacionesGastos(props) {
             setRows={setRows}
             page={page}
             setPage={setPage}
+            busquedaFiltro={busquedaFiltro}
+            setBusquedaFiltro={setBusquedaFiltro}
             tittle={tittleTableComponent}
             setShowComponent={setShowComponent}
             setLoading={setLoading}
@@ -625,6 +636,7 @@ export default function AutorizacionesGastos(props) {
           <FormularioAYG
             tittle={tittleTableComponent}
             page={page}
+            busquedaFiltro={busquedaFiltro}
             setShowComponent={setShowComponent}
             sucursales={sucursales}
             setLoading={setLoading}
@@ -656,6 +668,8 @@ function TablaAYG(props) {
   const setRows = props.setRows;
   const page = props.page;
   const setPage = props.setPage;
+  const busquedaFiltro = props.busquedaFiltro;
+  const setBusquedaFiltro = props.setBusquedaFiltro;
   const tableTittle = props.tittle;
   const setShowComponent = props.setShowComponent;
   const setLoading = props.setLoading;
@@ -683,8 +697,9 @@ function TablaAYG(props) {
   //const [page, setPage] = useState(0);
 
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  //const [validarFiltro, setValidarFiltro] = useState(0);
   //const [filterRows, setFilterRows] = useState([]);
-  const [busquedaFiltro, setBusquedaFiltro] = useState("");
+  //const [busquedaFiltro, setBusquedaFiltro] = useState("");
   const [
     {
       data: eliminaRequerimientoData,
@@ -701,6 +716,8 @@ function TablaAYG(props) {
       manual: true,
     }
   );
+
+  useEffect(() => {}, []);
 
   useEffect(() => {
     function getFilterRows() {
@@ -732,14 +749,85 @@ function TablaAYG(props) {
       }
       return dataFilter;
     }
-
-    setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
+    //aqui
     const decodedToken = jwt.verify(
       localStorage.getItem("menuTemporal"),
       "mysecretpassword"
     );
-    setPage(busquedaFiltro.trim() !== "" ? 0 : decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0);
-  }, [busquedaFiltro, setRows, setPage]);
+    setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
+    setPage(
+      rows.length < rowsPerPage
+        ? 0
+        : decodedToken.menuTemporal.page
+        ? decodedToken.menuTemporal.page
+        : 0
+    );
+    const token = jwt.sign(
+      {
+        menuTemporal: {
+          tableTittle: tableTittle,
+          showComponent: 1,
+          idModulo: idModulo,
+          idMenu: idMenu,
+          idSubmenu: idSubmenu,
+          accionAG: 0,
+          idRequerimiento: 0,
+          estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+          page:
+            rows.length < rowsPerPage && rows.length !== 0
+              ? 0
+              : decodedToken.menuTemporal.page
+              ? decodedToken.menuTemporal.page
+              : 0,
+          busquedaFiltro: busquedaFiltro,
+        },
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("menuTemporal", token);
+  }, [
+    busquedaFiltro,
+    setRows,
+    rows.length,
+    rowsPerPage,
+    page,
+    setPage,
+    idMenu,
+    idModulo,
+    idSubmenu,
+    radioTipo,
+    tableTittle,
+  ]);
+
+  /* useEffect(() => {
+    const decodedToken = jwt.verify(
+      localStorage.getItem("menuTemporal"),
+      "mysecretpassword"
+    );
+    const token = jwt.sign(
+      {
+        menuTemporal: {
+          tableTittle: tableTittle,
+          showComponent: 1,
+          idModulo: idModulo,
+          idMenu: idMenu,
+          idSubmenu: idSubmenu,
+          accionAG: 0,
+          idRequerimiento: 0,
+          estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+          page:
+            rows.length < rowsPerPage
+              ? 0
+              : decodedToken.menuTemporal.page
+              ? decodedToken.menuTemporal.page
+              : 0,
+          busquedaFiltro: busquedaFiltro,
+        },
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("menuTemporal", token);
+  }, [busquedaFiltro]) */
 
   useEffect(() => {
     function checkData() {
@@ -797,7 +885,8 @@ function TablaAYG(props) {
           accionAG: 0,
           idRequerimiento: 0,
           estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
-          page: newPage
+          page: newPage,
+          busquedaFiltro: busquedaFiltro,
         },
       },
       "mysecretpassword"
@@ -826,7 +915,8 @@ function TablaAYG(props) {
           idMenu: idMenu,
           idSubmenu: idSubmenu,
           estatusRequerimiento: event.target.value === "requerimientos" ? 1 : 2,
-          page: 0
+          page: 0,
+          busquedaFiltro: busquedaFiltro,
         },
       },
       "mysecretpassword"
@@ -955,7 +1045,8 @@ function TablaAYG(props) {
                                 idRequerimiento: 0,
                                 estatusRequerimiento:
                                   radioTipo !== "gastos" ? 1 : 2,
-                                page: page
+                                page: page,
+                                busquedaFiltro: busquedaFiltro,
                               },
                             },
                             "mysecretpassword"
@@ -973,9 +1064,14 @@ function TablaAYG(props) {
                   </Tooltip>
                 </Grid>
                 <Grid item style={{ alignSelf: "flex-end" }}>
-                  <Tooltip title="Filtro">
-                    <IconButton aria-label="filtro">
-                      <FilterListIcon style={{ color: "black" }} />
+                  <Tooltip title="Limpiar Filtro">
+                    <IconButton
+                      aria-label="filtro"
+                      onClick={() => {
+                        setBusquedaFiltro("");
+                      }}
+                    >
+                      <ClearAllIcon style={{ color: "black" }} />
                     </IconButton>
                   </Tooltip>
                 </Grid>
@@ -1095,7 +1191,8 @@ function TablaAYG(props) {
                                           idRequerimiento: row.id,
                                           estatusRequerimiento:
                                             radioTipo !== "gastos" ? 1 : 2,
-                                          page: page
+                                          page: page,
+                                          busquedaFiltro: busquedaFiltro,
                                         },
                                       },
                                       "mysecretpassword"
@@ -1165,7 +1262,7 @@ function TablaAYG(props) {
           }}
           count={rows.length}
           rowsPerPage={rowsPerPage}
-          page={rows.length > 0 ? page : 0}
+          page={rows.length > 0 && rows.length >= rowsPerPage ? page : 0}//aqui
           onChangePage={handleChangePage}
           onChangeRowsPerPage={handleChangeRowsPerPage}
         />
@@ -1200,6 +1297,7 @@ function FormularioAYG(props) {
   const [proveedores, setProveedores] = useState([]);
   const tableTittle = props.tittle;
   const page = props.page;
+  const busquedaFiltro = props.busquedaFiltro;
   const setShowComponent = props.setShowComponent;
   const usuarioDatos = props.usuarioDatos;
   const idUsuarioLogueado = usuarioDatos.idusuario;
@@ -1694,7 +1792,8 @@ function FormularioAYG(props) {
                   accionAG: 0,
                   idRequerimiento: 0,
                   estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
-                  page: page
+                  page: page,
+                  busquedaFiltro: busquedaFiltro,
                 },
               },
               "mysecretpassword"
@@ -1717,7 +1816,8 @@ function FormularioAYG(props) {
     setShowComponent,
     tableTittle,
     radioTipo,
-    page
+    page,
+    busquedaFiltro,
   ]);
 
   useEffect(() => {
@@ -1863,7 +1963,8 @@ function FormularioAYG(props) {
                     accionAG: 0,
                     idRequerimiento: 0,
                     estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
-                    page: page
+                    page: page,
+                    busquedaFiltro: busquedaFiltro,
                   },
                 },
                 "mysecretpassword"
@@ -1966,7 +2067,8 @@ function FormularioAYG(props) {
                 accionAG: 0,
                 idRequerimiento: 0,
                 estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
-                page: page
+                page: page,
+                busquedaFiltro: busquedaFiltro,
               },
             },
             "mysecretpassword"
@@ -1989,6 +2091,7 @@ function FormularioAYG(props) {
     tableTittle,
     radioTipo,
     page,
+    busquedaFiltro,
     RADatos.importe,
     limiteImporteGasto,
     RADatos.concepto,
@@ -2296,7 +2399,8 @@ function FormularioAYG(props) {
                 accionAG: 0,
                 idRequerimiento: 0,
                 estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
-                page: page
+                page: page,
+                busquedaFiltro: busquedaFiltro,
               },
             },
             "mysecretpassword"
@@ -2318,7 +2422,8 @@ function FormularioAYG(props) {
     setShowComponent,
     tableTittle,
     radioTipo,
-    page
+    page,
+    busquedaFiltro,
   ]);
 
   useEffect(() => {
@@ -2416,7 +2521,8 @@ function FormularioAYG(props) {
             idMenu: idMenu,
             idSubmenu: idSubmenu,
             estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
-            page: page
+            page: page,
+            busquedaFiltro: busquedaFiltro,
           },
         },
         "mysecretpassword"
@@ -3507,7 +3613,8 @@ function FormularioAYG(props) {
                       accionAG: 0,
                       idRequerimiento: 0,
                       estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
-                      page: page
+                      page: page,
+                      busquedaFiltro: busquedaFiltro,
                     },
                   },
                   "mysecretpassword"
@@ -3564,7 +3671,8 @@ function FormularioAYG(props) {
                       accionAG: 1,
                       idRequerimiento: 0,
                       estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
-                      page: page
+                      page: page,
+                      busquedaFiltro: busquedaFiltro,
                     },
                   },
                   "mysecretpassword"
@@ -4346,7 +4454,7 @@ function FormularioAYG(props) {
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="subtitle1">
-                            <strong>Responsable: </strong>
+                            <strong>Usuario: </strong>
                             {requerimiento[0].usuario}
                           </Typography>
                         </Grid>

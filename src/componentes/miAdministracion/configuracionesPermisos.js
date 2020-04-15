@@ -114,6 +114,7 @@ function StyledTreeItem(props) {
     labelIcon: LabelIcon,
     labelInfo,
     conceptos,
+    limite,
     itemPadre,
     color,
     bgColor,
@@ -156,7 +157,7 @@ function StyledTreeItem(props) {
           >
             {labelText}{" "}
             <span style={{ fontSize: "12px" }}>
-              {itemPadre ? getConceptosUsuario() : null}
+              {itemPadre ? getConceptosUsuario() : limite}
             </span>
           </Typography>
           <Typography variant="caption" color="inherit">
@@ -440,12 +441,13 @@ export default function ConfiguracionesPermisos(props) {
             "El límite de gasto se ha guardado",
             "success"
           );
+          executepermisosAutorizaciones();
         }
       }
     }
 
     checkData();
-  }, [guardaLimiteGastosData]);
+  }, [guardaLimiteGastosData, executepermisosAutorizaciones]);
 
   useEffect(() => {
     function checkData() {
@@ -620,7 +622,8 @@ export default function ConfiguracionesPermisos(props) {
         <StyledTreeItem
           key={index}
           nodeId={`0${index}`}
-          labelText={concepto.nombre_concepto}
+          labelText={`${concepto.nombre_concepto}`}
+          limite={`Límite: ${concepto.limite === 0 || concepto.limite === null ? 'Ninguno' : '$'+concepto.limite}`}
           labelIcon={AccountBalanceWalletIcon}
           labelInfo={
             <Fragment>

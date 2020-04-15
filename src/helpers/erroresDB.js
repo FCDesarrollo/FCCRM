@@ -68,6 +68,8 @@ export const dataBaseErrores = error => {
       return "No se pudieron crear las carpetas.";
     case 47:
       return "El usuario ya esta vinculado a esta empresa.";
+    case 48:
+      return "Ya existe un registro con ese concepto, folio y serie.";
     case -1:
       return "El teléfono ya existe.";
     case -2:
