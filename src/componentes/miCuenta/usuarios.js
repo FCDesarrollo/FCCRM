@@ -277,10 +277,18 @@ export default function Usuarios(props) {
               <CrearUsuario
                 setShowComponent={setShowComponent}
                 executeListaUsuariosEmpresa={executeListaUsuariosEmpresa}
+                usuario={usuario}
+                idUsuario={idUsuario}
+                pwd={pwd}
+                rfc={rfc}
+                idEmpresa={idEmpresa}
+                idSubmenu={idSubmenuActual}
+                setLoading={setLoading}
               />
             ) : showComponent === 3 ? (
               <VincularUsuario
                 setShowComponent={setShowComponent}
+                executeListaUsuariosEmpresa={executeListaUsuariosEmpresa}
                 usuario={usuario}
                 idUsuario={idUsuario}
                 pwd={pwd}
@@ -1281,6 +1289,148 @@ function EditarPermisosUsuario(props) {
 function CrearUsuario(props) {
   const classes = useStyles();
   const setShowComponent = props.setShowComponent;
+  const executeListaUsuariosEmpresa = props.executeListaUsuariosEmpresa;
+  const idUsuario = props.idUsuario;
+  const usuario = props.usuario;
+  const pwd = props.pwd;
+  const rfc = props.rfc;
+  const idEmpresa = props.idEmpresa;
+  const idSubmenu = props.idSubmenu;
+  const setLoading = props.setLoading;
+  const [usuarioDatos, setUsuarioDatos] = useState({
+    nombre: "",
+    apellidoPaterno: "",
+    apellidoMaterno: "",
+    correo: "",
+    celular: "",
+    perfil: "0"
+  })
+  const [
+    { data: perfilesData, loading: perfilesLoading, error: perfilesError },
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/listaPerfiles`,
+      method: "GET",
+      params: {
+        usuario: usuario,
+        pwd: pwd,
+        rfc: rfc,
+        idsubmenu: idSubmenu,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+  const [
+    { data: crearNuevoUsuarioData, loading: crearNuevoUsuarioLoading, error: crearNuevoUsuarioError }, executeCrearNuevoUsuario
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/crearNuevoUsuario`,
+      method: "POST"
+    },
+    {
+      manual: true,
+    }
+  );
+
+  useEffect(() => {
+    function checkData() {
+      if (perfilesData) {
+        if (perfilesData.error !== 0) {
+          swal("Error", dataBaseErrores(perfilesData.error), "warning");
+        }
+      }
+    }
+
+    checkData();
+  }, [perfilesData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (crearNuevoUsuarioData) {
+        if (crearNuevoUsuarioData.error !== 0) {
+          swal("Error", dataBaseErrores(crearNuevoUsuarioData.error), "warning");
+        }
+        else {
+          swal("Usuario Creado", "Usuario creado con éxito", "success");
+          //executeListaUsuariosEmpresa();
+        }
+      }
+    }
+
+    checkData();
+  }, [crearNuevoUsuarioData, executeListaUsuariosEmpresa]);
+
+  if (perfilesLoading || crearNuevoUsuarioLoading) {
+    setLoading(true);
+  } else {
+    setLoading(false);
+  }
+
+  if (perfilesError || crearNuevoUsuarioError) {
+    return <ErrorQueryDB />;
+  }
+
+  const getPerfiles = () => {
+    return perfilesData.perfiles.map((perfil, index) => {
+      return (
+        <option key={index} value={perfil.idperfil}>
+          {perfil.nombre}
+        </option>
+      );
+    });
+  };
+
+  const agregarNuevoUsuario = () => {
+    const { nombre, apellidoPaterno, apellidoMaterno, correo, celular, perfil } = usuarioDatos;
+    if(nombre.trim() === "") {
+      swal("Error", "Ingrese un nombre", "warning");
+    }
+    else if(apellidoPaterno.trim() === "") {
+      swal("Error", "Ingrese un apellido paterno", "warning");
+    }
+    else if(apellidoMaterno.trim() === "") {
+      swal("Error", "Ingrese un apellido materno", "warning");
+    }
+    else if(correo.trim() === "") {
+      swal("Error", "Ingrese un correo", "warning");
+    }
+    else if(!validarCorreo(correo.trim())) {
+      swal("Error", "Ingrese un correo valido", "warning");
+    }
+    else if(celular.trim() === "") {
+      swal("Error", "Ingrese un celular", "warning");
+    }
+    else if(perfil === "0") {
+      swal("Error", "Seleccione un perfil", "warning");
+    }
+    else {
+      const identificador = Math.floor(Math.random() * 1000000);
+      const linkConfirmacion = `http://${window.location.host}/#/?ruta=cambiarContra&usuario=`;
+      executeCrearNuevoUsuario({
+        data: {
+          usuario: usuario,
+          pwd: pwd,
+          rfc: rfc,
+          idsubmenu: idSubmenu,
+          correo: correo,
+          celular: celular,
+          nombre: nombre,
+          apellidop: apellidoPaterno,
+          apellidom: apellidoMaterno,
+          perfil: parseInt(perfil),
+          password: '12345678',
+          identificador: identificador,
+          idempresa: idEmpresa,
+          fecha_vinculacion: moment().format("YYYY-MM-DD"),
+          idusuario_vinculador: idUsuario,
+          linkconfirmacion: linkConfirmacion
+        }
+      });
+    }
+  }
+
   return (
     <Grid container justify="center" spacing={3}>
       <Grid item xs={12}>
@@ -1306,11 +1456,19 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
+          value={usuarioDatos.nombre}
+          inputProps={{
+            maxLength: 50
+          }}
           onKeyPress={(e) => {
-            keyValidation(e, 2);
+            keyValidation(e, 1);
           }}
           onChange={(e) => {
-            pasteValidation(e, 2);
+            pasteValidation(e, 1);
+            setUsuarioDatos({ 
+              ...usuarioDatos,
+              nombre: e.target.value
+            });
           }}
         />
       </Grid>
@@ -1322,11 +1480,19 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
+          value={usuarioDatos.apellidoPaterno}
+          inputProps={{
+            maxLength: 50
+          }}
           onKeyPress={(e) => {
-            keyValidation(e, 2);
+            keyValidation(e, 1);
           }}
           onChange={(e) => {
-            pasteValidation(e, 2);
+            pasteValidation(e, 1);
+            setUsuarioDatos({ 
+              ...usuarioDatos,
+              apellidoPaterno: e.target.value
+            });
           }}
         />
       </Grid>
@@ -1338,11 +1504,19 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
+          value={usuarioDatos.apellidoMaterno}
+          inputProps={{
+            maxLength: 50
+          }}
           onKeyPress={(e) => {
-            keyValidation(e, 2);
+            keyValidation(e, 1);
           }}
           onChange={(e) => {
-            pasteValidation(e, 2);
+            pasteValidation(e, 1);
+            setUsuarioDatos({ 
+              ...usuarioDatos,
+              apellidoMaterno: e.target.value
+            });
           }}
         />
       </Grid>
@@ -1354,11 +1528,19 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
+          value={usuarioDatos.correo}
+          inputProps={{
+            maxLength: 70
+          }}
           onKeyPress={(e) => {
-            keyValidation(e, 2);
+            keyValidation(e, 4);
           }}
           onChange={(e) => {
-            pasteValidation(e, 2);
+            pasteValidation(e, 4);
+            setUsuarioDatos({ 
+              ...usuarioDatos,
+              correo: e.target.value
+            });
           }}
         />
       </Grid>
@@ -1370,11 +1552,19 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
+          value={usuarioDatos.celular}
+          inputProps={{
+            maxLength: 20
+          }}
           onKeyPress={(e) => {
             keyValidation(e, 2);
           }}
           onChange={(e) => {
             pasteValidation(e, 2);
+            setUsuarioDatos({ 
+              ...usuarioDatos,
+              celular: e.target.value
+            });
           }}
         />
       </Grid>
@@ -1386,18 +1576,32 @@ function CrearUsuario(props) {
           variant="outlined"
           type="text"
           margin="normal"
-          onKeyPress={(e) => {
-            keyValidation(e, 2);
+          value={usuarioDatos.perfil}
+          select
+          SelectProps={{
+            native: true,
+          }}
+          InputLabelProps={{
+            shrink: true,
           }}
           onChange={(e) => {
-            pasteValidation(e, 2);
+            setUsuarioDatos({ 
+              ...usuarioDatos,
+              perfil: e.target.value
+            });
           }}
-        />
+        >
+          <option value="0">Selecciona un perfil</option>
+          {perfilesData ? getPerfiles() : null}
+        </TextField>
       </Grid>
       <Grid item xs={12}>
         <Button
           variant="contained"
-          style={{ background: "#17A2B8", color: "#FFFFFF", float: "right" }}
+          style={{ background: "#17A2B8", color: "#FFFFFF", float: "right", marginBottom: "10px" }}
+          onClick={() => {
+            agregarNuevoUsuario();
+          }}
         >
           Agregar Usuario
         </Button>
@@ -1409,6 +1613,7 @@ function CrearUsuario(props) {
 function VincularUsuario(props) {
   const classes = useStyles();
   const setShowComponent = props.setShowComponent;
+  const executeListaUsuariosEmpresa = props.executeListaUsuariosEmpresa;
   const idUsuario = props.idUsuario;
   const usuario = props.usuario;
   const pwd = props.pwd;
@@ -1467,12 +1672,13 @@ function VincularUsuario(props) {
         }
         else {
           swal("Usuario vinculado", "Usuario vinculado con éxito", "success");
+          executeListaUsuariosEmpresa();
         }
       }
     }
 
     checkData();
-  }, [vincularUsuarioData]);
+  }, [vincularUsuarioData, executeListaUsuariosEmpresa]);
 
   if (perfilesLoading || vincularUsuarioLoading) {
     setLoading(true);

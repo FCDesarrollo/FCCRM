@@ -280,6 +280,7 @@ export default function Header(props) {
   const urlIdSubmenu = getUrlVariable("idsubmenu");
   const urlIdDocumento = getUrlVariable("iddocumento");
   const urlTipoDocumento = getUrlVariable("tipo");
+  const idUsuarioRegistrado = getUrlVariable("usuario");
   const classes = useStyles();
   const theme = useTheme();
   const fullScreenDialog = useMediaQuery(theme.breakpoints.down("xs"));
@@ -637,6 +638,19 @@ export default function Header(props) {
         </Typography>
       );
     }
+  }
+
+  if(urlRuta !== false && urlRuta === "cambiarContra") {
+    const token = jwt.sign(
+      {
+        usuarioRegistrado: {
+          idUsuarioRegistrado: idUsuarioRegistrado
+        }
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("usuarioRegistrado", token);
+    return <Redirect to={`/${urlRuta}`} />;
   }
 
   if (

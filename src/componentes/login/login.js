@@ -52,6 +52,7 @@ export default function Login() {
   const [passwordState, setPasswordState] = useState("");
   const [redirect, setRedirect] = useState(false);
   const [disabledButton, setDisabledButton] = useState(false);
+  const [redirectCodigoValidacion, setRedirectCodigoValidacion] = useState(false);
 
   if(localStorage.getItem("token")) {
     if(!redirect) {
@@ -81,6 +82,18 @@ export default function Login() {
             swal("Error", dataBaseErrores(response.data.error), "error");
             setDisabledButton(false);
           }
+          else if(response.data.usuario[0].tipo === -1) {
+            swal("Error", "Usuario y/o contraseña incorrecta", "error");
+            setDisabledButton(false);
+          }
+          else if(response.data.usuario[0].tipo === 0) {
+            const usuarioToken = jwt.sign(
+              { usuario: emailState.trim() },
+              "mysecretpassword"
+            );
+            localStorage.setItem("usuarioToken", usuarioToken);
+            setRedirectCodigoValidacion(true);
+          }
           else {
             const token = jwt.sign(
               { userData: response.data.usuario[0] },
@@ -99,7 +112,9 @@ export default function Login() {
     }
   };
 
-  return ( !redirect ?
+  return ( redirectCodigoValidacion ? (
+    <Redirect to="/verificarCodigo" />
+  ) : !redirect ?
     <Grid container justify="center" className={classes.container}>
       <Grid item md={4}>
         <Card className={classes.root}>

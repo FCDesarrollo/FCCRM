@@ -9,6 +9,7 @@ import Login from "./componentes/login/login";
 import Registrate from "./componentes/login/registrate";
 import VerificarCodigo from "./componentes/login/verificarCodigo";
 import ReenviarCodigoVerificacion from "./componentes/login/reenviarCodigoVerificacion";
+import CambiarContra from "./componentes/login/cambiarContra";
 import Empresas from "./componentes/empresas/empresas";
 import AgregarEmpresa from "./componentes/empresas/agregarEmpresa";
 import VincularEmpresa from "./componentes/empresas/vincularEmpresa";
@@ -54,6 +55,9 @@ function App() {
         </Route>
         <Route exact path="/reenviarCodigoVerificacion">
           <ReenviarCodigoVerificacion />
+        </Route>
+        <Route exact path="/cambiarContra">
+          <CambiarContra />
         </Route>
         <Route exact path="/empresas">
           <Empresas />
