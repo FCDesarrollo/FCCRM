@@ -25,7 +25,8 @@ import {
   Close as CloseIcon,
   Settings as SettingsIcon,
   Edit as EditIcon,
-  Attachment as AttachmentIcon,
+  Link as LinkIcon,
+  LinkOff as LinkOffIcon,
   Delete as DeleteIcon,
   Error as ErrorIcon,
   ArrowBack as ArrowBackIcon,
@@ -78,6 +79,7 @@ export default function Usuarios(props) {
   const usuarioDatos = props.usuarioDatos;
   const idUsuario = usuarioDatos.idusuario;
   const empresaDatos = props.empresaDatos;
+  const nombreEmpresa = empresaDatos.nombreempresa;
   const idEmpresa = empresaDatos.idempresa;
   const usuario = usuarioDatos.correo;
   const pwd = usuarioDatos.password;
@@ -270,8 +272,13 @@ export default function Usuarios(props) {
                 permisosSubmenu={permisosSubmenu}
                 listaUsuariosEmpresaData={listaUsuariosEmpresaData}
                 setShowComponent={setShowComponent}
+                executeListaUsuariosEmpresa={executeListaUsuariosEmpresa}
                 setIdUsuarioEditar={setIdUsuarioEditar}
                 idSubmenuActual={idSubmenuActual}
+                usuario={usuario}
+                pwd={pwd}
+                rfc={rfc}
+                setLoading={setLoading}
               />
             ) : showComponent === 2 ? (
               <CrearUsuario
@@ -294,6 +301,7 @@ export default function Usuarios(props) {
                 pwd={pwd}
                 rfc={rfc}
                 idEmpresa={idEmpresa}
+                nombreEmpresa={nombreEmpresa}
                 idSubmenu={idSubmenuActual}
                 setLoading={setLoading}
               />
@@ -324,10 +332,89 @@ function ListaUsuarios(props) {
   const classes = useStyles();
   const permisosSubmenu = props.permisosSubmenu;
   //console.log(permisosSubmenu);
+  const executeListaUsuariosEmpresa = props.executeListaUsuariosEmpresa;
   const listaUsuariosEmpresaData = props.listaUsuariosEmpresaData;
   const setShowComponent = props.setShowComponent;
   const setIdUsuarioEditar = props.setIdUsuarioEditar;
   const idSubmenuActual = props.idSubmenuActual;
+  const usuarioActual = props.usuario;
+  const pwd = props.pwd;
+  const rfc = props.rfc;
+  const setLoading = props.setLoading;
+  const [
+    {
+      data: desvinculaUsuarioData,
+      loading: desvinculaUsuarioLoading,
+      error: desvinculaUsuarioError,
+    },
+    executeDesvinculaUsuario,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/desvinculaUsuario`,
+      method: "PUT"
+    },
+    {
+      manual: true,
+    }
+  );
+  const [
+    {
+      data: eliminaUsuarioEmpresaData,
+      loading: eliminaUsuarioEmpresaLoading,
+      error: eliminaUsuarioEmpresaError,
+    },
+    executeEliminaUsuarioEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/eliminaUsuarioEmpresa`,
+      method: "DELETE"
+    },
+    {
+      manual: true,
+    }
+  );
+
+  useEffect(() => {
+    function checkData() {
+      if (desvinculaUsuarioData) {
+        if (desvinculaUsuarioData.error !== 0) {
+          swal("Error", dataBaseErrores(desvinculaUsuarioData.error), "warning");
+        }
+        else {
+          swal(desvinculaUsuarioData.estatus === "0" ? "Usuario Desvinculado" : "Usuario Vinculado", desvinculaUsuarioData.estatus === "0" ? "Usuario desvinculado con éxito" : "Usuario vinculado con éxito", "success");
+          executeListaUsuariosEmpresa();
+        }
+      }
+    }
+
+    checkData();
+  }, [desvinculaUsuarioData, executeListaUsuariosEmpresa]);
+
+  useEffect(() => {
+    function checkData() {
+      if (eliminaUsuarioEmpresaData) {
+        if (eliminaUsuarioEmpresaData.error !== 0) {
+          swal("Error", dataBaseErrores(eliminaUsuarioEmpresaData.error), "warning");
+        }
+        else {
+          swal("Usuario Eliminado", "Usuario eliminado con éxito", "success");
+          executeListaUsuariosEmpresa();
+        }
+      }
+    }
+
+    checkData();
+  }, [eliminaUsuarioEmpresaData, executeListaUsuariosEmpresa]);
+
+  if (desvinculaUsuarioLoading || eliminaUsuarioEmpresaLoading) {
+    setLoading(true);
+    return <div></div>;
+  } else {
+    setLoading(false);
+  }
+  if (desvinculaUsuarioError || eliminaUsuarioEmpresaError) {
+    return <ErrorQueryDB />;
+  }
 
   const getListaUsuariosEmpresa = () => {
     return listaUsuariosEmpresaData.usuarios ? (
@@ -338,7 +425,7 @@ function ListaUsuarios(props) {
               {`${usuario.nombre} ${usuario.apellidop} ${usuario.apellidom}`}
             </TableCell>
             <TableCell align="right">
-              {usuario.status === 1 ? "Vinculado" : "No vinculado"}
+              {usuario.estatus_vinculacion === 1 ? "Vinculado" : "No Vinculado"}
             </TableCell>
             <TableCell align="right">
               <Tooltip title="Editar permisos">
@@ -368,18 +455,86 @@ function ListaUsuarios(props) {
                   </IconButton>
                 </span>
               </Tooltip>
-              <Tooltip title="Desvincular">
+              {usuario.estatus_vinculacion === 1 ? (
+                <Tooltip title="Desvincular">
                 <span>
-                  <IconButton disabled={permisosSubmenu < 2}>
-                    <AttachmentIcon
+                  <IconButton disabled={permisosSubmenu < 2} onClick={() => {
+                    swal({
+                      text: "¿Está seguro de desvincular este usuario?",
+                      buttons: ["No", "Sí"],
+                      dangerMode: true,
+                    }).then((value) => {
+                      if (value) {
+                        executeDesvinculaUsuario({
+                          params: {
+                            usuario: usuarioActual,
+                            pwd: pwd,
+                            rfc: rfc,
+                            idsubmenu: 21,
+                            idusuario: usuario.idusuario,
+                            estatus: 0
+                          }
+                        });
+                      }
+                    });
+                  }}>
+                    <LinkOffIcon
                       style={{ color: permisosSubmenu >= 2 ? "#ffc400" : "" }}
                     />
                   </IconButton>
                 </span>
               </Tooltip>
+              ) : (
+                <Tooltip title="Vincular">
+                <span>
+                  <IconButton disabled={permisosSubmenu < 2} onClick={() => {
+                    swal({
+                      text: "¿Está seguro de vincular este usuario?",
+                      buttons: ["No", "Sí"],
+                      dangerMode: true,
+                    }).then((value) => {
+                      if (value) {
+                        executeDesvinculaUsuario({
+                          params: {
+                            usuario: usuarioActual,
+                            pwd: pwd,
+                            rfc: rfc,
+                            idsubmenu: 21,
+                            idusuario: usuario.idusuario,
+                            estatus: 1
+                          }
+                        });
+                      }
+                    });
+                  }}>
+                    <LinkIcon
+                      style={{ color: permisosSubmenu >= 2 ? "#ffc400" : "" }}
+                    />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              )}
               <Tooltip title="Eliminar usuario">
                 <span>
-                  <IconButton disabled={permisosSubmenu !== 3}>
+                  <IconButton disabled={permisosSubmenu !== 3} onClick={() => {
+                    swal({
+                      text: "¿Está seguro de eliminar este usuario?",
+                      buttons: ["No", "Sí"],
+                      dangerMode: true,
+                    }).then((value) => {
+                      if (value) {
+                        executeEliminaUsuarioEmpresa({
+                          params: {
+                            usuario: usuarioActual,
+                            pwd: pwd,
+                            rfc: rfc,
+                            idsubmenu: 21,
+                            idusuario: usuario.idusuario
+                          }
+                        });
+                      }
+                    });
+                  }}>
                     <DeleteIcon
                       color={permisosSubmenu === 3 ? "secondary" : "inherit"}
                     />
@@ -1619,6 +1774,7 @@ function VincularUsuario(props) {
   const pwd = props.pwd;
   const rfc = props.rfc;
   const idEmpresa = props.idEmpresa;
+  const nombreEmpresa = props.nombreEmpresa;
   const idSubmenu = props.idSubmenu;
   const setLoading = props.setLoading;
   const [correo, setCorreo] = useState("");
@@ -1720,6 +1876,7 @@ function VincularUsuario(props) {
           correo: correo,
           perfil: parseInt(perfil),
           idempresa: idEmpresa,
+          nombreempresa: nombreEmpresa,
           fecha_vinculacion: moment().format("YYYY-MM-DD"),
           idusuario_vinculador: idUsuario
         }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import {
@@ -415,7 +415,7 @@ export default function AlmacenDigitalExpedientes(props) {
                           idAlmacenDigital: idAlmacenDigital,
                           idSubmenu: content.submenu.idsubmenu,
                           page: 0,
-                          busquedaFiltro: ""
+                          busquedaFiltro: "",
                         },
                       },
                       "mysecretpassword"
@@ -456,6 +456,7 @@ export default function AlmacenDigitalExpedientes(props) {
         ) : showComponent === 2 ? (
           <VerDocumentos
             setShowComponent={setShowComponent}
+            tittle={tittleTableComponent}
             userEmail={userEmail}
             userPassword={userPassword}
             empresaRFC={empresaRFC}
@@ -581,13 +582,22 @@ function TablaADE(props) {
               : decodedToken.menuTemporal.page
               ? decodedToken.menuTemporal.page
               : 0,
-          busquedaFiltro: busquedaFiltro
+          busquedaFiltro: busquedaFiltro,
         },
       },
       "mysecretpassword"
     );
     localStorage.setItem("menuTemporal", token);
-  }, [busquedaFiltro, setRows, setPage, idAlmacenDigital, idSubmenu, rows.length, rowsPerPage, tableTittle]);
+  }, [
+    busquedaFiltro,
+    setRows,
+    setPage,
+    idAlmacenDigital,
+    idSubmenu,
+    rows.length,
+    rowsPerPage,
+    tableTittle,
+  ]);
 
   useEffect(() => {
     function checkData() {
@@ -686,7 +696,7 @@ function TablaADE(props) {
           idAlmacenDigital: idAlmacenDigital,
           idSubmenu: idSubmenu,
           page: newPage,
-          busquedaFiltro: busquedaFiltro
+          busquedaFiltro: busquedaFiltro,
         },
       },
       "mysecretpassword"
@@ -1061,6 +1071,7 @@ function TablaADE(props) {
 
 function VerDocumentos(props) {
   const classes = useStyles();
+  const tittle = props.tittle;
   const userEmail = props.userEmail;
   const userPassword = props.userPassword;
   const empresaRFC = props.empresaRFC;
@@ -1256,16 +1267,18 @@ function VerDocumentos(props) {
             idSubmenu === 32 ||
             idSubmenu === 37 ||
             idSubmenu === 67
-              ? archivo.conceptoadw !== null ? archivo.conceptoadw : "Sin Concepto - Sin Folio - Sin Serie"
+              ? archivo.conceptoadw !== null
+                ? archivo.conceptoadw
+                : "Sin Modulo - Sin Documento - Sin Período De Ejercicio"
               : `${
                   archivo.conceptoadw !== null
                     ? archivo.conceptoadw
                     : "Sin Concepto"
                 } - ${
-                  archivo.folioadw !== null ? archivo.folioadw : "Sin Folio"
-                } - ${
                   archivo.serieadw !== null ? archivo.serieadw : "Sin Serie"
-                }`}
+                } - ${
+                  archivo.folioadw !== null ? archivo.folioadw : "Sin Folio"
+                } `}
           </TableCell>
           <TableCell align="right">{archivo.agente}</TableCell>
           <TableCell align="right">
@@ -1347,12 +1360,16 @@ function VerDocumentos(props) {
           </div>
         </Toolbar>
       ) : (
-        <Tooltip title="Regresar">
-          <IconButton
-            onClick={() => {
-              executeADE();
-              setShowComponent(1);
-              /* const token = jwt.sign(
+        <Fragment>
+          <Tooltip
+            title="Regresar"
+            style={{ float: "left", marginBottom: "10px" }}
+          >
+            <IconButton
+              onClick={() => {
+                executeADE();
+                setShowComponent(1);
+                /* const token = jwt.sign(
               {
                 menuTemporal: {
                   tableTittle: tableTittle,
@@ -1364,11 +1381,15 @@ function VerDocumentos(props) {
               "mysecretpassword"
             );
             localStorage.setItem("menuTemporal", token); */
-            }}
-          >
-            <ArrowBackIcon color="primary" />
-          </IconButton>
-        </Tooltip>
+              }}
+            >
+              <ArrowBackIcon color="primary" />
+            </IconButton>
+          </Tooltip>
+          <Typography variant="h6" style={{ float: "left", marginTop: "10px" }}>
+            {tittle}
+          </Typography>
+        </Fragment>
       )}
       <TableContainer component={Paper}>
         <Table className={classes.table} aria-label="simple table">
@@ -1388,7 +1409,14 @@ function VerDocumentos(props) {
                 <strong>Archivo(s)</strong>
               </TableCell>
               <TableCell align="right">
-                <strong>Concepto-Folio-Serie</strong>
+                <strong>
+                  {idSubmenu === 31 ||
+                  idSubmenu === 32 ||
+                  idSubmenu === 37 ||
+                  idSubmenu === 67
+                    ? "Modulo-Documento-Período De Ejercicio "
+                    : "Concepto-Serie-Folio"}
+                </strong>
               </TableCell>
               <TableCell align="right">
                 <strong>Agente</strong>

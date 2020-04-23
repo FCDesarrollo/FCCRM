@@ -53,6 +53,7 @@ export default function Login() {
   const [redirect, setRedirect] = useState(false);
   const [disabledButton, setDisabledButton] = useState(false);
   const [redirectCodigoValidacion, setRedirectCodigoValidacion] = useState(false);
+  localStorage.removeItem("usuarioRegistrado");
 
   if(localStorage.getItem("token")) {
     if(!redirect) {

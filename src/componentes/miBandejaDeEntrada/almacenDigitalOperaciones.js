@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import PropTypes from "prop-types";
 import {
   Card,
@@ -355,7 +355,9 @@ export default function AlmacenDigitalOperaciones(props) {
           setShowComponent(decodedToken.menuTemporal.showComponent);
           setTittleTableComponent(decodedToken.menuTemporal.tableTittle);
           setIdSubmenu(decodedToken.menuTemporal.idSubmenu);
-          setPage(decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0);
+          setPage(
+            decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0
+          );
           setBusquedaFiltro(
             decodedToken.menuTemporal.busquedaFiltro
               ? decodedToken.menuTemporal.busquedaFiltro
@@ -426,7 +428,7 @@ export default function AlmacenDigitalOperaciones(props) {
                           idAlmacenDigital: idAlmacenDigital,
                           idSubmenu: content.submenu.idsubmenu,
                           page: 0,
-                          busquedaFiltro: ""
+                          busquedaFiltro: "",
                         },
                       },
                       "mysecretpassword"
@@ -468,6 +470,7 @@ export default function AlmacenDigitalOperaciones(props) {
         ) : showComponent === 2 ? (
           <VerDocumentos
             setShowComponent={setShowComponent}
+            tittle={tittleTableComponent}
             /* page={page} */
             userEmail={userEmail}
             userPassword={userPassword}
@@ -575,7 +578,13 @@ function TablaADO(props) {
       "mysecretpassword"
     );
     setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
-    setPage(rows.length < rowsPerPage ? 0 : decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0);
+    setPage(
+      rows.length < rowsPerPage
+        ? 0
+        : decodedToken.menuTemporal.page
+        ? decodedToken.menuTemporal.page
+        : 0
+    );
     const token = jwt.sign(
       {
         menuTemporal: {
@@ -589,13 +598,22 @@ function TablaADO(props) {
               : decodedToken.menuTemporal.page
               ? decodedToken.menuTemporal.page
               : 0,
-          busquedaFiltro: busquedaFiltro
+          busquedaFiltro: busquedaFiltro,
         },
       },
       "mysecretpassword"
     );
     localStorage.setItem("menuTemporal", token);
-  }, [busquedaFiltro, setRows, setPage, idAlmacenDigital, idSubmenu, rows.length, rowsPerPage, tableTittle]);
+  }, [
+    busquedaFiltro,
+    setRows,
+    setPage,
+    idAlmacenDigital,
+    idSubmenu,
+    rows.length,
+    rowsPerPage,
+    tableTittle,
+  ]);
 
   useEffect(() => {
     function checkData() {
@@ -694,7 +712,7 @@ function TablaADO(props) {
           idAlmacenDigital: idAlmacenDigital,
           idSubmenu: idSubmenu,
           page: newPage,
-          busquedaFiltro: busquedaFiltro
+          busquedaFiltro: busquedaFiltro,
         },
       },
       "mysecretpassword"
@@ -802,9 +820,13 @@ function TablaADO(props) {
               style={{ alignSelf: "flex-end", textAlign: "center" }}
             >
               <Tooltip title="Limpiar Filtro">
-                <IconButton aria-label="filtro" style={{ float: "right" }} onClick={() => {
-                      setBusquedaFiltro("");
-                    }}>
+                <IconButton
+                  aria-label="filtro"
+                  style={{ float: "right" }}
+                  onClick={() => {
+                    setBusquedaFiltro("");
+                  }}
+                >
                   <ClearAllIcon style={{ color: "black" }} />
                 </IconButton>
               </Tooltip>
@@ -1074,6 +1096,7 @@ function TablaADO(props) {
 function VerDocumentos(props) {
   const classes = useStyles();
   //const page = props.page;
+  const tittle = props.tittle;
   const userEmail = props.userEmail;
   const userPassword = props.userPassword;
   const empresaRFC = props.empresaRFC;
@@ -1266,8 +1289,8 @@ function VerDocumentos(props) {
           </TableCell>
           <TableCell align="right">{`${
             archivo.conceptoadw !== null ? archivo.conceptoadw : "Sin Concepto"
-          } - ${archivo.folioadw !== null ? archivo.folioadw : "Sin Folio"} - ${
-            archivo.serieadw !== null ? archivo.serieadw : "Sin Serie"
+          } - ${archivo.serieadw !== null ? archivo.serieadw : "Sin Serie"} - ${
+            archivo.folioadw !== null ? archivo.folioadw : "Sin Folio"
           }`}</TableCell>
           <TableCell align="right">{archivo.agente}</TableCell>
           <TableCell align="right">
@@ -1349,12 +1372,13 @@ function VerDocumentos(props) {
           </div>
         </Toolbar>
       ) : (
-        <Tooltip title="Regresar">
-          <IconButton
-            onClick={() => {
-              executeADO();
-              setShowComponent(1);
-              /* const token = jwt.sign(
+        <Fragment>
+          <Tooltip title="Regresar" style={{float: "left", marginBottom: "10px"}}>
+            <IconButton
+              onClick={() => {
+                executeADO();
+                setShowComponent(1);
+                /* const token = jwt.sign(
               {
                 menuTemporal: {
                   tableTittle: tableTittle,
@@ -1366,11 +1390,13 @@ function VerDocumentos(props) {
               "mysecretpassword"
             );
             localStorage.setItem("menuTemporal", token); */
-            }}
-          >
-            <ArrowBackIcon color="primary" />
-          </IconButton>
-        </Tooltip>
+              }}
+            >
+              <ArrowBackIcon color="primary" />
+            </IconButton>
+          </Tooltip>
+          <Typography variant="h6" style={{float: "left", marginTop: "10px"}}>{tittle}</Typography>
+        </Fragment>
       )}
       <TableContainer component={Paper}>
         <Table className={classes.table} aria-label="simple table">
@@ -1390,7 +1416,7 @@ function VerDocumentos(props) {
                 <strong>Archivo(s)</strong>
               </TableCell>
               <TableCell align="right">
-                <strong>Concepto-Folio-Serie</strong>
+                <strong>Concepto-Serie-Folio</strong>
               </TableCell>
               <TableCell align="right">
                 <strong>Agente</strong>

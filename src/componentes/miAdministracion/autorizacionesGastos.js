@@ -579,7 +579,11 @@ export default function AutorizacionesGastos(props) {
                     setIdMenu(content.submenu.idmenu);
                     setIdSubmenu(content.submenu.idsubmenu);
                     setEstatusRequerimiento(1);
-                    setRadioTipo("requerimientos");
+                    setRadioTipo(
+                      content.submenu.idsubmenu !== 44
+                        ? "requerimientos"
+                        : "gastos"
+                    );
                     const token = jwt.sign(
                       {
                         menuTemporal: {
@@ -1215,7 +1219,9 @@ function TablaAYG(props) {
                       <ErrorIcon
                         style={{ color: "red", verticalAlign: "sub" }}
                       />
-                      No hay requerimientos disponibles
+                      {idSubmenu === 44 && radioTipo === "gastos"
+                        ? "No hay gastos disponibles"
+                        : "No hay requerimientos disponibles"}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -1232,7 +1238,7 @@ function TablaAYG(props) {
           }}
           count={rows.length}
           rowsPerPage={rowsPerPage}
-          page={rows.length > 0 && rows.length >= rowsPerPage ? page : 0}//aqui
+          page={rows.length > 0 && rows.length >= rowsPerPage ? page : 0} //aqui
           onChangePage={handleChangePage}
           onChangeRowsPerPage={handleChangeRowsPerPage}
         />
@@ -1363,6 +1369,7 @@ function FormularioAYG(props) {
   );
   const [checkNoRFCEstatus, setCheckNoRFCEstatus] = useState(false);
   const [checkNoRFC, setCheckNoRFC] = useState(false);
+  const [siguienteFolio, setSiguienteFolio] = useState("1");
   const [
     {
       data: cargaConceptosData,
@@ -1648,6 +1655,73 @@ function FormularioAYG(props) {
       manual: true
     } */
   );
+  const [
+    {
+      data: traerRequerimientoPorSeriesData,
+      loading: traerRequerimientoPorSerieLoading,
+      error: traerRequerimientoPorSerieError,
+    },
+    executeTraerRequerimientoPorSerie,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/traerRequerimientoPorSerie`,
+      method: "GET",
+      params: {
+        usuario: usuario,
+        pwd: usuarioPassword,
+        rfc: rfcEmpresa,
+        idsubmenu: idSubmenu,
+        serie: RADatos.serie,
+      },
+    },
+    {
+      manual: true,
+      useCache: false,
+    }
+  );
+
+  useEffect(() => {
+    if (RADatos.serie.trim() !== "" && RADatos.folio.trim() === "") {
+      executeTraerRequerimientoPorSerie();
+    }
+  }, [RADatos.serie, RADatos.folio, executeTraerRequerimientoPorSerie]);
+
+  useEffect(() => {
+    function checkData() {
+      if (traerRequerimientoPorSeriesData) {
+        if (traerRequerimientoPorSeriesData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(traerRequerimientoPorSeriesData.error)}
+            </Typography>
+          );
+        } else {
+          //console.log(traerRequerimientoPorSeriesData.requerimiento);
+          setSiguienteFolio(
+            traerRequerimientoPorSeriesData.requerimiento.length !== 0
+              ? parseInt(
+                  traerRequerimientoPorSeriesData.requerimiento[0].folio
+                ) + 1
+              : 1
+          );
+          /* setRADatos(R => ({
+            ...R,
+            folio: traerRequerimientoPorSeriesData.requerimiento.length !== 0
+            ? parseInt(
+                traerRequerimientoPorSeriesData.requerimiento[0].folio
+              ) + 1
+            : 1
+          })); */
+          /* setFolioSiguiente(traerRequerimientoPorSeriesData.requerimiento.length !== 0
+            ? parseInt(
+                traerRequerimientoPorSeriesData.requerimiento[0].folio
+              ) + 1
+            : 1) */
+        }
+      }
+    }
+    checkData();
+  }, [traerRequerimientoPorSeriesData]);
 
   useEffect(() => {
     if (
@@ -2456,7 +2530,8 @@ function FormularioAYG(props) {
     creaGastoLoading ||
     getTotalImporteLoading ||
     traerLimiteGastosUsuarioLoading ||
-    traerProveedoresLoading
+    traerProveedoresLoading ||
+    traerRequerimientoPorSerieLoading
   ) {
     setLoading(true);
     return <div></div>;
@@ -2478,7 +2553,8 @@ function FormularioAYG(props) {
     creaGastoError ||
     getTotalImporteError ||
     traerLimiteGastosUsuarioError ||
-    traerProveedoresError
+    traerProveedoresError ||
+    traerRequerimientoPorSerieError
   ) {
     if (datosRequerimientoError) {
       setShowComponent(1);
@@ -3842,7 +3918,7 @@ function FormularioAYG(props) {
               className={classes.textFields}
               id="folio"
               variant="outlined"
-              label="Folio"
+              label={accionAG !== 1 ? `Folio` : `Folio (Recomendado ${siguienteFolio})`}
               type="text"
               inputProps={{
                 maxLength: 30,

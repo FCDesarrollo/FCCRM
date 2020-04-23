@@ -62,6 +62,11 @@ export default function CambiarContra() {
     } catch (err) {
       localStorage.removeItem("usuarioRegistrado");
     }
+  } else {
+    localStorage.removeItem("usuarioRegistrado");
+    if (!redirect) {
+      setRedirect(true);
+    }
   }
 
   const [
@@ -78,7 +83,7 @@ export default function CambiarContra() {
     },
     {
       useCache: false,
-      manual: true
+      manual: true,
     }
   );
   const [
@@ -94,34 +99,38 @@ export default function CambiarContra() {
       method: "PUT",
     },
     {
-      manual: true
+      manual: true,
     }
   );
 
   useEffect(() => {
-      if(idUsuarioRegistrado !== -1) {
-        executeTraerNuevoUsuarioRegistrado({
-            params: {
-                idusuario: idUsuarioRegistrado
-            }
-        });
-      }
+    if (idUsuarioRegistrado !== -1) {
+      executeTraerNuevoUsuarioRegistrado({
+        params: {
+          idusuario: idUsuarioRegistrado,
+        },
+      });
+    }
   }, [idUsuarioRegistrado, executeTraerNuevoUsuarioRegistrado]);
 
   useEffect(() => {
     function checkData() {
       if (traerNuevoUsuarioRegistradoData) {
         if (traerNuevoUsuarioRegistradoData.error !== 0) {
-            swal("Error", dataBaseErrores(traerNuevoUsuarioRegistradoData.error), "warning");
-        }
-        else {
-            if(traerNuevoUsuarioRegistradoData.usuario[0].tipo !== -1) {
-                localStorage.removeItem("usuarioRegistrado");
-                setRedirect(true);
-            }
-            else {
-                setCodigoUsuario(traerNuevoUsuarioRegistradoData.usuario[0].identificador);
-            }
+          swal(
+            "Error",
+            dataBaseErrores(traerNuevoUsuarioRegistradoData.error),
+            "warning"
+          );
+        } else {
+          if (traerNuevoUsuarioRegistradoData.usuario[0].tipo !== -1) {
+            localStorage.removeItem("usuarioRegistrado");
+            setRedirect(true);
+          } else {
+            setCodigoUsuario(
+              traerNuevoUsuarioRegistradoData.usuario[0].identificador
+            );
+          }
         }
       }
     }
@@ -133,12 +142,19 @@ export default function CambiarContra() {
     function checkData() {
       if (cambiarContraNuevoUsuarioRegistradoData) {
         if (cambiarContraNuevoUsuarioRegistradoData.error !== 0) {
-            swal("Error",dataBaseErrores(cambiarContraNuevoUsuarioRegistradoData.error), "warning");
-        }
-        else {
-            swal("Contraseña Cambiada", "La contraseña se ha cambiado con éxito", "success");
-            localStorage.removeItem("usuarioRegistrado");
-            setRedirect(true);
+          swal(
+            "Error",
+            dataBaseErrores(cambiarContraNuevoUsuarioRegistradoData.error),
+            "warning"
+          );
+        } else {
+          swal(
+            "Contraseña Cambiada",
+            "La contraseña se ha cambiado con éxito",
+            "success"
+          );
+          localStorage.removeItem("usuarioRegistrado");
+          setRedirect(true);
         }
       }
     }
@@ -146,37 +162,38 @@ export default function CambiarContra() {
     checkData();
   }, [cambiarContraNuevoUsuarioRegistradoData]);
 
-  if (traerNuevoUsuarioRegistradoLoading || cambiarContraNuevoUsuarioRegistradoLoading) {
+  if (
+    traerNuevoUsuarioRegistradoLoading ||
+    cambiarContraNuevoUsuarioRegistradoLoading
+  ) {
     return <LoadingComponent />;
   }
-  if (traerNuevoUsuarioRegistradoError || cambiarContraNuevoUsuarioRegistradoError) {
+  if (
+    traerNuevoUsuarioRegistradoError ||
+    cambiarContraNuevoUsuarioRegistradoError
+  ) {
     return <ErrorQueryDB />;
   }
 
   const cambiarContra = () => {
-    if(contra.trim() === "") {
-        swal("Error", "Ingrese una contraseña", "warning");
-      }
-      else if(repiteContra.trim() === "") {
-        swal("Error", "Vuelva a ingresar la contraseña", "warning");
-      }
-      else if(repiteContra.trim() !== contra.trim()) {
-        swal("Error", "La contraseñas no coinciden", "warning");
-      }
-      else if(codigo.trim() === "") {
-        swal("Error", "Ingrese un código de confirmación", "warning");
-      }
-      else if(codigo.trim() !== codigoUsuario) {
-        swal("Error", "Código de confirmación incorrecto", "warning");
-      }
-      else {
-        executeCambiarContraNuevoUsuarioRegistrado({
-            data: {
-                idusuario: idUsuarioRegistrado,
-                password: contra
-            }
-        });
-      }
+    if (contra.trim() === "") {
+      swal("Error", "Ingrese una contraseña", "warning");
+    } else if (repiteContra.trim() === "") {
+      swal("Error", "Vuelva a ingresar la contraseña", "warning");
+    } else if (repiteContra.trim() !== contra.trim()) {
+      swal("Error", "La contraseñas no coinciden", "warning");
+    } else if (codigo.trim() === "") {
+      swal("Error", "Ingrese un código de confirmación", "warning");
+    } else if (codigo.trim() !== codigoUsuario) {
+      swal("Error", "Código de confirmación incorrecto", "warning");
+    } else {
+      executeCambiarContraNuevoUsuarioRegistrado({
+        data: {
+          idusuario: idUsuarioRegistrado,
+          password: contra,
+        },
+      });
+    }
   };
 
   return redirect ? (
@@ -263,7 +280,7 @@ export default function CambiarContra() {
                 marginBottom: "10px",
               }}
               onClick={() => {
-                  cambiarContra();
+                cambiarContra();
               }}
             >
               Cambiar Contraseña

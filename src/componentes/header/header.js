@@ -26,7 +26,7 @@ import {
   useMediaQuery,
   Button,
   Tooltip,
-  Badge
+  Badge,
 } from "@material-ui/core";
 import {
   Menu as MenuIcon,
@@ -46,7 +46,7 @@ import {
   Email as EmailIcon,
   AccountBox as AccountBoxIcon,
   EmojiObjects as EmojiObjectsIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
 } from "@material-ui/icons";
 import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
@@ -107,57 +107,57 @@ window.Echo.private().listen("prueba", data => {
 
 const drawerWidth = 350;
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
-    display: "flex"
+    display: "flex",
   },
   appBar: {
     zIndex: theme.zIndex.drawer + 1,
     transition: theme.transitions.create(["width", "margin"], {
       easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen
+      duration: theme.transitions.duration.leavingScreen,
     }),
     background: "#FFFFFF",
-    color: "#868E96"
+    color: "#868E96",
   },
   appBarShift: {
     marginLeft: drawerWidth,
     width: `calc(100% - ${drawerWidth}px)`,
     transition: theme.transitions.create(["width", "margin"], {
       easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen
-    })
+      duration: theme.transitions.duration.enteringScreen,
+    }),
   },
   menuButton: {
-    marginRight: 36
+    marginRight: 36,
   },
   hide: {
-    display: "none"
+    display: "none",
   },
   drawer: {
     width: drawerWidth,
     flexShrink: 0,
-    whiteSpace: "nowrap"
+    whiteSpace: "nowrap",
   },
   drawerOpen: {
     width: drawerWidth,
     transition: theme.transitions.create("width", {
       easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen
+      duration: theme.transitions.duration.enteringScreen,
     }),
-    background: "#1D2939"
+    background: "#1D2939",
   },
   drawerClose: {
     transition: theme.transitions.create("width", {
       easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen
+      duration: theme.transitions.duration.leavingScreen,
     }),
     background: "#1D2939",
     overflowX: "hidden",
     width: theme.spacing(7) + 1,
     [theme.breakpoints.up("sm")]: {
-      width: theme.spacing(9) + 1
-    }
+      width: theme.spacing(9) + 1,
+    },
   },
   toolbar: {
     display: "flex",
@@ -165,48 +165,48 @@ const useStyles = makeStyles(theme => ({
     alignItems: "center",
     justifyContent: "flex-end",
     padding: theme.spacing(0, 1),
-    ...theme.mixins.toolbar
+    ...theme.mixins.toolbar,
   },
   toolbarMain: {
     display: "flex",
     alignItems: "center",
     justifyContent: "flex-end",
     padding: theme.spacing(0, 1),
-    ...theme.mixins.toolbar
+    ...theme.mixins.toolbar,
   },
   content: {
     flexGrow: 1,
-    padding: theme.spacing(3)
+    padding: theme.spacing(3),
   },
   nestedFirstLevel: {
     paddingLeft: theme.spacing(4),
-    alignItems: "baseline"
+    alignItems: "baseline",
   },
   nestedSecondLevel: {
-    paddingLeft: theme.spacing(6)
+    paddingLeft: theme.spacing(6),
   },
   titleTypography: {
     fontSize: "13px",
-    marginRight: "5px"
+    marginRight: "5px",
   },
   toolbarIcons: {
-    color: "#868E96"
+    color: "#868E96",
   },
   toolbarIconButton1: {
-    marginRight: "15px"
+    marginRight: "15px",
   },
   toolbarList: {
     padding: "0",
     display: "inline-flex",
-    marginInlineStart: "auto"
+    marginInlineStart: "auto",
   },
   toolbarListItemText: {
     fontSize: "13px",
-    textAlign: "center"
+    textAlign: "center",
   },
   toolbarListItemAvatar: {
     marginLeft: "20px",
-    cursor: "pointer"
+    cursor: "pointer",
   },
   drawerToolbarTitle: {
     color: "#212529",
@@ -218,55 +218,55 @@ const useStyles = makeStyles(theme => ({
     display: "flex",
     "&:hover": {
       display: "inline-block",
-      transition: "all 0.2s ease-in-out"
-    }
+      transition: "all 0.2s ease-in-out",
+    },
   },
   drawerToolbarTitleLeftSquareBracket: {
     color: "#00b297",
-    marginRight: "5px"
+    marginRight: "5px",
   },
   drawerToolbarTitleRightSquareBracket: {
     color: "#00b297",
-    marginLeft: "5px"
+    marginLeft: "5px",
   },
   drawerNavHomeLinks: {
     textDecoration: "none",
-    color: "#BDFAFF"
+    color: "#BDFAFF",
   },
   drawerNavLinks: {
     textDecoration: "none",
-    color: "#ADB5BD"
+    color: "#ADB5BD",
   },
   drawerHomeNavLink: {
     background: "#00B297",
     "&:hover": {
-      background: "#00B280"
-    }
+      background: "#00B280",
+    },
   },
   drawerHomeIcon: {
-    color: "#BDFAFF"
+    color: "#BDFAFF",
   },
   drawerListTextAndItems: {
-    color: "#ADB5BD"
-  }
+    color: "#ADB5BD",
+  },
 }));
 
 const StyledMenu = withStyles({
   paper: {
     border: "1px solid #d3d4d5",
-    maxWidth: "500px"
-  }
-})(props => (
+    maxWidth: "500px",
+  },
+})((props) => (
   <Menu
     elevation={0}
     getContentAnchorEl={null}
     anchorOrigin={{
       vertical: "bottom",
-      horizontal: "center"
+      horizontal: "center",
     }}
     transformOrigin={{
       vertical: "top",
-      horizontal: "center"
+      horizontal: "center",
     }}
     {...props}
   />
@@ -312,9 +312,16 @@ export default function Header(props) {
           localStorage.getItem("emToken"),
           "mysecretpassword"
         );
-        setUsuarioDatos(
+        /* console.log(decodedToken.userData.idusuario);
+        console.log(usuarioDatos.length);
+        console.log(usuarioDatos.idusuario); */
+        /* setUsuarioDatos(
           usuarioDatos.length === 0 ? decodedToken.userData : usuarioDatos
-        );
+        ); */
+        if (decodedToken.userData.idusuario !== usuarioDatos.idusuario) {
+          setUsuarioDatos(decodedToken.userData);
+        }
+
         setEmpresaDatos(
           empresaDatos.length === 0 ? decodedEToken.empresaData : empresaDatos
         );
@@ -333,7 +340,7 @@ export default function Header(props) {
   const [nombreEmpresa, setNombreEmpresa] = useState("");
   const [nombreUsuario, setNombreUsuario] = useState("");
   const [perfilUsuario, setPerfilUsuario] = useState("");
-  const [openDrawer, setOpenDrawer] = useState(false);
+  const [openDrawer, setOpenDrawer] = useState(window.location.hash.substr(2) === "" ? true : false);
   const [openDialogEmpresas, setOpenDialogEmpresas] = useState(false);
   const [openCollapse, setOpenCollapse] = useState(0);
   const [collapseHistorial, setCollapseHistorial] = useState(0);
@@ -342,23 +349,23 @@ export default function Header(props) {
   const [badgeVisibility, setBadgeVisibility] = useState(true);
   const [
     { data: menuData, loading: menuLoading, error: menuError },
-    executeMenu
+    executeMenu,
   ] = useAxios(
     {
       url: API_BASE_URL + `/menuWeb`,
       method: "GET",
       params: {
         usuario: userEmail,
-        pwd: userPassword
-      }
+        pwd: userPassword,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
   const [
     { data: perfilData, loading: perfilLoading, error: perfilError },
-    executePerfil
+    executePerfil,
   ] = useAxios(
     {
       url: API_BASE_URL + `/permisosUsuario`,
@@ -366,29 +373,29 @@ export default function Header(props) {
       params: {
         usuario: userEmail,
         pwd: userPassword,
-        rfc: empresaRFC
-      }
+        rfc: empresaRFC,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
   const [
-    { data: empresasData, loading: empresasLoading, error: empresasError }
+    { data: empresasData, loading: empresasLoading, error: empresasError },
   ] = useAxios({
     url: API_BASE_URL + `/listaEmpresasUsuario`,
     method: "GET",
     params: {
       usuario: userEmail,
-      pwd: userPassword
-    }
+      pwd: userPassword,
+    },
   });
   const [
     {
       data: notificacionesData,
       loading: notificacionesLoading,
-      error: notificacionesError
-    }/* , executeNotificaciones */
+      error: notificacionesError,
+    } /* , executeNotificaciones */,
   ] = useAxios(
     {
       url: API_BASE_URL + `/notificacionesCRM`,
@@ -397,28 +404,28 @@ export default function Header(props) {
         usuario: userEmail,
         pwd: userPassword,
         rfc: empresaRFC,
-        idsubmenu: 1
-      }
+        idsubmenu: 1,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
   const [
     {
       data: eliminaNotificacionData,
       loading: eliminaNotificacionLoading,
-      error: eliminaNotificacionError
+      error: eliminaNotificacionError,
     },
-    executeEliminaNotificacion
+    executeEliminaNotificacion,
   ] = useAxios(
     {
       url: API_BASE_URL + `/eliminaNotificacion`,
-      method: "DELETE"
+      method: "DELETE",
     },
     {
       useCache: false,
-      manual: true
+      manual: true,
     }
   );
 
@@ -436,7 +443,7 @@ export default function Header(props) {
     executeQueriesHeader,
     executeMenu,
     executePerfil,
-    setExecuteQueriesHeader
+    setExecuteQueriesHeader,
   ]);
 
   useEffect(() => {
@@ -481,7 +488,7 @@ export default function Header(props) {
 
   useEffect(() => {
     function sortSubmenus(subMenu) {
-      return subMenu.sort(function(a, b) {
+      return subMenu.sort(function (a, b) {
         if (a.orden > b.orden) {
           return 1;
         }
@@ -537,8 +544,8 @@ export default function Header(props) {
     let submenuData = [];
     let idModulo = [];
     if (menuData && menuData.modulos) {
-      menuData.modulos.map(modulo => {
-        return modulo.menus.map(menu => {
+      menuData.modulos.map((modulo) => {
+        return modulo.menus.map((menu) => {
           if (menu.ref === currentPath) {
             const permisosMenus = getPermisosMenus(menu.idmodulo, menu.idmenu);
             setEmpresaPermisos(permisosMenus !== 0 ? true : false);
@@ -557,7 +564,7 @@ export default function Header(props) {
               dataSubmenuAndPermisos.push({
                 submenu: submenuData[x],
                 permisos: permisosSubmenu[y].tipopermiso,
-                idModulo: idModulo
+                idModulo: idModulo,
               });
               break;
             }
@@ -571,7 +578,6 @@ export default function Header(props) {
   useEffect(() => {
     function checkData() {
       if (eliminaNotificacionData) {
-        console.log(eliminaNotificacionData);
         if (eliminaNotificacionData.error !== 0) {
           swal(
             "Error",
@@ -591,7 +597,7 @@ export default function Header(props) {
     checkData();
   }, [eliminaNotificacionData]);
 
-  window.onhashchange = function() {
+  window.onhashchange = function () {
     localStorage.removeItem("menuTemporal");
     if (window.location.hash.substr(2) !== "configuracionesPermisos") {
       localStorage.removeItem("idMenuTemporal");
@@ -640,12 +646,12 @@ export default function Header(props) {
     }
   }
 
-  if(urlRuta !== false && urlRuta === "cambiarContra") {
+  if (urlRuta !== false && urlRuta === "cambiarContra") {
     const token = jwt.sign(
       {
         usuarioRegistrado: {
-          idUsuarioRegistrado: idUsuarioRegistrado
-        }
+          idUsuarioRegistrado: idUsuarioRegistrado,
+        },
       },
       "mysecretpassword"
     );
@@ -681,8 +687,8 @@ export default function Header(props) {
             accionAG: 2,
             idRequerimiento: urlIdDocumento,
             idEmpresa: urlIdEmpresa,
-            estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2
-          }
+            estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2,
+          },
         },
         "mysecretpassword"
       );
@@ -716,8 +722,8 @@ export default function Header(props) {
             idSubmenu: urlIdSubmenu,
             accionAG: 2,
             idRequerimiento: urlIdDocumento,
-            estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2
-          }
+            estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2,
+          },
         },
         "mysecretpassword"
       );
@@ -726,7 +732,7 @@ export default function Header(props) {
     }
   }
 
-  const menuIcon = menu => {
+  const menuIcon = (menu) => {
     switch (menu) {
       case 1:
         return <SettingsIcon className={classes.drawerListTextAndItems} />;
@@ -747,8 +753,8 @@ export default function Header(props) {
     }
   };
 
-  const sortMenuData = menu => {
-    return menu.sort(function(a, b) {
+  const sortMenuData = (menu) => {
+    return menu.sort(function (a, b) {
       if (a.orden > b.orden) {
         return 1;
       }
@@ -759,7 +765,7 @@ export default function Header(props) {
     });
   };
 
-  const checkMenus = modulo => {
+  const checkMenus = (modulo) => {
     let exist = false;
     for (let x = 0; x < modulo.menus.length; x++) {
       if (modulo.menus[x].idmodulo === modulo.idmodulo) {
@@ -805,7 +811,7 @@ export default function Header(props) {
           >
             <List component="div" disablePadding>
               <NavLink
-                onClick={e => {
+                onClick={(e) => {
                   if (permisos !== 1) {
                     e.preventDefault();
                   }
@@ -841,9 +847,9 @@ export default function Header(props) {
     return null;
   };
 
-  const getModulosPermisos = idModulo => {
+  const getModulosPermisos = (idModulo) => {
     let permisos = 0;
-    perfilData.permisomodulos.map(modulo => {
+    perfilData.permisomodulos.map((modulo) => {
       if (modulo.idmodulo === idModulo) {
         permisos = modulo.tipopermiso;
       }
@@ -909,12 +915,12 @@ export default function Header(props) {
     });
   };
 
-  const handleClickOpenCollapse = collapse => {
+  const handleClickOpenCollapse = (collapse) => {
     setOpenCollapse(collapse !== openCollapse ? collapse : 0);
     setCollapseHistorial(collapse !== openCollapse ? collapse : 0);
   };
 
-  const handleOpenMenu = event => {
+  const handleOpenMenu = (event) => {
     setAnchorMenuEl(event.currentTarget);
   };
 
@@ -922,7 +928,7 @@ export default function Header(props) {
     setAnchorMenuEl(null);
   };
 
-  const handleOpenNotificaciones = event => {
+  const handleOpenNotificaciones = (event) => {
     setAnchorNotificacionesEl(event.currentTarget);
   };
 
@@ -952,9 +958,10 @@ export default function Header(props) {
     swal({
       text: "¿Está seguro de cerrar sesión?",
       buttons: ["No", "Sí"],
-      dangerMode: true
-    }).then(value => {
+      dangerMode: true,
+    }).then((value) => {
       if (value) {
+        //setUsuarioDatos([]);
         localStorage.removeItem("token");
         localStorage.removeItem("emToken");
         localStorage.removeItem("notificacionData");
@@ -963,35 +970,34 @@ export default function Header(props) {
     });
   };
 
-  const eliminarNotificacion = idNotificacion => {
+  const eliminarNotificacion = (idNotificacion) => {
     swal({
       text: "¿Está seguro de eliminar esta notificación?",
       buttons: ["No", "Sí"],
-      dangerMode: true
-    }).then(value => {
+      dangerMode: true,
+    }).then((value) => {
       if (value) {
         executeEliminaNotificacion({
           data: {
             usuario: userEmail,
             pwd: userPassword,
             rfc: empresaRFC,
-            idnotificacion: idNotificacion
-          }
+            idnotificacion: idNotificacion,
+          },
         });
-        console.log("Se eliminara la notificacion: ", idNotificacion);
       }
     });
   };
 
   const getNotificacionesLength = () => {
     let notificacionesLength = 0;
-    for(let x=0 ; x<notificacionesData.notificacion.length ; x++) {
-      if(notificacionesData.notificacion[x].idusuario === userId) {
-        notificacionesLength ++;
+    for (let x = 0; x < notificacionesData.notificacion.length; x++) {
+      if (notificacionesData.notificacion[x].idusuario === userId) {
+        notificacionesLength++;
       }
     }
     return notificacionesLength;
-  }
+  };
 
   const getNotificaciones = () => {
     if (notificacionesData.notificacion) {
@@ -1016,7 +1022,7 @@ export default function Header(props) {
               <ListItem
                 button
                 style={{
-                  background: notificacion.status === 0 ? "#f8f9fa" : "#ffffff"
+                  background: notificacion.status === 0 ? "#f8f9fa" : "#ffffff",
                 }}
                 onClick={() => {
                   const token = jwt.sign(
@@ -1036,8 +1042,8 @@ export default function Header(props) {
                         idSubmenu: notificacion.idsubmenu,
                         accionAG: 2,
                         idRequerimiento: notificacion.idregistro,
-                        estatusRequerimiento: notificacion.estatus
-                      }
+                        estatusRequerimiento: notificacion.estatus,
+                      },
                     },
                     "mysecretpassword"
                   );
@@ -1077,15 +1083,18 @@ export default function Header(props) {
                 />
                 <ListItemAvatar
                   style={{ alignSelf: "end" }}
-                  onClick={e => {
+                  onClick={(e) => {
                     e.stopPropagation();
                   }}
                 >
-                  <Tooltip title="Eliminar notificación" onClick={(e)=> {
-                    e.stopPropagation();
-                  }}>
+                  <Tooltip
+                    title="Eliminar notificación"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
                     <IconButton
-                      onClick={e => {
+                      onClick={(e) => {
                         e.stopPropagation();
                         eliminarNotificacion(notificacion.idnotificacion);
                       }}
@@ -1161,7 +1170,7 @@ export default function Header(props) {
       <AppBar
         position="fixed"
         className={clsx(classes.appBar, {
-          [classes.appBarShift]: openDrawer
+          [classes.appBarShift]: openDrawer,
         })}
       >
         <Toolbar>
@@ -1171,7 +1180,7 @@ export default function Header(props) {
             onClick={handleDrawerOpen}
             edge="start"
             className={clsx(classes.menuButton, {
-              [classes.hide]: openDrawer
+              [classes.hide]: openDrawer,
             })}
           >
             <MenuIcon />
@@ -1194,7 +1203,7 @@ export default function Header(props) {
             <Tooltip title="Notificaciones">
               <IconButton
                 className={classes.toolbarIconButton1}
-                onClick={e => {
+                onClick={(e) => {
                   handleOpenNotificaciones(e);
                   setBadgeVisibility(true);
                 }}
@@ -1239,13 +1248,13 @@ export default function Header(props) {
         variant="permanent"
         className={clsx(classes.drawer, {
           [classes.drawerOpen]: openDrawer,
-          [classes.drawerClose]: !openDrawer
+          [classes.drawerClose]: !openDrawer,
         })}
         classes={{
           paper: clsx({
             [classes.drawerOpen]: openDrawer,
-            [classes.drawerClose]: !openDrawer
-          })
+            [classes.drawerClose]: !openDrawer,
+          }),
         }}
       >
         <div className={classes.toolbar}>
@@ -1294,7 +1303,7 @@ export default function Header(props) {
       <main
         className={classes.content}
         style={{
-          maxWidth: `calc(100% - ${openDrawer ? drawerWidth : 57}px)`
+          maxWidth: `calc(100% - ${openDrawer ? drawerWidth : 57}px)`,
         }}
       >
         <div className={classes.toolbarMain} />
@@ -1318,17 +1327,6 @@ export default function Header(props) {
             <ListItemText primary="Editar Perfil" />
           </MenuItem>
         </NavLink>
-        {/* <MenuItem
-          onClick={() => {
-            handleCloseMenu();
-            handleClickOpenDialogEmpresas();
-          }}
-        >
-          <ListItemIcon>
-            <BusinessIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Cambiar Empresa" />
-        </MenuItem> */}
         <MenuItem
           onClick={() => {
             handleCloseMenu();
