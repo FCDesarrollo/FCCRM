@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import { makeStyles, withStyles, useTheme } from "@material-ui/core/styles";
@@ -138,7 +138,9 @@ function createData(
   gastoRequerimiento,
   gastoSurtido,
   gasto,
-  requerimiento
+  requerimiento,
+  estatusProcesado,
+  estatusProcesadoEscrito
 ) {
   return {
     id,
@@ -155,6 +157,8 @@ function createData(
     gastoSurtido,
     gasto,
     requerimiento,
+    estatusProcesado,
+    estatusProcesadoEscrito
   };
 }
 
@@ -222,6 +226,13 @@ const headCells = [
     sortHeadCell: true,
     disablePadding: false,
     label: "Importe",
+  },
+  {
+    id: "asociado",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Asociado",
   },
   {
     id: "status",
@@ -470,7 +481,9 @@ export default function AutorizacionesGastos(props) {
                 requerimiento.gasto_requerimiento,
                 requerimiento.gasto_surtido,
                 requerimiento.gasto,
-                requerimiento.requerimiento
+                requerimiento.requerimiento,
+                requerimiento.estatus_procesado,
+                requerimiento.estatus_procesado === 1 ? "Sí" : "No"
               )
             );
           });
@@ -744,6 +757,9 @@ function TablaAYG(props) {
             .toLowerCase()
             .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
           filterRows[x].importe.toString().indexOf(busquedaFiltro) !== -1 ||
+          filterRows[x].estatusProcesadoEscrito
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
           filterRows[x].statusEscrito
             .toLowerCase()
             .indexOf(busquedaFiltro.toLowerCase()) !== -1
@@ -1120,6 +1136,7 @@ function TablaAYG(props) {
                         <TableCell align="right">{row.sucursal}</TableCell>
                         <TableCell align="right">{row.detalle}</TableCell>
                         <TableCell align="right">{row.importe}</TableCell>
+                        <TableCell align="right">{row.estatusProcesadoEscrito}</TableCell>
                         <TableCell align="right">
                           {radioTipo !== "gastos"
                             ? row.status === 1
@@ -1136,7 +1153,7 @@ function TablaAYG(props) {
                               ? "Sin Surtir"
                               : row.status === 7
                               ? "No autorizado"
-                              : ""
+                              : "Pendiente"
                             : row.status === 1
                             ? "Pendiente"
                             : row.status === 3
@@ -1370,6 +1387,7 @@ function FormularioAYG(props) {
   const [checkNoRFCEstatus, setCheckNoRFCEstatus] = useState(false);
   const [checkNoRFC, setCheckNoRFC] = useState(false);
   const [siguienteFolio, setSiguienteFolio] = useState("1");
+  const inputSerie = useRef(null);
   const [
     {
       data: cargaConceptosData,
@@ -1681,10 +1699,10 @@ function FormularioAYG(props) {
   );
 
   useEffect(() => {
-    if (RADatos.serie.trim() !== "" && RADatos.folio.trim() === "") {
+    if (RADatos.serie.trim() !== "" /* && RADatos.folio.trim() === "" */) {
       executeTraerRequerimientoPorSerie();
     }
-  }, [RADatos.serie, RADatos.folio, executeTraerRequerimientoPorSerie]);
+  }, [RADatos.serie/* , RADatos.folio */, executeTraerRequerimientoPorSerie]);
 
   useEffect(() => {
     function checkData() {
@@ -1704,6 +1722,9 @@ function FormularioAYG(props) {
                 ) + 1
               : 1
           );
+          if(accionAG === 1) {
+            inputSerie.current.focus();
+          }
           /* setRADatos(R => ({
             ...R,
             folio: traerRequerimientoPorSeriesData.requerimiento.length !== 0
@@ -1721,7 +1742,7 @@ function FormularioAYG(props) {
       }
     }
     checkData();
-  }, [traerRequerimientoPorSeriesData]);
+  }, [traerRequerimientoPorSeriesData, accionAG]);
 
   useEffect(() => {
     if (
@@ -3898,6 +3919,7 @@ function FormularioAYG(props) {
               type="text"
               inputProps={{
                 maxLength: 20,
+                ref: inputSerie
               }}
               value={RADatos.serie}
               disabled={accionAG === 2}
@@ -3921,7 +3943,7 @@ function FormularioAYG(props) {
               label={accionAG !== 1 ? `Folio` : `Folio (Recomendado ${siguienteFolio})`}
               type="text"
               inputProps={{
-                maxLength: 30,
+                maxLength: 30
               }}
               value={RADatos.folio}
               disabled={accionAG === 2}

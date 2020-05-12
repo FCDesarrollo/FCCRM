@@ -70,6 +70,18 @@ export const dataBaseErrores = error => {
       return "El usuario ya esta vinculado a esta empresa.";
     case 48:
       return "Ya existe un registro con ese concepto, folio y serie.";
+    case 49:
+      return "Error al validar el documento.";
+    case 50:
+      return "Documento no valido, favor de subir el correcto.";
+    case 51:
+      return "El archivo no es válido para este apartado.";
+    case 52:
+      return "El documento no tiene movimientos registrados.";
+    case 53:
+      return "Existen conceptos que no pertenecen al apartado actual.";
+    case 54:
+      return "Existen sucursales que no han sido dadas de alta.";
     case -1:
       return "El teléfono ya existe.";
     case -2:

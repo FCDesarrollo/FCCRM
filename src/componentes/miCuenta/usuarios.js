@@ -1168,7 +1168,8 @@ function EditarPermisosUsuario(props) {
                       checked={
                         permisoNotificacion === 4 ||
                         permisoNotificacion === 5 ||
-                        permisoNotificacion === 6
+                        permisoNotificacion === 6 ||
+                        permisoNotificacion === 7
                       }
                       onClick={(e) => {
                         setSumaSubmenuNotificacion(
@@ -1189,7 +1190,8 @@ function EditarPermisosUsuario(props) {
                       checked={
                         permisoNotificacion === 1 ||
                         permisoNotificacion === 3 ||
-                        permisoNotificacion === 5
+                        permisoNotificacion === 5 ||
+                        permisoNotificacion === 7
                       }
                       onClick={(e) => {
                         setSumaSubmenuNotificacion(
@@ -1210,7 +1212,8 @@ function EditarPermisosUsuario(props) {
                       checked={
                         permisoNotificacion === 2 ||
                         permisoNotificacion === 3 ||
-                        permisoNotificacion === 6
+                        permisoNotificacion === 6 ||
+                        permisoNotificacion === 7
                       }
                       onClick={(e) => {
                         setSumaSubmenuNotificacion(
