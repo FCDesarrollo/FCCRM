@@ -58,6 +58,7 @@ import Home from "../home/home";
 //import Websocket from "react-websocket";
 import jwt from "jsonwebtoken";
 import { getUrlVariable } from "../../helpers/funciones";
+import moment from "moment";
 /* import Pusher from "pusher-js";
 import Echo from "laravel-echo"; */
 
@@ -290,6 +291,8 @@ export default function Header(props) {
   const usuarioDatos = props.usuarioDatos;
   const setUsuarioDatos = props.setUsuarioDatos;
   const empresaDatos = props.empresaDatos;
+  const idEmpresa = empresaDatos.idempresa;
+  const statusEmpresa = empresaDatos.statusempresa;
   const setEmpresaDatos = props.setEmpresaDatos;
   const loading = props.loading;
   const executeQueriesHeader = props.executeQueriesHeader;
@@ -340,13 +343,36 @@ export default function Header(props) {
   const [nombreEmpresa, setNombreEmpresa] = useState("");
   const [nombreUsuario, setNombreUsuario] = useState("");
   const [perfilUsuario, setPerfilUsuario] = useState("");
-  const [openDrawer, setOpenDrawer] = useState(window.location.hash.substr(2) === "" ? true : false);
+  const [openDrawer, setOpenDrawer] = useState(
+    window.location.hash.substr(2) === "" ? true : false
+  );
   const [openDialogEmpresas, setOpenDialogEmpresas] = useState(false);
   const [openCollapse, setOpenCollapse] = useState(0);
   const [collapseHistorial, setCollapseHistorial] = useState(0);
   const [anchorMenuEl, setAnchorMenuEl] = useState(null);
   const [anchorNotificacionesEl, setAnchorNotificacionesEl] = useState(null);
   const [badgeVisibility, setBadgeVisibility] = useState(true);
+  const [
+    {
+      data: getEmpresaData,
+      loading: getEmpresaLoading,
+      error: getEmpresaError,
+    }, executeGetEmpresaValidacion, 
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getEmpresaValidacion`,
+      method: "GET",
+      params: {
+        usuario: userEmail,
+        pwd: userPassword,
+        idempresa: idEmpresa,
+      },
+    },
+    {
+      useCache: false,
+      manual: true
+    }
+  );
   const [
     { data: menuData, loading: menuLoading, error: menuError },
     executeMenu,
@@ -430,6 +456,28 @@ export default function Header(props) {
   );
 
   useEffect(() => {
+    function checkData() {
+      if (getEmpresaData) {
+        if (getEmpresaData.error !== 0) {
+          swal("Error", dataBaseErrores(getEmpresaData.error), "warning");
+        } else {
+          if (
+            getEmpresaData.empresa[0].fechaprueba <=
+              moment().format("YYYY-MM-DD") ||
+            getEmpresaData.empresa[0].fecharestriccion <=
+              moment().format("YYYY-MM-DD")
+          ) {
+            getEmpresaData.empresa[0].statusempresa = 0;
+          }
+          setEmpresaDatos(getEmpresaData.empresa[0]);
+        }
+      }
+    }
+
+    checkData();
+  }, [getEmpresaData, setEmpresaDatos]);
+
+  useEffect(() => {
     function executeQueries() {
       if (executeQueriesHeader) {
         executeMenu();
@@ -450,6 +498,14 @@ export default function Header(props) {
     executeMenu();
     executePerfil();
   }, [currentPath, executeMenu, executePerfil]);
+
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      if (localStorage.getItem("emToken")){
+        executeGetEmpresaValidacion();
+      }
+    }
+  }, [executeGetEmpresaValidacion])
 
   useEffect(() => {
     function putEmpresaName() {
@@ -606,6 +662,7 @@ export default function Header(props) {
   };
 
   if (
+    getEmpresaLoading ||
     menuLoading ||
     perfilLoading ||
     empresasLoading ||
@@ -615,6 +672,7 @@ export default function Header(props) {
     return <LoadingComponent />;
   }
   if (
+    getEmpresaError ||
     menuError ||
     perfilError ||
     empresasError ||
@@ -1081,28 +1139,30 @@ export default function Header(props) {
                     </span>
                   }
                 />
-                <ListItemAvatar
-                  style={{ alignSelf: "end" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  <Tooltip
-                    title="Eliminar notificación"
+                {statusEmpresa === 1 ? (
+                  <ListItemAvatar
+                    style={{ alignSelf: "end" }}
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
                   >
-                    <IconButton
+                    <Tooltip
+                      title="Eliminar notificación"
                       onClick={(e) => {
                         e.stopPropagation();
-                        eliminarNotificacion(notificacion.idnotificacion);
                       }}
                     >
-                      <CloseIcon style={{ color: "gray" }} fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </ListItemAvatar>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          eliminarNotificacion(notificacion.idnotificacion);
+                        }}
+                      >
+                        <CloseIcon style={{ color: "gray" }} fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </ListItemAvatar>
+                ) : null}
               </ListItem>
             </NavLink>
           ) : null;
@@ -1186,7 +1246,10 @@ export default function Header(props) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap className={classes.titleTypography}>
-            {nombreEmpresa}
+            {nombreEmpresa}{" "}
+            {statusEmpresa !== 1 ? (
+              <span style={{ color: "red" }}>(Solo lectura. Contacte a su administrador.)</span>
+            ) : null}
           </Typography>
 
           <List className={classes.toolbarList}>

@@ -46,6 +46,7 @@ import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
 import { dataBaseErrores } from "../../helpers/erroresDB";
 import swal from "sweetalert";
 import { keyValidation, pasteValidation } from "../../helpers/inputHelpers";
+import { verificarArchivoLote } from "../../helpers/extensionesArchivos";
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -262,6 +263,8 @@ export default function RecepcionPorLotes(props) {
   const usuario = usuarioDatos.correo;
   const pwd = usuarioDatos.password;
   const rfc = empresaDatos.RFC;
+  const statusEmpresa = empresaDatos.statusempresa;
+  const [permisosSubmenu, setPermisosSubmenu] = useState(-1);
   const [idSubmenu, setIdSubmenu] = useState(0);
   const setLoading = props.setLoading;
   const [anchorMenuEl, setAnchorMenuEl] = useState(null);
@@ -310,6 +313,14 @@ export default function RecepcionPorLotes(props) {
       useCache: false,
     }
   );
+
+  useEffect(() => {
+    for (let x = 0; x < submenuContent.length; x++) {
+      if (submenuContent[x].submenu.idsubmenu === parseInt(idSubmenu)) {
+        setPermisosSubmenu(submenuContent[x].permisos);
+      }
+    }
+  }, [idSubmenu, submenuContent, showComponent]);
 
   useEffect(() => {
     function checkData() {
@@ -455,6 +466,8 @@ export default function RecepcionPorLotes(props) {
             idSubmenu={idSubmenu}
             executeTraerLotes={executeTraerLotes}
             tipoLote={tipoLote}
+            statusEmpresa={statusEmpresa}
+            permisosSubmenu={permisosSubmenu}
           />
         ) : null}
       </Card>
@@ -532,6 +545,8 @@ function TablaRPL(props) {
   const setLoading = props.setLoading;
   const executeTraerLotes = props.executeTraerLotes;
   const tipoLote = props.tipoLote;
+  const statusEmpresa = props.statusEmpresa;
+  const permisosSubmenu = props.permisosSubmenu;
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("fecha");
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -677,13 +692,31 @@ function TablaRPL(props) {
               );
             }
             if (validarDocumentoLoteData.documentos[x].clienprovreg === 1) {
-              nuevosClientes.push(validarDocumentoLoteData.documentos[x]);
-              elementoClientes.push(validarDocumentoLoteData.documentos[x].rfc);
-              codigoClientes.push(validarDocumentoLoteData.documentos[x].rfc);
-              rfcClientes.push(validarDocumentoLoteData.documentos[x].rfc);
-              razonSocialClientes.push(
-                validarDocumentoLoteData.documentos[x].razonsocial
-              );
+              let validarRFC = 0;
+              for (let y = 0; y < codigoClientes.length; y++) {
+                if (
+                  validarDocumentoLoteData.documentos[x].rfc ===
+                  elementoClientes[y]
+                ) {
+                  validarRFC++;
+                  break;
+                }
+              }
+              if (validarRFC === 0) {
+                nuevosClientes.push(validarDocumentoLoteData.documentos[x]);
+                elementoClientes.push(
+                  validarDocumentoLoteData.documentos[x].rfc
+                );
+                codigoClientes.push(
+                  validarDocumentoLoteData.documentos[x].codigocliprov === ""
+                    ? validarDocumentoLoteData.documentos[x].rfc
+                    : validarDocumentoLoteData.documentos[x].codigocliprov
+                );
+                rfcClientes.push(validarDocumentoLoteData.documentos[x].rfc);
+                razonSocialClientes.push(
+                  validarDocumentoLoteData.documentos[x].razonsocial
+                );
+              }
             }
           }
 
@@ -881,23 +914,32 @@ function TablaRPL(props) {
           <Grid item xs={12} md={6}>
             <TextField
               variant="outlined"
+              disabled={permisosSubmenu < 1 || statusEmpresa !== 1}
               type="file"
               style={{ marginLeft: "15px", width: "90%" }}
               onChange={(e) => {
                 const documento = e.target.files[0];
-                const formData = new FormData();
-                formData.append("usuario", usuario);
-                formData.append("pwd", pwd);
-                formData.append("rfc", rfc);
-                formData.append("idmenu", 6);
-                formData.append("idsubmenu", idSubmenu);
-                formData.append("documento", documento);
-                executeValidarDocumentoLote({
-                  data: formData,
-                  headers: {
-                    "Content-Type": "multipart/form-data",
-                  },
-                });
+                if (!verificarArchivoLote(documento.name)) {
+                  swal(
+                    "Error de extensión de archivo",
+                    "Extensión no valida, seleccione un archivo .xlsm",
+                    "warning"
+                  );
+                } else {
+                  const formData = new FormData();
+                  formData.append("usuario", usuario);
+                  formData.append("pwd", pwd);
+                  formData.append("rfc", rfc);
+                  formData.append("idmenu", 6);
+                  formData.append("idsubmenu", idSubmenu);
+                  formData.append("documento", documento);
+                  executeValidarDocumentoLote({
+                    data: formData,
+                    headers: {
+                      "Content-Type": "multipart/form-data",
+                    },
+                  });
+                }
               }}
             />
           </Grid>
@@ -1032,6 +1074,8 @@ function TablaRPL(props) {
             idSubmenu={idSubmenu}
             executeTraerLotes={executeTraerLotes}
             tipoLote={tipoLote}
+            statusEmpresa={statusEmpresa}
+            permisosSubmenu={permisosSubmenu}
           />
         ) : showComponent === 3 ? (
           <VerMovimientosDocumentos
@@ -1091,30 +1135,32 @@ function TablaRPL(props) {
         >
           <ListItemText primary="Nivel de Movimientos" />
         </MenuItem>
-        <MenuItem
-          onClick={() => {
-            handleCloseMenu();
-            swal({
-              text: "¿Está seguro de eliminar el registro?",
-              buttons: ["No", "Sí"],
-              dangerMode: true,
-            }).then((value) => {
-              if (value) {
-                executeEliminaLote({
-                  data: {
-                    usuario: usuario,
-                    pwd: pwd,
-                    rfc: rfc,
-                    idsubmenu: idSubmenu,
-                    idlote: idLote,
-                  },
-                });
-              }
-            });
-          }}
-        >
-          <ListItemText primary="Eliminar Lote" />
-        </MenuItem>
+        {permisosSubmenu < 3 || statusEmpresa !== 1 ? (
+          <MenuItem
+            onClick={() => {
+              handleCloseMenu();
+              swal({
+                text: "¿Está seguro de eliminar el registro?",
+                buttons: ["No", "Sí"],
+                dangerMode: true,
+              }).then((value) => {
+                if (value) {
+                  executeEliminaLote({
+                    data: {
+                      usuario: usuario,
+                      pwd: pwd,
+                      rfc: rfc,
+                      idsubmenu: idSubmenu,
+                      idlote: idLote,
+                    },
+                  });
+                }
+              });
+            }}
+          >
+            <ListItemText primary="Eliminar Lote" />
+          </MenuItem>
+        ) : null}
       </StyledMenu>
       <Dialog
         fullScreen={fullScreenDialog}
@@ -1388,7 +1434,7 @@ function PreviewsDocumentos(props) {
   const setLotes = props.setLotes;
   const tituloDocumento = props.tituloDocumento;
   const setLoading = props.setLoading;
-  const executeTraerLotes = props.executeTraerLotes;
+  //const executeTraerLotes = props.executeTraerLotes;
   const usuario = props.usuario;
   const pwd = props.pwd;
   const rfc = props.rfc;
@@ -1427,13 +1473,16 @@ function PreviewsDocumentos(props) {
             "Documento eliminado con éxito",
             "success"
           );
-          executeTraerLotes();
+          const datosLotes = lotes;
+          datosLotes[eliminaDocumentoLoteData.index].estatus = "False";
+          setLotes(datosLotes);
+          //executeTraerLotes();
         }
       }
     }
 
     checkData();
-  }, [eliminaDocumentoLoteData, executeTraerLotes]);
+  }, [eliminaDocumentoLoteData, lotes, setLotes /* , executeTraerLotes */]);
 
   if (eliminaDocumentoLoteLoading) {
     setLoading(true);
@@ -1505,6 +1554,7 @@ function PreviewsDocumentos(props) {
                             rfc: rfc,
                             idsubmenu: idSubmenu,
                             iddocumento: lote.iddocto,
+                            index: index,
                           },
                         });
                       }
@@ -1606,6 +1656,8 @@ function NivelDocumentos(props) {
   const setLoading = props.setLoading;
   const executeTraerLotes = props.executeTraerLotes;
   const tipoLote = props.tipoLote;
+  const statusEmpresa = props.statusEmpresa;
+  const permisosSubmenu = props.permisosSubmenu;
   const [
     {
       data: traerDocumentosLoteData,
@@ -1735,29 +1787,33 @@ function NivelDocumentos(props) {
               </IconButton>
             </Tooltip>
             <Tooltip title="Eliminar De La Base De Datos">
-              <IconButton
-                onClick={() => {
-                  swal({
-                    text: "¿Está seguro de eliminar el documento?",
-                    buttons: ["No", "Sí"],
-                    dangerMode: true,
-                  }).then((value) => {
-                    if (value) {
-                      executeEliminaDocumentoLote({
-                        data: {
-                          usuario: usuario,
-                          pwd: pwd,
-                          rfc: rfc,
-                          idsubmenu: idSubmenu,
-                          iddocumento: documento.id,
-                        },
-                      });
-                    }
-                  });
-                }}
-              >
-                <DeleteIcon color="secondary" />
-              </IconButton>
+              <span>
+                <IconButton
+                  disabled={permisosSubmenu < 3 || statusEmpresa !== 1}
+                  onClick={() => {
+                    swal({
+                      text: "¿Está seguro de eliminar el documento?",
+                      buttons: ["No", "Sí"],
+                      dangerMode: true,
+                    }).then((value) => {
+                      if (value) {
+                        executeEliminaDocumentoLote({
+                          data: {
+                            usuario: usuario,
+                            pwd: pwd,
+                            rfc: rfc,
+                            idsubmenu: idSubmenu,
+                            iddocumento: documento.id,
+                            index: 0,
+                          },
+                        });
+                      }
+                    });
+                  }}
+                >
+                  <DeleteIcon color={permisosSubmenu < 3 || statusEmpresa !== 1 ? "disabled" : "secondary"} />
+                </IconButton>
+              </span>
             </Tooltip>
           </TableCell>
         </TableRow>

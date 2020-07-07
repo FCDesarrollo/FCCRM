@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import { makeStyles, useTheme } from "@material-ui/core/styles";
 import {
   Paper,
   Toolbar,
@@ -24,6 +22,9 @@ import {
   Button,
   FormGroup,
   Checkbox,
+  Menu,
+  MenuItem,
+  ListItemText,
 } from "@material-ui/core";
 import { TreeView, TreeItem } from "@material-ui/lab";
 import {
@@ -31,8 +32,6 @@ import {
   ClearAll as ClearAllIcon,
   Error as ErrorIcon,
   Settings as SettingsIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
   ExpandMore as ExpandMoreIcon,
   ChevronRight as ChevronRightIcon,
@@ -41,21 +40,39 @@ import {
   Assessment as AssessmentIcon,
   Minimize as MinimizeIcon,
   Star as StarIcon,
+  SettingsEthernet as SettingsEthernetIcon,
 } from "@material-ui/icons";
-import { keyValidation, pasteValidation } from "../../helpers/inputHelpers";
+import { makeStyles, withStyles, useTheme } from "@material-ui/core/styles";
 import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
 import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
 import { dataBaseErrores } from "../../helpers/erroresDB";
 import swal from "sweetalert";
 import moment from "moment";
+import { keyValidation, pasteValidation } from "../../helpers/inputHelpers";
 import jwt from "jsonwebtoken";
 
 const useStyles = makeStyles((theme) => ({
-  card: {
-    padding: "10px",
-    height: "100%",
+  title: {
+    marginTop: "10px",
+    marginBottom: "20px",
+  },
+  titleTable: {
+    flex: "1 1 100%",
+  },
+  buttons: {
     width: "100%",
+    height: "100%",
+    "&:hover": {
+      background: "#0866C6",
+      color: "#FFFFFF",
+    },
+  },
+  paper: {
+    width: "100%",
+  },
+  table: {
+    minWidth: 750,
   },
   visuallyHidden: {
     border: 0,
@@ -68,69 +85,15 @@ const useStyles = makeStyles((theme) => ({
     top: 20,
     width: 1,
   },
-  title: {
-    marginTop: "10px",
-    marginBottom: "20px",
-  },
-  titleTable: {
-    flex: "1 1 100%",
-  },
   textFields: {
     width: "100%",
   },
 }));
 
-function EnhancedTableHead(props) {
-  const { classes, order, orderBy, onRequestSort } = props;
-  const createSortHandler = (property) => (event) => {
-    onRequestSort(event, property);
-  };
-
-  return (
-    <TableHead style={{ background: "#fafafa" }}>
-      <TableRow>
-        <TableCell padding="checkbox" />
-        {headCells.map((headCell) => (
-          <TableCell
-            key={headCell.id}
-            align={headCell.align}
-            padding={headCell.disablePadding ? "none" : "default"}
-            sortDirection={orderBy === headCell.id ? order : false}
-          >
-            {headCell.sortHeadCell ? (
-              <TableSortLabel
-                active={orderBy === headCell.id}
-                direction={orderBy === headCell.id ? order : "asc"}
-                onClick={createSortHandler(headCell.id)}
-              >
-                <strong>{headCell.label}</strong>
-                {orderBy === headCell.id ? (
-                  <span className={classes.visuallyHidden}>
-                    {order === "desc"
-                      ? "sorted descending"
-                      : "sorted ascending"}
-                  </span>
-                ) : null}
-              </TableSortLabel>
-            ) : (
-              headCell.label
-            )}
-          </TableCell>
-        ))}
-      </TableRow>
-    </TableHead>
-  );
+function createData(id, nombre, descripcion, estatus, acciones) {
+  return { id, nombre, descripcion, estatus, acciones };
 }
 
-EnhancedTableHead.propTypes = {
-  classes: PropTypes.object.isRequired,
-  onRequestSort: PropTypes.func.isRequired,
-  order: PropTypes.oneOf(["asc", "desc"]).isRequired,
-  orderBy: PropTypes.string.isRequired,
-  rowCount: PropTypes.number.isRequired,
-};
-
-//let rows = [];
 let filterRows = [];
 
 function descendingComparator(a, b, orderBy) {
@@ -190,41 +153,100 @@ const headCells = [
   },
 ];
 
+function EnhancedTableHead(props) {
+  const { classes, order, orderBy, onRequestSort } = props;
+  const createSortHandler = (property) => (event) => {
+    onRequestSort(event, property);
+  };
+
+  return (
+    <TableHead style={{ background: "#FAFAFA" }}>
+      <TableRow>
+        <TableCell padding="checkbox" />
+        {headCells.map((headCell) => (
+          <TableCell
+            key={headCell.id}
+            align={headCell.align}
+            padding={headCell.disablePadding ? "none" : "default"}
+            sortDirection={orderBy === headCell.id ? order : false}
+          >
+            {headCell.sortHeadCell ? (
+              <TableSortLabel
+                active={orderBy === headCell.id}
+                direction={orderBy === headCell.id ? order : "asc"}
+                onClick={createSortHandler(headCell.id)}
+              >
+                <strong>{headCell.label}</strong>
+                {orderBy === headCell.id ? (
+                  <span className={classes.visuallyHidden}>
+                    {order === "desc"
+                      ? "sorted descending"
+                      : "sorted ascending"}
+                  </span>
+                ) : null}
+              </TableSortLabel>
+            ) : (
+              headCell.label
+            )}
+          </TableCell>
+        ))}
+      </TableRow>
+    </TableHead>
+  );
+}
+
+const StyledMenu = withStyles({
+  paper: {
+    border: "1px solid #d3d4d5",
+  },
+})((props) => (
+  <Menu
+    elevation={0}
+    getContentAnchorEl={null}
+    anchorOrigin={{
+      vertical: "bottom",
+      horizontal: "center",
+    }}
+    transformOrigin={{
+      vertical: "top",
+      horizontal: "center",
+    }}
+    {...props}
+  />
+));
+
 export default function Perfiles(props) {
   const classes = useStyles();
-  /* const submenuContent = props.submenuContent;
-  console.log(submenuContent); */
   const usuarioDatos = props.usuarioDatos;
-  const empresaDatos = props.empresaDatos;
-  const usuario = usuarioDatos.correo;
-  const pwd = usuarioDatos.password;
-  const rfc = empresaDatos.RFC;
-  const statusEmpresa = empresaDatos.statusempresa;
+  const correo = usuarioDatos.correo;
+  const password = usuarioDatos.password;
   const setLoading = props.setLoading;
-  const [idPerfilEditar, setIdPerfilEditar] = useState(0);
+  const [showComponent, setShowComponent] = useState(0);
+  const [rows, setRows] = useState([]);
+  const [page, setPage] = useState(0);
   const [order, setOrder] = useState("desc");
   const [orderBy, setOrderBy] = useState("nombre");
-  const [page, setPage] = useState(0);
-  const [rows, setRows] = useState([]);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [showComponent, setShowComponent] = useState(0);
   const [busquedaFiltro, setBusquedaFiltro] = useState("");
+  const [idPerfilEditar, setIdPerfilEditar] = useState(0);
+  const [anchorMenuEl, setAnchorMenuEl] = useState(null);
+  //const [statusPerfil, setStatusPerfil] = useState(0);
+
   const [
     {
-      data: listaPerfilesData,
-      loading: listaPerfilesLoading,
-      error: listaPerfilesError,
+      data: getPerfilesData,
+      loading: getPerfilesLoading,
+      error: getPerfilesError,
     },
-    executeListaPerfiles,
+    executeGetPerfiles,
+    ,
   ] = useAxios(
     {
-      url: API_BASE_URL + `/listaPerfiles`,
+      url: API_BASE_URL + `/getPerfiles`,
       method: "GET",
       params: {
-        usuario: usuario,
-        pwd: pwd,
-        rfc: rfc,
-        idsubmenu: 22,
+        usuario: correo,
+        pwd: password,
       },
     },
     {
@@ -233,14 +255,14 @@ export default function Perfiles(props) {
   );
   const [
     {
-      data: eliminarPerfilData,
-      loading: eliminarPerfilLoading,
-      error: eliminarPerfilError,
+      data: eliminarPerfilGlobalData,
+      loading: eliminarPerfilGlobalLoading,
+      error: eliminarPerfilGlobalError,
     },
-    executeEliminarPerfil,
+    executeEliminarPerfilGlobal,
   ] = useAxios(
     {
-      url: API_BASE_URL + `/eliminarPerfil`,
+      url: API_BASE_URL + `/eliminarPerfilGlobal`,
       method: "DELETE",
     },
     {
@@ -255,53 +277,88 @@ export default function Perfiles(props) {
           localStorage.getItem("menuTemporal"),
           "mysecretpassword"
         );
-        setPage(
-          decodedToken.menuTemporal.page ? decodedToken.menuTemporal.page : 0
-        );
-        setBusquedaFiltro(
-          decodedToken.menuTemporal.busquedaFiltro
-            ? decodedToken.menuTemporal.busquedaFiltro
-            : ""
-        );
+        if (decodedToken.menuTemporal.modulo === "perfiles") {
+          setShowComponent(decodedToken.menuTemporal.showComponent);
+          setIdPerfilEditar(decodedToken.menuTemporal.idPerfil);
+          setBusquedaFiltro(decodedToken.menuTemporal.busquedaFiltro);
+          setPage(decodedToken.menuTemporal.page);
+        } else {
+          const token = jwt.sign(
+            {
+              menuTemporal: {
+                modulo: "perfiles",
+                showComponent: 0,
+                idPerfil: 0,
+                busquedaFiltro: "",
+                page: 0,
+              },
+            },
+            "mysecretpassword"
+          );
+          localStorage.setItem("menuTemporal", token);
+        }
       } catch (err) {
         localStorage.removeItem("menuTemporal");
       }
+    } else {
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            modulo: "perfiles",
+            showComponent: 0,
+            idPerfil: 0,
+            busquedaFiltro: "",
+            page: 0,
+          },
+        },
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
     }
   }, []);
 
   useEffect(() => {
-    function checkData() {
-      if (listaPerfilesData) {
-        if (listaPerfilesData.error !== 0) {
-          swal("Error", dataBaseErrores(listaPerfilesData.error), "warning");
-        } else {
-          //rows = [];
-          filterRows = [];
-          for (let x = 0; x < listaPerfilesData.perfiles.length; x++) {
-            filterRows.push(listaPerfilesData.perfiles[x]);
-          }
-          setRows(filterRows);
-        }
+    if (getPerfilesData) {
+      if (getPerfilesData.error !== 0) {
+        swal("Error", dataBaseErrores(getPerfilesData.error), "warning");
+      } else {
+        filterRows = [];
+        getPerfilesData.perfiles.map((perfil) => {
+          return filterRows.push(
+            createData(
+              perfil.idperfil,
+              perfil.nombre,
+              perfil.descripcion,
+              perfil.status,
+              <IconButton>
+                <SettingsEthernetIcon style={{ color: "black" }} />
+              </IconButton>
+            )
+          );
+        });
+        setRows(filterRows);
       }
     }
-
-    checkData();
-  }, [listaPerfilesData]);
+  }, [getPerfilesData]);
 
   useEffect(() => {
     function checkData() {
-      if (eliminarPerfilData) {
-        if (eliminarPerfilData.error !== 0) {
-          swal("Error", dataBaseErrores(eliminarPerfilData.error), "warning");
+      if (eliminarPerfilGlobalData) {
+        if (eliminarPerfilGlobalData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(eliminarPerfilGlobalData.error),
+            "warning"
+          );
         } else {
           swal("Perfil Eliminado", "Perfil eliminado con éxito", "success");
-          executeListaPerfiles();
+          executeGetPerfiles();
         }
       }
     }
 
     checkData();
-  }, [eliminarPerfilData, executeListaPerfiles]);
+  }, [eliminarPerfilGlobalData, executeGetPerfiles]);
 
   useEffect(() => {
     function getFilterRows() {
@@ -337,6 +394,9 @@ export default function Perfiles(props) {
       const token = jwt.sign(
         {
           menuTemporal: {
+            modulo: "perfiles",
+            showComponent: 0,
+            idPerfil: 0,
             page:
               rows.length < rowsPerPage && rows.length !== 0
                 ? 0
@@ -355,6 +415,9 @@ export default function Perfiles(props) {
       const token = jwt.sign(
         {
           menuTemporal: {
+            modulo: "perfiles",
+            showComponent: 0,
+            idPerfil: 0,
             page: rows.length < rowsPerPage && rows.length !== 0 ? 0 : page,
             busquedaFiltro: busquedaFiltro,
           },
@@ -365,13 +428,13 @@ export default function Perfiles(props) {
     }
   }, [busquedaFiltro, page, rows.length, rowsPerPage]);
 
-  if (listaPerfilesLoading || eliminarPerfilLoading) {
+  if (getPerfilesLoading || eliminarPerfilGlobalLoading) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (listaPerfilesError || eliminarPerfilError) {
+  if (getPerfilesError || eliminarPerfilGlobalError) {
     return <ErrorQueryDB />;
   }
 
@@ -390,24 +453,12 @@ export default function Perfiles(props) {
     setPage(0);
   };
 
-  const eliminarPerfil = (idPerfil) => {
-    swal({
-      text: "¿Está seguro de eliminar el perfil?",
-      buttons: ["No", "Sí"],
-      dangerMode: true,
-    }).then((value) => {
-      if (value) {
-        executeEliminarPerfil({
-          data: {
-            usuario: usuario,
-            pwd: pwd,
-            rfc: rfc,
-            idsubmenu: 22,
-            idperfil: idPerfil,
-          },
-        });
-      }
-    });
+  const handleOpenMenu = (event) => {
+    setAnchorMenuEl(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorMenuEl(null);
   };
 
   return (
@@ -415,53 +466,80 @@ export default function Perfiles(props) {
       {showComponent === 0 ? (
         <Paper className={classes.paper}>
           <Toolbar>
-            <Typography
-              className={classes.titleTable}
-              variant="h6"
-              id="tableTitle"
-            >
-              Lista de Perfiles
-            </Typography>
-            <Tooltip title="Nuevo">
-              <span>
-                <IconButton
-                  disabled={statusEmpresa !== 1}
-                  aria-label="nuevo"
-                  onClick={() => {
-                    setShowComponent(1);
-                  }}
+            <Grid container alignItems="center">
+              <Grid item xs={8} sm={6} md={6}>
+                <Typography
+                  className={classes.titleTable}
+                  variant="h6"
+                  style={{ alignSelf: "center" }}
+                  id="tableTitle"
                 >
-                  <AddCircleIcon
-                    style={{
-                      color: statusEmpresa !== 1 ? "disabled" : "#4caf50",
-                    }}
-                  />
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Tooltip title="Limpiar Filtro">
-              <IconButton
-                aria-label="filtro"
-                onClick={() => {
-                  setBusquedaFiltro("");
-                }}
+                  Lista de Perfiles
+                </Typography>
+              </Grid>
+              <Grid
+                item
+                xs={4}
+                sm={6}
+                md={2}
+                style={{ alignSelf: "flex-end", textAlign: "center" }}
               >
-                <ClearAllIcon style={{ color: "black" }} />
-              </IconButton>
-            </Tooltip>
-            <TextField
-              className={classes.textFields}
-              label="Escriba algo para filtrar"
-              type="text"
-              margin="normal"
-              value={busquedaFiltro}
-              inputProps={{
-                maxLength: 20,
-              }}
-              onChange={(e) => {
-                setBusquedaFiltro(e.target.value);
-              }}
-            />
+                <Tooltip title="Limpiar Filtro">
+                  <IconButton
+                    aria-label="filtro"
+                    style={{ float: "right" }}
+                    onClick={() => {
+                      setBusquedaFiltro("");
+                    }}
+                  >
+                    <ClearAllIcon style={{ color: "black" }} />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Nuevo">
+                  <IconButton
+                    aria-label="nuevo"
+                    style={{ float: "right" }}
+                    onClick={() => {
+                      setShowComponent(1);
+                      const token = jwt.sign(
+                        {
+                          menuTemporal: {
+                            modulo: "perfiles",
+                            showComponent: 1,
+                            idPerfil: idPerfilEditar,
+                            busquedaFiltro: busquedaFiltro,
+                            page: page,
+                          },
+                        },
+                        "mysecretpassword"
+                      );
+                      localStorage.setItem("menuTemporal", token);
+                    }}
+                  >
+                    <AddCircleIcon
+                      style={{
+                        color: "#4caf50",
+                      }}
+                    />
+                  </IconButton>
+                </Tooltip>
+              </Grid>
+              <Grid item xs={12} sm={12} md={4}>
+                <TextField
+                  className={classes.textFields}
+                  label="Escriba algo para filtrar"
+                  type="text"
+                  margin="normal"
+                  value={busquedaFiltro}
+                  inputProps={{
+                    maxLength: 20,
+                  }}
+                  onChange={(e) => {
+                    setBusquedaFiltro(e.target.value);
+                  }}
+                />
+              </Grid>
+            </Grid>
           </Toolbar>
           <div className={classes.tableWrapper}>
             <Table
@@ -497,55 +575,17 @@ export default function Perfiles(props) {
                           </TableCell>
                           <TableCell align="right">{row.descripcion}</TableCell>
                           <TableCell align="right">
-                            {row.status === 1 ? "Activo" : "No Activo"}
+                            {row.estatus === 1 ? "Activo" : "No Activo"}
                           </TableCell>
-                          <TableCell align="right">
-                            <Tooltip title="Editar">
-                              <span>
-                                <IconButton
-                                  disabled={statusEmpresa !== 1}
-                                  onClick={() => {
-                                    setIdPerfilEditar(row.idperfil);
-                                    setShowComponent(2);
-                                  }}
-                                >
-                                  <EditIcon
-                                    style={{
-                                      color:
-                                        statusEmpresa !== 1
-                                          ? "disabled"
-                                          : "black",
-                                    }}
-                                  />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                            <Tooltip title="Eliminar">
-                              <span>
-                                <IconButton
-                                  disabled={
-                                    row.idperfil === 1 ||
-                                    row.idperfil === 2 ||
-                                    row.idperfil === 3 ||
-                                    statusEmpresa !== 1
-                                  }
-                                  onClick={() => {
-                                    eliminarPerfil(row.idperfil);
-                                  }}
-                                >
-                                  <DeleteIcon
-                                    color={
-                                      row.idperfil === 1 ||
-                                      row.idperfil === 2 ||
-                                      row.idperfil === 3 ||
-                                      statusEmpresa !== 1
-                                        ? "disabled"
-                                        : "secondary"
-                                    }
-                                  />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
+                          <TableCell
+                            align="right"
+                            onClick={(e) => {
+                              handleOpenMenu(e);
+                              setIdPerfilEditar(row.id);
+                              //setStatusPerfil(row.estatus);
+                            }}
+                          >
+                            {row.acciones}
                           </TableCell>
                         </TableRow>
                       );
@@ -584,12 +624,11 @@ export default function Perfiles(props) {
           <CrearPerfil
             setShowComponent={setShowComponent}
             setLoading={setLoading}
-            usuario={usuario}
-            pwd={pwd}
-            rfc={rfc}
-            idPerfilEditar={idPerfilEditar}
-            executeListaPerfiles={executeListaPerfiles}
-            statusEmpresa={statusEmpresa}
+            correo={correo}
+            password={password}
+            executeGetPerfiles={executeGetPerfiles}
+            busquedaFiltro={busquedaFiltro}
+            page={page}
           />
         </Card>
       ) : showComponent === 2 ? (
@@ -597,15 +636,68 @@ export default function Perfiles(props) {
           <EditarPerfil
             setShowComponent={setShowComponent}
             setLoading={setLoading}
-            usuario={usuario}
-            pwd={pwd}
-            rfc={rfc}
+            correo={correo}
+            password={password}
             idPerfilEditar={idPerfilEditar}
-            executeListaPerfiles={executeListaPerfiles}
-            statusEmpresa={statusEmpresa}
+            executeGetPerfiles={executeGetPerfiles}
+            busquedaFiltro={busquedaFiltro}
+            page={page}
           />
         </Card>
       ) : null}
+      <StyledMenu
+        id="customized-menu"
+        anchorEl={anchorMenuEl}
+        keepMounted
+        open={Boolean(anchorMenuEl)}
+        onClose={handleCloseMenu}
+      >
+        <MenuItem
+          onClick={() => {
+            handleCloseMenu();
+            const token = jwt.sign(
+              {
+                menuTemporal: {
+                  modulo: "perfiles",
+                  showComponent: 2,
+                  idPerfil: idPerfilEditar,
+                  busquedaFiltro: busquedaFiltro,
+                  page: page,
+                },
+              },
+              "mysecretpassword"
+            );
+            localStorage.setItem("menuTemporal", token);
+            setShowComponent(2);
+          }}
+        >
+          <ListItemText primary="Editar" />
+        </MenuItem>
+        {idPerfilEditar > 4 ? (
+          <MenuItem
+            onClick={() => {
+              handleCloseMenu();
+              swal({
+                text: "¿Está seguro de eliminar el perfil?",
+                buttons: ["No", "Sí"],
+                dangerMode: true,
+              }).then((value) => {
+                if (value) {
+                  executeEliminarPerfilGlobal({
+                    data: {
+                      usuario: correo,
+                      pwd: password,
+                      idperfil: idPerfilEditar,
+                    },
+                  });
+                }
+              });
+            }}
+          >
+            <ListItemText primary="Eliminar" />
+          </MenuItem>
+        ) : null}
+      </StyledMenu>
     </div>
   );
 }
@@ -721,21 +813,20 @@ function CrearPerfil(props) {
   const TreeClasses = useTreeItemStyles();
   const setShowComponent = props.setShowComponent;
   const setLoading = props.setLoading;
-  const usuario = props.usuario;
-  const pwd = props.pwd;
-  const rfc = props.rfc;
-  const statusEmpresa = props.statusEmpresa;
-  const executeListaPerfiles = props.executeListaPerfiles;
-  //const idPerfilEditar = props.idPerfilEditar;
+  const usuario = props.correo;
+  const pwd = props.password;
+  const executeGetPerfiles = props.executeGetPerfiles;
+  const busquedaFiltro = props.busquedaFiltro;
+  const page = props.page;
   const [expanded, setExpanded] = useState([]);
-  //const [permiso, setPermiso] = useState(-1);
-  //const [idModulo, setIdModulo] = useState(0);
   const [nombrePerfil, setNombrePerfil] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [permisosModulos, setPermisosModulos] = useState([]);
-  const [{ data: menuData, loading: menuLoading, error: menuError }] = useAxios(
+  const [
+    { data: getMenusData, loading: getMenusLoading, error: getMenusError },
+  ] = useAxios(
     {
-      url: API_BASE_URL + `/menuWeb`,
+      url: API_BASE_URL + `/getMenus`,
       method: "GET",
       params: {
         usuario: usuario,
@@ -748,20 +839,18 @@ function CrearPerfil(props) {
   );
   const [
     {
-      data: agregarPerfilData,
-      loading: agregarPerfilLoading,
-      error: agregarPerfilError,
+      data: agregarPerfilGlobalData,
+      loading: agregarPerfilGlobalLoading,
+      error: agregarPerfilGlobalError,
     },
     executeAgregarPerfil,
   ] = useAxios(
     {
-      url: API_BASE_URL + `/agregarPerfil`,
+      url: API_BASE_URL + `/agregarPerfilGlobal`,
       method: "POST",
       data: {
         usuario: usuario,
         pwd: pwd,
-        rfc: rfc,
-        idsubmenu: 22,
         nombre: nombrePerfil,
         descripcion: descripcion,
         fecha: moment().format("YYYY-MM-DD"),
@@ -775,50 +864,51 @@ function CrearPerfil(props) {
 
   useEffect(() => {
     function checkData() {
-      if (menuData) {
-        if (menuData.error !== 0) {
+      if (getMenusData) {
+        if (getMenusData.error !== 0) {
           swal(
             "Error al cambiar permisos",
-            dataBaseErrores(menuData.error),
+            dataBaseErrores(getMenusData.error),
             "error"
           );
         } else {
           let modulos = [];
           let menus = [];
           let submenus = [];
-          for (let x = 0; x < menuData.modulos.length; x++) {
+          for (let x = 0; x < getMenusData.modulos.length; x++) {
             modulos[x] = {
-              idModulo: menuData.modulos[x].idmodulo,
-              nombreModulo: menuData.modulos[x].nombre_modulo,
-              status: menuData.modulos[x].status,
-              orden: menuData.modulos[x].orden,
-              icono: menuData.modulos[x].icono,
+              idModulo: getMenusData.modulos[x].idmodulo,
+              nombreModulo: getMenusData.modulos[x].nombre_modulo,
+              status: getMenusData.modulos[x].status,
+              orden: getMenusData.modulos[x].orden,
+              icono: getMenusData.modulos[x].icono,
               permisos: 0,
             };
             menus = [];
-            for (let y = 0; y < menuData.modulos[x].menus.length; y++) {
+            for (let y = 0; y < getMenusData.modulos[x].menus.length; y++) {
               menus[y] = {
-                idMenu: menuData.modulos[x].menus[y].idmenu,
-                idModulo: menuData.modulos[x].idmodulo,
-                nombreMenu: menuData.modulos[x].menus[y].nombre_menu,
-                status: menuData.modulos[x].menus[y].status,
-                orden: menuData.modulos[x].menus[y].orden,
+                idMenu: getMenusData.modulos[x].menus[y].idmenu,
+                idModulo: getMenusData.modulos[x].idmodulo,
+                nombreMenu: getMenusData.modulos[x].menus[y].nombre_menu,
+                status: getMenusData.modulos[x].menus[y].status,
+                orden: getMenusData.modulos[x].menus[y].orden,
                 permisos: 0,
               };
               submenus = [];
               for (
                 let z = 0;
-                z < menuData.modulos[x].menus[y].submenus.length;
+                z < getMenusData.modulos[x].menus[y].submenus.length;
                 z++
               ) {
                 submenus[z] = {
-                  idSubmenu: menuData.modulos[x].menus[y].submenus[z].idsubmenu,
-                  idMenu: menuData.modulos[x].menus[y].idmenu,
-                  idModulo: menuData.modulos[x].idmodulo,
+                  idSubmenu:
+                    getMenusData.modulos[x].menus[y].submenus[z].idsubmenu,
+                  idMenu: getMenusData.modulos[x].menus[y].idmenu,
+                  idModulo: getMenusData.modulos[x].idmodulo,
                   nombreSubmenu:
-                    menuData.modulos[x].menus[y].submenus[z].nombre_submenu,
-                  status: menuData.modulos[x].menus[y].submenus[z].status,
-                  orden: menuData.modulos[x].menus[y].submenus[z].orden,
+                    getMenusData.modulos[x].menus[y].submenus[z].nombre_submenu,
+                  status: getMenusData.modulos[x].menus[y].submenus[z].status,
+                  orden: getMenusData.modulos[x].menus[y].submenus[z].orden,
                   permisos: 0,
                   permisosNotificaciones: 0,
                 };
@@ -839,31 +929,35 @@ function CrearPerfil(props) {
     }
 
     checkData();
-  }, [menuData]);
+  }, [getMenusData]);
 
   useEffect(() => {
     function checkData() {
-      if (agregarPerfilData) {
-        if (agregarPerfilData.error !== 0) {
-          swal("Error", dataBaseErrores(agregarPerfilData.error), "warning");
+      if (agregarPerfilGlobalData) {
+        if (agregarPerfilGlobalData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(agregarPerfilGlobalData.error),
+            "warning"
+          );
         } else {
           swal("Perfil Agregado", "Perfil agregado con éxito", "success");
-          executeListaPerfiles();
+          executeGetPerfiles();
           setShowComponent(0);
         }
       }
     }
 
     checkData();
-  }, [agregarPerfilData, executeListaPerfiles, setShowComponent]);
+  }, [agregarPerfilGlobalData, executeGetPerfiles, setShowComponent]);
 
-  if (menuLoading || agregarPerfilLoading) {
+  if (getMenusLoading || agregarPerfilGlobalLoading) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (menuError || agregarPerfilError) {
+  if (getMenusError || agregarPerfilGlobalError) {
     return <ErrorQueryDB />;
   }
 
@@ -899,10 +993,7 @@ function CrearPerfil(props) {
                   e.stopPropagation();
                 }}
                 onChange={(e) => {
-                  //console.log(indexModulo, indexMenu, index, submenu);
                   let newData = [...permisosModulos];
-                  /* console.log(newData[indexModulo].menus[indexMenu].submenus[index]);
-                  console.log(newData[indexModulo].menus[indexMenu].submenus[index].permisos); */
                   newData[indexModulo].menus[indexMenu].submenus[
                     index
                   ].permisos = parseInt(e.target.value);
@@ -1095,6 +1186,19 @@ function CrearPerfil(props) {
             <IconButton
               onClick={() => {
                 setShowComponent(0);
+                const token = jwt.sign(
+                  {
+                    menuTemporal: {
+                      modulo: "perfiles",
+                      showComponent: 0,
+                      idPerfil: 0,
+                      busquedaFiltro: busquedaFiltro,
+                      page: page,
+                    },
+                  },
+                  "mysecretpassword"
+                );
+                localStorage.setItem("menuTemporal", token);
               }}
             >
               <ArrowBackIcon color="primary" />
@@ -1105,7 +1209,6 @@ function CrearPerfil(props) {
       </Grid>
       <Grid item xs={12}>
         <Button
-          disabled={statusEmpresa !== 1}
           variant="contained"
           color="primary"
           style={{ float: "right" }}
@@ -1182,33 +1285,29 @@ function EditarPerfil(props) {
   const TreeClasses = useTreeItemStyles();
   const setShowComponent = props.setShowComponent;
   const setLoading = props.setLoading;
-  const usuario = props.usuario;
-  const pwd = props.pwd;
-  const rfc = props.rfc;
-  const statusEmpresa = props.statusEmpresa;
-  const executeListaPerfiles = props.executeListaPerfiles;
+  const correo = props.correo;
+  const password = props.password;
+  const executeGetPerfiles = props.executeGetPerfiles;
   const idPerfilEditar = props.idPerfilEditar;
+  const busquedaFiltro = props.busquedaFiltro;
+  const page = props.page;
   const [expanded, setExpanded] = useState([]);
-  //const [permiso, setPermiso] = useState(-1);
-  //const [idModulo, setIdModulo] = useState(0);
   const [nombrePerfil, setNombrePerfil] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [permisosModulos, setPermisosModulos] = useState([]);
   const [
     {
-      data: datosPerfilData,
-      loading: datosPerfilLoading,
-      error: datosPerfilError,
+      data: datosPerfilGlobalData,
+      loading: datosPerfilGlobalLoading,
+      error: datosPerfilGlobalError,
     },
   ] = useAxios(
     {
-      url: API_BASE_URL + `/datosPerfil`,
+      url: API_BASE_URL + `/datosPerfilGlobal`,
       method: "GET",
       params: {
-        usuario: usuario,
-        pwd: pwd,
-        rfc: rfc,
-        idsubmenu: 22,
+        usuario: correo,
+        pwd: password,
         idperfil: idPerfilEditar,
       },
     },
@@ -1218,20 +1317,18 @@ function EditarPerfil(props) {
   );
   const [
     {
-      data: editarPerfilData,
-      loading: editarPerfilLoading,
-      error: editarPerfilError,
+      data: editarPerfilGlobalData,
+      loading: editarPerfilGlobalLoading,
+      error: editarPerfilGlobalError,
     },
-    executeEditarPerfil,
+    executeEditarPerfilGlobal,
   ] = useAxios(
     {
-      url: API_BASE_URL + `/editarPerfil`,
+      url: API_BASE_URL + `/editarPerfilGlobal`,
       method: "PUT",
       data: {
-        usuario: usuario,
-        pwd: pwd,
-        rfc: rfc,
-        idsubmenu: 22,
+        usuario: correo,
+        pwd: password,
         nombre: nombrePerfil,
         descripcion: descripcion,
         permisosdatos: permisosModulos,
@@ -1245,53 +1342,66 @@ function EditarPerfil(props) {
 
   useEffect(() => {
     function checkData() {
-      if (datosPerfilData) {
-        if (datosPerfilData.error !== 0) {
-          swal("Error", dataBaseErrores(datosPerfilData.error), "warning");
+      if (datosPerfilGlobalData) {
+        if (datosPerfilGlobalData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(datosPerfilGlobalData.error),
+            "warning"
+          );
         } else {
           let modulos = [];
           let menus = [];
           let submenus = [];
-          for (let x = 0; x < datosPerfilData.modulos.length; x++) {
+          for (let x = 0; x < datosPerfilGlobalData.modulos.length; x++) {
             modulos[x] = {
-              idModulo: datosPerfilData.modulos[x].idmodulo,
-              nombreModulo: datosPerfilData.modulos[x].nombre_modulo,
-              status: datosPerfilData.modulos[x].status,
-              orden: datosPerfilData.modulos[x].orden,
-              icono: datosPerfilData.modulos[x].icono,
-              permisos: datosPerfilData.modulos[x].permisos,
+              idModulo: datosPerfilGlobalData.modulos[x].idmodulo,
+              nombreModulo: datosPerfilGlobalData.modulos[x].nombre_modulo,
+              status: datosPerfilGlobalData.modulos[x].status,
+              orden: datosPerfilGlobalData.modulos[x].orden,
+              icono: datosPerfilGlobalData.modulos[x].icono,
+              permisos: datosPerfilGlobalData.modulos[x].permisos,
             };
             menus = [];
-            for (let y = 0; y < datosPerfilData.modulos[x].menus.length; y++) {
+            for (
+              let y = 0;
+              y < datosPerfilGlobalData.modulos[x].menus.length;
+              y++
+            ) {
               menus[y] = {
-                idMenu: datosPerfilData.modulos[x].menus[y].idmenu,
-                idModulo: datosPerfilData.modulos[x].idmodulo,
-                nombreMenu: datosPerfilData.modulos[x].menus[y].nombre_menu,
-                status: datosPerfilData.modulos[x].menus[y].status,
-                orden: datosPerfilData.modulos[x].menus[y].orden,
-                permisos: datosPerfilData.modulos[x].menus[y].permisos,
+                idMenu: datosPerfilGlobalData.modulos[x].menus[y].idmenu,
+                idModulo: datosPerfilGlobalData.modulos[x].idmodulo,
+                nombreMenu:
+                  datosPerfilGlobalData.modulos[x].menus[y].nombre_menu,
+                status: datosPerfilGlobalData.modulos[x].menus[y].status,
+                orden: datosPerfilGlobalData.modulos[x].menus[y].orden,
+                permisos: datosPerfilGlobalData.modulos[x].menus[y].permisos,
               };
               submenus = [];
               for (
                 let z = 0;
-                z < datosPerfilData.modulos[x].menus[y].submenus.length;
+                z < datosPerfilGlobalData.modulos[x].menus[y].submenus.length;
                 z++
               ) {
                 submenus[z] = {
                   idSubmenu:
-                    datosPerfilData.modulos[x].menus[y].submenus[z].idsubmenu,
-                  idMenu: datosPerfilData.modulos[x].menus[y].idmenu,
-                  idModulo: datosPerfilData.modulos[x].idmodulo,
+                    datosPerfilGlobalData.modulos[x].menus[y].submenus[z]
+                      .idsubmenu,
+                  idMenu: datosPerfilGlobalData.modulos[x].menus[y].idmenu,
+                  idModulo: datosPerfilGlobalData.modulos[x].idmodulo,
                   nombreSubmenu:
-                    datosPerfilData.modulos[x].menus[y].submenus[z]
+                    datosPerfilGlobalData.modulos[x].menus[y].submenus[z]
                       .nombre_submenu,
                   status:
-                    datosPerfilData.modulos[x].menus[y].submenus[z].status,
-                  orden: datosPerfilData.modulos[x].menus[y].submenus[z].orden,
+                    datosPerfilGlobalData.modulos[x].menus[y].submenus[z]
+                      .status,
+                  orden:
+                    datosPerfilGlobalData.modulos[x].menus[y].submenus[z].orden,
                   permisos:
-                    datosPerfilData.modulos[x].menus[y].submenus[z].permisos,
+                    datosPerfilGlobalData.modulos[x].menus[y].submenus[z]
+                      .permisos,
                   permisosNotificaciones:
-                    datosPerfilData.modulos[x].menus[y].submenus[z]
+                    datosPerfilGlobalData.modulos[x].menus[y].submenus[z]
                       .permisosNotificaciones,
                 };
               }
@@ -1306,38 +1416,42 @@ function EditarPerfil(props) {
             };
           }
           setPermisosModulos(modulos);
-          setNombrePerfil(datosPerfilData.perfil[0].nombre);
-          setDescripcion(datosPerfilData.perfil[0].descripcion);
+          setNombrePerfil(datosPerfilGlobalData.perfil[0].nombre);
+          setDescripcion(datosPerfilGlobalData.perfil[0].descripcion);
         }
       }
     }
 
     checkData();
-  }, [datosPerfilData]);
+  }, [datosPerfilGlobalData]);
 
   useEffect(() => {
     function checkData() {
-      if (editarPerfilData) {
-        if (editarPerfilData.error !== 0) {
-          swal("Error", dataBaseErrores(editarPerfilData.error), "warning");
+      if (editarPerfilGlobalData) {
+        if (editarPerfilGlobalData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(editarPerfilGlobalData.error),
+            "warning"
+          );
         } else {
           swal("Perfil Editado", "Perfil editado con éxito", "success");
-          executeListaPerfiles();
+          executeGetPerfiles();
           setShowComponent(0);
         }
       }
     }
 
     checkData();
-  }, [editarPerfilData, executeListaPerfiles, setShowComponent]);
+  }, [editarPerfilGlobalData, executeGetPerfiles, setShowComponent]);
 
-  if (editarPerfilLoading || datosPerfilLoading) {
+  if (editarPerfilGlobalLoading || datosPerfilGlobalLoading) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (editarPerfilError || datosPerfilError) {
+  if (editarPerfilGlobalError || datosPerfilGlobalError) {
     return <ErrorQueryDB />;
   }
 
@@ -1572,7 +1686,7 @@ function EditarPerfil(props) {
     } else if (descripcion.trim() === "") {
       swal("Error", "Agregue una descripción", "warning");
     } else {
-      executeEditarPerfil();
+      executeEditarPerfilGlobal();
     }
   };
 
@@ -1584,6 +1698,19 @@ function EditarPerfil(props) {
             <IconButton
               onClick={() => {
                 setShowComponent(0);
+                const token = jwt.sign(
+                  {
+                    menuTemporal: {
+                      modulo: "perfiles",
+                      showComponent: 0,
+                      idPerfil: 0,
+                      busquedaFiltro: busquedaFiltro,
+                      page: page,
+                    },
+                  },
+                  "mysecretpassword"
+                );
+                localStorage.setItem("menuTemporal", token);
               }}
             >
               <ArrowBackIcon color="primary" />
@@ -1594,7 +1721,6 @@ function EditarPerfil(props) {
       </Grid>
       <Grid item xs={12}>
         <Button
-          disabled={statusEmpresa !== 1}
           variant="contained"
           color="primary"
           style={{ float: "right" }}

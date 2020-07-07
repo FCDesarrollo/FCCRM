@@ -272,12 +272,14 @@ export default function AlmacenDigitalExpedientes(props) {
   const userPassword = props.usuarioDatos.password;
   const empresaDatos = props.empresaDatos;
   const empresaRFC = empresaDatos.RFC;
+  const statusEmpresa = empresaDatos.statusempresa;
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [idSubmenu, setIdSubmenu] = useState(0);
   const [idAlmacenDigital, setIdAlmacenDigital] = useState(0);
   const setLoading = props.setLoading;
   const [showComponent, setShowComponent] = useState(0);
+  const [permisosSubmenu, setPermisosSubmenu] = useState(-1);
   const [tittleTableComponent, setTittleTableComponent] = useState("");
   const [busquedaFiltro, setBusquedaFiltro] = useState("");
   const [
@@ -298,6 +300,14 @@ export default function AlmacenDigitalExpedientes(props) {
       useCache: false,
     }
   );
+
+  useEffect(() => {
+    for (let x = 0; x < submenuContent.length; x++) {
+      if (submenuContent[x].submenu.idsubmenu === parseInt(idSubmenu)) {
+        setPermisosSubmenu(submenuContent[x].permisos);
+      }
+    }
+  }, [idSubmenu, submenuContent, showComponent]);
 
   useEffect(() => {
     function checkData() {
@@ -452,6 +462,8 @@ export default function AlmacenDigitalExpedientes(props) {
             idModulo={idModulo}
             executeADE={executeADE}
             setLoading={setLoading}
+            statusEmpresa={statusEmpresa}
+            permisosSubmenu={permisosSubmenu}
           />
         ) : showComponent === 2 ? (
           <VerDocumentos
@@ -488,6 +500,7 @@ function TablaADE(props) {
   const userEmail = props.userEmail;
   const userPassword = props.userPassword;
   const empresaRFC = props.empresaRFC;
+  const statusEmpresa = props.statusEmpresa;
   const tableTittle = props.tittle;
   const setShowComponent = props.setShowComponent;
   const idAlmacenDigital = props.idAlmacenDigital;
@@ -498,6 +511,7 @@ function TablaADE(props) {
   const empresaDatos = props.empresaDatos;
   const executeADE = props.executeADE;
   const setLoading = props.setLoading;
+  const permisosSubmenu = props.permisosSubmenu;
   const sucursalesEmpresa = empresaDatos.sucursales;
   const [order, setOrder] = React.useState("desc");
   const [orderBy, setOrderBy] = React.useState("fecha");
@@ -815,15 +829,18 @@ function TablaADE(props) {
                 </IconButton>
               </Tooltip>
               <Tooltip title="Nuevo">
-                <IconButton
-                  aria-label="nuevo"
-                  style={{ float: "right" }}
-                  onClick={() => {
-                    handleClickOpenDialogNuevoADO();
-                  }}
-                >
-                  <AddCircleIcon style={{ color: "#4caf50" }} />
-                </IconButton>
+                <span>
+                  <IconButton
+                    aria-label="nuevo"
+                    disabled={permisosSubmenu < 1 || statusEmpresa !== 1}
+                    style={{ float: "right" }}
+                    onClick={() => {
+                      handleClickOpenDialogNuevoADO();
+                    }}
+                  >
+                    <AddCircleIcon style={{ color: permisosSubmenu < 1 || statusEmpresa !== 1 ? "disabled" : "#4caf50" }} />
+                  </IconButton>
+                </span>
               </Tooltip>
             </Grid>
             <Grid item xs={12} sm={12} md={4}>
@@ -1049,6 +1066,7 @@ function TablaADE(props) {
             onClick={() => {
               newADO();
             }}
+            disabled={permisosSubmenu < 1 || statusEmpresa !== 1}
             color="primary"
             variant="contained"
             autoFocus

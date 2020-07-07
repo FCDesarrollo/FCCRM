@@ -276,6 +276,8 @@ export default function AlmacenDigitalOperaciones(props) {
   const empresaDatos = props.empresaDatos;
   const setLoading = props.setLoading;
   const empresaRFC = empresaDatos.RFC;
+  const statusEmpresa = empresaDatos.statusempresa;
+  const [permisosSubmenu, setPermisosSubmenu] = useState(-1);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [idAlmacenDigital, setIdAlmacenDigital] = useState(0);
@@ -302,6 +304,14 @@ export default function AlmacenDigitalOperaciones(props) {
       useCache: false,
     }
   );
+
+  useEffect(() => {
+    for (let x = 0; x < submenuContent.length; x++) {
+      if (submenuContent[x].submenu.idsubmenu === parseInt(idSubmenu)) {
+        setPermisosSubmenu(submenuContent[x].permisos);
+      }
+    }
+  }, [idSubmenu, submenuContent, showComponent]);
 
   useEffect(() => {
     function checkData() {
@@ -466,6 +476,8 @@ export default function AlmacenDigitalOperaciones(props) {
             idModulo={idModulo}
             executeADO={executeADO}
             setLoading={setLoading}
+            statusEmpresa={statusEmpresa}
+            permisosSubmenu={permisosSubmenu}
           />
         ) : showComponent === 2 ? (
           <VerDocumentos
@@ -514,6 +526,8 @@ function TablaADO(props) {
   const empresaDatos = props.empresaDatos;
   const executeADO = props.executeADO;
   const setLoading = props.setLoading;
+  const statusEmpresa = props.statusEmpresa;
+  const permisosSubmenu = props.permisosSubmenu;
   const sucursalesEmpresa = empresaDatos.sucursales;
   const [order, setOrder] = useState("desc");
   const [orderBy, setOrderBy] = useState("fecha");
@@ -832,15 +846,25 @@ function TablaADO(props) {
               </Tooltip>
               {getPermisosSubmenu(idSubmenu) >= 2 ? (
                 <Tooltip title="Nuevo">
-                  <IconButton
-                    aria-label="nuevo"
-                    style={{ float: "right" }}
-                    onClick={() => {
-                      handleClickOpenDialogNuevoADO();
-                    }}
-                  >
-                    <AddCircleIcon style={{ color: "#4caf50" }} />
-                  </IconButton>
+                  <span>
+                    <IconButton
+                      aria-label="nuevo"
+                      disabled={permisosSubmenu < 1 || statusEmpresa !== 1}
+                      style={{ float: "right" }}
+                      onClick={() => {
+                        handleClickOpenDialogNuevoADO();
+                      }}
+                    >
+                      <AddCircleIcon
+                        style={{
+                          color:
+                            permisosSubmenu < 1 || statusEmpresa !== 1
+                              ? "disabled"
+                              : "#4caf50",
+                        }}
+                      />
+                    </IconButton>
+                  </span>
                 </Tooltip>
               ) : (
                 <Tooltip title="Nuevo">
@@ -1070,6 +1094,7 @@ function TablaADO(props) {
         </DialogContent>
         <DialogActions>
           <Button
+            disabled={permisosSubmenu < 1 || statusEmpresa !== 1}
             onClick={() => {
               newADO();
             }}
@@ -1373,7 +1398,10 @@ function VerDocumentos(props) {
         </Toolbar>
       ) : (
         <Fragment>
-          <Tooltip title="Regresar" style={{float: "left", marginBottom: "10px"}}>
+          <Tooltip
+            title="Regresar"
+            style={{ float: "left", marginBottom: "10px" }}
+          >
             <IconButton
               onClick={() => {
                 executeADO();
@@ -1395,7 +1423,9 @@ function VerDocumentos(props) {
               <ArrowBackIcon color="primary" />
             </IconButton>
           </Tooltip>
-          <Typography variant="h6" style={{float: "left", marginTop: "10px"}}>{tittle}</Typography>
+          <Typography variant="h6" style={{ float: "left", marginTop: "10px" }}>
+            {tittle}
+          </Typography>
         </Fragment>
       )}
       <TableContainer component={Paper}>

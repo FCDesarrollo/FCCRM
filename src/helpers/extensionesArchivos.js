@@ -12,3 +12,13 @@ export const verificarArchivoKey = fileName => {
     const extensionesPermitidas = /(.key)$/i;
     return extensionesPermitidas.exec(fileName);
 }
+
+export const verificarArchivoLote = fileName => {
+    const extensionesPermitidas = /(.xlsm)$/i;
+    return extensionesPermitidas.exec(fileName);
+}
+
+export const verificarArchivoMovimiento = fileName => {
+    const extensionesPermitidas = /(.xml|.pdf)$/i;
+    return extensionesPermitidas.exec(fileName);
+}

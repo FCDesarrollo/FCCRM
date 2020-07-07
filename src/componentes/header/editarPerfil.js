@@ -54,6 +54,7 @@ export default function EditarPerfil(props) {
   const usuario = usuarioDatos.correo;
   const pwd = usuarioDatos.password;
   const empresaDatos = props.empresaDatos;
+  const statusEmpresa = empresaDatos.statusempresa;
   const rfc = empresaDatos.RFC;
   const [nombre, setNombre] = useState(usuarioDatos.nombre);
   const [apellidoPaterno, setApellidoPaterno] = useState(
@@ -78,7 +79,7 @@ export default function EditarPerfil(props) {
     },
     {
       useCache: false,
-      manual: true
+      manual: true,
     }
   );
   const [
@@ -130,7 +131,7 @@ export default function EditarPerfil(props) {
             { userData: cambiarContraUsuarioData.usuario[0] },
             "mysecretpassword",
             {
-              expiresIn: 60 * 60 * 24
+              expiresIn: 60 * 60 * 24,
             }
           );
           localStorage.setItem("token", token);
@@ -192,8 +193,8 @@ export default function EditarPerfil(props) {
           rfc: rfc,
           idsubmenu: 1,
           idusuario: idUsuario,
-          password: contraNueva.trim()
-        }
+          password: contraNueva.trim(),
+        },
       });
     }
   };
@@ -292,11 +293,19 @@ export default function EditarPerfil(props) {
           style={{ alignSelf: "center", textAlign: "center" }}
         >
           <FormControlLabel
-            control={<VpnKeyIcon style={{ marginRight: "10px" }} />}
+            disabled={statusEmpresa !== 1}
+            control={
+              <VpnKeyIcon
+                style={{ marginRight: "10px" }}
+                color={statusEmpresa !== 1 ? "disabled" : "inherit"}
+              />
+            }
             label="Cambiar Contraseña"
             labelPlacement="end"
             onClick={() => {
-              handleClickOpenMenuContra();
+              if (statusEmpresa === 1) {
+                handleClickOpenMenuContra();
+              }
             }}
           />
         </Grid>
@@ -307,11 +316,19 @@ export default function EditarPerfil(props) {
           style={{ alignSelf: "center", textAlign: "center" }}
         >
           <FormControlLabel
-            control={<SettingsIcon style={{ marginRight: "10px" }} />}
+            disabled={statusEmpresa !== 1}
+            control={
+              <SettingsIcon
+                style={{ marginRight: "10px" }}
+                color={statusEmpresa !== 1 ? "disabled" : "inherit"}
+              />
+            }
             label="Notificaciones"
             labelPlacement="end"
             onClick={() => {
-              handleClickOpenMenuNotificaciones();
+              if (statusEmpresa === 1) {
+                handleClickOpenMenuNotificaciones();
+              }
             }}
           />
         </Grid>
@@ -390,6 +407,7 @@ export default function EditarPerfil(props) {
             Cancelar
           </Button>
           <Button
+            disabled={statusEmpresa !== 1}
             variant="contained"
             color="primary"
             onClick={() => {
@@ -430,7 +448,7 @@ export default function EditarPerfil(props) {
           </TableContainer>
         </DialogContent>
         <DialogActions>
-        <Button
+          <Button
             variant="contained"
             color="secondary"
             onClick={() => {

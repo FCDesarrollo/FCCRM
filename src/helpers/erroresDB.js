@@ -82,6 +82,10 @@ export const dataBaseErrores = error => {
       return "Existen conceptos que no pertenecen al apartado actual.";
     case 54:
       return "Existen sucursales que no han sido dadas de alta.";
+    case 55:
+      return "Para eliminar un movimiento primero se tienen que eliminar todos sus abonos.";
+    case 56:
+      return "No se pueden eliminar ninguno de los cuatro perfiles principales.";
     case -1:
       return "El teléfono ya existe.";
     case -2:

@@ -186,6 +186,7 @@ export default function ConfiguracionesPermisos(props) {
   const TreeClasses = useTreeItemStyles();
   const usuarioDatos = props.usuarioDatos;
   const empresaDatos = props.empresaDatos;
+  const statusEmpresa = empresaDatos.statusempresa;
   const usuario = usuarioDatos.correo;
   const pwd = usuarioDatos.password;
   const rfc = empresaDatos.RFC;
@@ -630,7 +631,7 @@ export default function ConfiguracionesPermisos(props) {
               <Tooltip title="Máximo importe de gastos">
                 <span>
                   <IconButton
-                    disabled={permisos < 1}
+                    disabled={permisos < 1 || statusEmpresa !== 1}
                     onClick={e => {
                       e.stopPropagation();
                       setSelectedConceptoLimite(concepto.id);
@@ -649,7 +650,7 @@ export default function ConfiguracionesPermisos(props) {
                     }}
                   >
                     <MoneyOffIcon
-                      style={{ color: permisos >= 1 ? "black" : "" }}
+                      style={{ color: permisos < 1 || statusEmpresa !== 1 ? "disabled" : "black" }}
                     />
                   </IconButton>
                 </span>
@@ -657,14 +658,14 @@ export default function ConfiguracionesPermisos(props) {
               <Tooltip title="Quitar concepto">
               <span>
                 <IconButton
-                  disabled={permisos < 3}
+                  disabled={permisos < 3 || statusEmpresa !== 1}
                   onClick={e => {
                     e.stopPropagation();
                     eliminarConcepto(concepto.id, idUsuario);
                   }}
                 >
                   <MinimizeIcon
-                    color={permisos === 3 ? "secondary" : "inherit"}
+                    color={permisos < 3 || statusEmpresa !== 1 ? "disabled" : "secondary" }
                   />
                 </IconButton>
               </span>
@@ -720,14 +721,14 @@ export default function ConfiguracionesPermisos(props) {
               <Tooltip title="Agregar concepto">
                 <span>
                   <IconButton
-                    disabled={permisos < 2}
+                    disabled={permisos < 2 || statusEmpresa !== 1}
                     onClick={e => {
                       e.stopPropagation();
                       agregarConcepto(usuario.idusuario);
                     }}
                   >
                     <AddIcon
-                      style={{ color: permisos >= 2 ? "#4caf50" : "" }}
+                      style={{ color: permisos < 2 || statusEmpresa !== 1 ? "disabled" : "#4caf50" }}
                     />
                   </IconButton>
                 </span>
@@ -932,7 +933,7 @@ export default function ConfiguracionesPermisos(props) {
           </Button>
           <Button
             variant="contained"
-            disabled={permisos < 2}
+            disabled={permisos < 2 || statusEmpresa !== 1}
             color="primary"
             onClick={() => {
               guardarLimiteImporte();

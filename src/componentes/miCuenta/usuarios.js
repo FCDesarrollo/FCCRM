@@ -39,7 +39,11 @@ import {
   Star as StarIcon,
 } from "@material-ui/icons";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
-import { keyValidation, pasteValidation, validarCorreo } from "../../helpers/inputHelpers";
+import {
+  keyValidation,
+  pasteValidation,
+  validarCorreo,
+} from "../../helpers/inputHelpers";
 import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
 import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
@@ -79,6 +83,7 @@ export default function Usuarios(props) {
   const usuarioDatos = props.usuarioDatos;
   const idUsuario = usuarioDatos.idusuario;
   const empresaDatos = props.empresaDatos;
+  const statusEmpresa = empresaDatos.statusempresa;
   const nombreEmpresa = empresaDatos.nombreempresa;
   const idEmpresa = empresaDatos.idempresa;
   const usuario = usuarioDatos.correo;
@@ -279,9 +284,11 @@ export default function Usuarios(props) {
                 pwd={pwd}
                 rfc={rfc}
                 setLoading={setLoading}
+                statusEmpresa={statusEmpresa}
               />
             ) : showComponent === 2 ? (
               <CrearUsuario
+                permisosSubmenu={permisosSubmenu}
                 setShowComponent={setShowComponent}
                 executeListaUsuariosEmpresa={executeListaUsuariosEmpresa}
                 usuario={usuario}
@@ -291,9 +298,11 @@ export default function Usuarios(props) {
                 idEmpresa={idEmpresa}
                 idSubmenu={idSubmenuActual}
                 setLoading={setLoading}
+                statusEmpresa={statusEmpresa}
               />
             ) : showComponent === 3 ? (
               <VincularUsuario
+                permisosSubmenu={permisosSubmenu}
                 setShowComponent={setShowComponent}
                 executeListaUsuariosEmpresa={executeListaUsuariosEmpresa}
                 usuario={usuario}
@@ -304,6 +313,7 @@ export default function Usuarios(props) {
                 nombreEmpresa={nombreEmpresa}
                 idSubmenu={idSubmenuActual}
                 setLoading={setLoading}
+                statusEmpresa={statusEmpresa}
               />
             ) : showComponent === 4 ? (
               <EditarPermisosUsuario
@@ -331,7 +341,7 @@ export default function Usuarios(props) {
 function ListaUsuarios(props) {
   const classes = useStyles();
   const permisosSubmenu = props.permisosSubmenu;
-  //console.log(permisosSubmenu);
+  const statusEmpresa = props.statusEmpresa;
   const executeListaUsuariosEmpresa = props.executeListaUsuariosEmpresa;
   const listaUsuariosEmpresaData = props.listaUsuariosEmpresaData;
   const setShowComponent = props.setShowComponent;
@@ -351,7 +361,7 @@ function ListaUsuarios(props) {
   ] = useAxios(
     {
       url: API_BASE_URL + `/desvinculaUsuario`,
-      method: "PUT"
+      method: "PUT",
     },
     {
       manual: true,
@@ -367,7 +377,7 @@ function ListaUsuarios(props) {
   ] = useAxios(
     {
       url: API_BASE_URL + `/eliminaUsuarioEmpresa`,
-      method: "DELETE"
+      method: "DELETE",
     },
     {
       manual: true,
@@ -378,10 +388,21 @@ function ListaUsuarios(props) {
     function checkData() {
       if (desvinculaUsuarioData) {
         if (desvinculaUsuarioData.error !== 0) {
-          swal("Error", dataBaseErrores(desvinculaUsuarioData.error), "warning");
-        }
-        else {
-          swal(desvinculaUsuarioData.estatus === "0" ? "Usuario Desvinculado" : "Usuario Vinculado", desvinculaUsuarioData.estatus === "0" ? "Usuario desvinculado con éxito" : "Usuario vinculado con éxito", "success");
+          swal(
+            "Error",
+            dataBaseErrores(desvinculaUsuarioData.error),
+            "warning"
+          );
+        } else {
+          swal(
+            desvinculaUsuarioData.estatus === "0"
+              ? "Usuario Desvinculado"
+              : "Usuario Vinculado",
+            desvinculaUsuarioData.estatus === "0"
+              ? "Usuario desvinculado con éxito"
+              : "Usuario vinculado con éxito",
+            "success"
+          );
           executeListaUsuariosEmpresa();
         }
       }
@@ -394,9 +415,12 @@ function ListaUsuarios(props) {
     function checkData() {
       if (eliminaUsuarioEmpresaData) {
         if (eliminaUsuarioEmpresaData.error !== 0) {
-          swal("Error", dataBaseErrores(eliminaUsuarioEmpresaData.error), "warning");
-        }
-        else {
+          swal(
+            "Error",
+            dataBaseErrores(eliminaUsuarioEmpresaData.error),
+            "warning"
+          );
+        } else {
           swal("Usuario Eliminado", "Usuario eliminado con éxito", "success");
           executeListaUsuariosEmpresa();
         }
@@ -431,7 +455,7 @@ function ListaUsuarios(props) {
               <Tooltip title="Editar permisos">
                 <span>
                   <IconButton
-                    disabled={permisosSubmenu < 2}
+                    disabled={permisosSubmenu < 2 || statusEmpresa !== 1}
                     onClick={() => {
                       setIdUsuarioEditar(usuario.idusuario);
                       setShowComponent(4);
@@ -450,93 +474,102 @@ function ListaUsuarios(props) {
                     }}
                   >
                     <EditIcon
-                      style={{ color: permisosSubmenu >= 2 ? "black" : "" }}
+                      style={{ color: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "black" }}
                     />
                   </IconButton>
                 </span>
               </Tooltip>
               {usuario.estatus_vinculacion === 1 ? (
                 <Tooltip title="Desvincular">
-                <span>
-                  <IconButton disabled={permisosSubmenu < 2} onClick={() => {
-                    swal({
-                      text: "¿Está seguro de desvincular este usuario?",
-                      buttons: ["No", "Sí"],
-                      dangerMode: true,
-                    }).then((value) => {
-                      if (value) {
-                        executeDesvinculaUsuario({
-                          params: {
-                            usuario: usuarioActual,
-                            pwd: pwd,
-                            rfc: rfc,
-                            idsubmenu: 21,
-                            idusuario: usuario.idusuario,
-                            estatus: 0
+                  <span>
+                    <IconButton
+                      disabled={permisosSubmenu < 2 || statusEmpresa !== 1}
+                      onClick={() => {
+                        swal({
+                          text: "¿Está seguro de desvincular este usuario?",
+                          buttons: ["No", "Sí"],
+                          dangerMode: true,
+                        }).then((value) => {
+                          if (value) {
+                            executeDesvinculaUsuario({
+                              params: {
+                                usuario: usuarioActual,
+                                pwd: pwd,
+                                rfc: rfc,
+                                idsubmenu: 21,
+                                idusuario: usuario.idusuario,
+                                estatus: 0,
+                              },
+                            });
                           }
                         });
-                      }
-                    });
-                  }}>
-                    <LinkOffIcon
-                      style={{ color: permisosSubmenu >= 2 ? "#ffc400" : "" }}
-                    />
-                  </IconButton>
-                </span>
-              </Tooltip>
+                      }}
+                    >
+                      <LinkOffIcon
+                        style={{ color: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#ffc400" }}
+                      />
+                    </IconButton>
+                  </span>
+                </Tooltip>
               ) : (
                 <Tooltip title="Vincular">
-                <span>
-                  <IconButton disabled={permisosSubmenu < 2} onClick={() => {
-                    swal({
-                      text: "¿Está seguro de vincular este usuario?",
-                      buttons: ["No", "Sí"],
-                      dangerMode: true,
-                    }).then((value) => {
-                      if (value) {
-                        executeDesvinculaUsuario({
-                          params: {
-                            usuario: usuarioActual,
-                            pwd: pwd,
-                            rfc: rfc,
-                            idsubmenu: 21,
-                            idusuario: usuario.idusuario,
-                            estatus: 1
+                  <span>
+                    <IconButton
+                      disabled={permisosSubmenu < 2 || statusEmpresa !== 1}
+                      onClick={() => {
+                        swal({
+                          text: "¿Está seguro de vincular este usuario?",
+                          buttons: ["No", "Sí"],
+                          dangerMode: true,
+                        }).then((value) => {
+                          if (value) {
+                            executeDesvinculaUsuario({
+                              params: {
+                                usuario: usuarioActual,
+                                pwd: pwd,
+                                rfc: rfc,
+                                idsubmenu: 21,
+                                idusuario: usuario.idusuario,
+                                estatus: 1,
+                              },
+                            });
                           }
                         });
-                      }
-                    });
-                  }}>
-                    <LinkIcon
-                      style={{ color: permisosSubmenu >= 2 ? "#ffc400" : "" }}
-                    />
-                  </IconButton>
-                </span>
-              </Tooltip>
+                      }}
+                    >
+                      <LinkIcon
+                        style={{ color: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#ffc400" }}
+                      />
+                    </IconButton>
+                  </span>
+                </Tooltip>
               )}
               <Tooltip title="Eliminar usuario">
                 <span>
-                  <IconButton disabled={permisosSubmenu !== 3} onClick={() => {
-                    swal({
-                      text: "¿Está seguro de eliminar este usuario?",
-                      buttons: ["No", "Sí"],
-                      dangerMode: true,
-                    }).then((value) => {
-                      if (value) {
-                        executeEliminaUsuarioEmpresa({
-                          params: {
-                            usuario: usuarioActual,
-                            pwd: pwd,
-                            rfc: rfc,
-                            idsubmenu: 21,
-                            idusuario: usuario.idusuario
-                          }
-                        });
-                      }
-                    });
-                  }}>
+                  <IconButton
+                    disabled={permisosSubmenu !== 3 || statusEmpresa !== 1}
+                    onClick={() => {
+                      swal({
+                        text: "¿Está seguro de eliminar este usuario?",
+                        buttons: ["No", "Sí"],
+                        dangerMode: true,
+                      }).then((value) => {
+                        if (value) {
+                          executeEliminaUsuarioEmpresa({
+                            params: {
+                              usuario: usuarioActual,
+                              pwd: pwd,
+                              rfc: rfc,
+                              idsubmenu: 21,
+                              idusuario: usuario.idusuario,
+                            },
+                          });
+                        }
+                      });
+                    }}
+                  >
                     <DeleteIcon
-                      color={permisosSubmenu === 3 ? "secondary" : "inherit"}
+                      color={permisosSubmenu !== 3 || statusEmpresa !== 1 ? "disabled" : "secondary"}
                     />
                   </IconButton>
                 </span>
@@ -1446,6 +1479,7 @@ function EditarPermisosUsuario(props) {
 
 function CrearUsuario(props) {
   const classes = useStyles();
+  const permisosSubmenu = props.permisosSubmenu;
   const setShowComponent = props.setShowComponent;
   const executeListaUsuariosEmpresa = props.executeListaUsuariosEmpresa;
   const idUsuario = props.idUsuario;
@@ -1454,6 +1488,7 @@ function CrearUsuario(props) {
   const rfc = props.rfc;
   const idEmpresa = props.idEmpresa;
   const idSubmenu = props.idSubmenu;
+  const statusEmpresa = props.statusEmpresa;
   const setLoading = props.setLoading;
   const [usuarioDatos, setUsuarioDatos] = useState({
     nombre: "",
@@ -1461,8 +1496,8 @@ function CrearUsuario(props) {
     apellidoMaterno: "",
     correo: "",
     celular: "",
-    perfil: "0"
-  })
+    perfil: "0",
+  });
   const [
     { data: perfilesData, loading: perfilesLoading, error: perfilesError },
   ] = useAxios(
@@ -1481,11 +1516,16 @@ function CrearUsuario(props) {
     }
   );
   const [
-    { data: crearNuevoUsuarioData, loading: crearNuevoUsuarioLoading, error: crearNuevoUsuarioError }, executeCrearNuevoUsuario
+    {
+      data: crearNuevoUsuarioData,
+      loading: crearNuevoUsuarioLoading,
+      error: crearNuevoUsuarioError,
+    },
+    executeCrearNuevoUsuario,
   ] = useAxios(
     {
       url: API_BASE_URL + `/crearNuevoUsuario`,
-      method: "POST"
+      method: "POST",
     },
     {
       manual: true,
@@ -1508,9 +1548,12 @@ function CrearUsuario(props) {
     function checkData() {
       if (crearNuevoUsuarioData) {
         if (crearNuevoUsuarioData.error !== 0) {
-          swal("Error", dataBaseErrores(crearNuevoUsuarioData.error), "warning");
-        }
-        else {
+          swal(
+            "Error",
+            dataBaseErrores(crearNuevoUsuarioData.error),
+            "warning"
+          );
+        } else {
           swal("Usuario Creado", "Usuario creado con éxito", "success");
           //executeListaUsuariosEmpresa();
         }
@@ -1541,29 +1584,29 @@ function CrearUsuario(props) {
   };
 
   const agregarNuevoUsuario = () => {
-    const { nombre, apellidoPaterno, apellidoMaterno, correo, celular, perfil } = usuarioDatos;
-    if(nombre.trim() === "") {
+    const {
+      nombre,
+      apellidoPaterno,
+      apellidoMaterno,
+      correo,
+      celular,
+      perfil,
+    } = usuarioDatos;
+    if (nombre.trim() === "") {
       swal("Error", "Ingrese un nombre", "warning");
-    }
-    else if(apellidoPaterno.trim() === "") {
+    } else if (apellidoPaterno.trim() === "") {
       swal("Error", "Ingrese un apellido paterno", "warning");
-    }
-    else if(apellidoMaterno.trim() === "") {
+    } else if (apellidoMaterno.trim() === "") {
       swal("Error", "Ingrese un apellido materno", "warning");
-    }
-    else if(correo.trim() === "") {
+    } else if (correo.trim() === "") {
       swal("Error", "Ingrese un correo", "warning");
-    }
-    else if(!validarCorreo(correo.trim())) {
+    } else if (!validarCorreo(correo.trim())) {
       swal("Error", "Ingrese un correo valido", "warning");
-    }
-    else if(celular.trim() === "") {
+    } else if (celular.trim() === "") {
       swal("Error", "Ingrese un celular", "warning");
-    }
-    else if(perfil === "0") {
+    } else if (perfil === "0") {
       swal("Error", "Seleccione un perfil", "warning");
-    }
-    else {
+    } else {
       const identificador = Math.floor(Math.random() * 1000000);
       const linkConfirmacion = `http://${window.location.host}/#/?ruta=cambiarContra&usuario=`;
       executeCrearNuevoUsuario({
@@ -1578,16 +1621,16 @@ function CrearUsuario(props) {
           apellidop: apellidoPaterno,
           apellidom: apellidoMaterno,
           perfil: parseInt(perfil),
-          password: '12345678',
+          password: "12345678",
           identificador: identificador,
           idempresa: idEmpresa,
           fecha_vinculacion: moment().format("YYYY-MM-DD"),
           idusuario_vinculador: idUsuario,
-          linkconfirmacion: linkConfirmacion
-        }
+          linkconfirmacion: linkConfirmacion,
+        },
       });
     }
-  }
+  };
 
   return (
     <Grid container justify="center" spacing={3}>
@@ -1616,16 +1659,16 @@ function CrearUsuario(props) {
           margin="normal"
           value={usuarioDatos.nombre}
           inputProps={{
-            maxLength: 50
+            maxLength: 50,
           }}
           onKeyPress={(e) => {
             keyValidation(e, 1);
           }}
           onChange={(e) => {
             pasteValidation(e, 1);
-            setUsuarioDatos({ 
+            setUsuarioDatos({
               ...usuarioDatos,
-              nombre: e.target.value
+              nombre: e.target.value,
             });
           }}
         />
@@ -1640,16 +1683,16 @@ function CrearUsuario(props) {
           margin="normal"
           value={usuarioDatos.apellidoPaterno}
           inputProps={{
-            maxLength: 50
+            maxLength: 50,
           }}
           onKeyPress={(e) => {
             keyValidation(e, 1);
           }}
           onChange={(e) => {
             pasteValidation(e, 1);
-            setUsuarioDatos({ 
+            setUsuarioDatos({
               ...usuarioDatos,
-              apellidoPaterno: e.target.value
+              apellidoPaterno: e.target.value,
             });
           }}
         />
@@ -1664,16 +1707,16 @@ function CrearUsuario(props) {
           margin="normal"
           value={usuarioDatos.apellidoMaterno}
           inputProps={{
-            maxLength: 50
+            maxLength: 50,
           }}
           onKeyPress={(e) => {
             keyValidation(e, 1);
           }}
           onChange={(e) => {
             pasteValidation(e, 1);
-            setUsuarioDatos({ 
+            setUsuarioDatos({
               ...usuarioDatos,
-              apellidoMaterno: e.target.value
+              apellidoMaterno: e.target.value,
             });
           }}
         />
@@ -1688,16 +1731,16 @@ function CrearUsuario(props) {
           margin="normal"
           value={usuarioDatos.correo}
           inputProps={{
-            maxLength: 70
+            maxLength: 70,
           }}
           onKeyPress={(e) => {
             keyValidation(e, 4);
           }}
           onChange={(e) => {
             pasteValidation(e, 4);
-            setUsuarioDatos({ 
+            setUsuarioDatos({
               ...usuarioDatos,
-              correo: e.target.value
+              correo: e.target.value,
             });
           }}
         />
@@ -1712,16 +1755,16 @@ function CrearUsuario(props) {
           margin="normal"
           value={usuarioDatos.celular}
           inputProps={{
-            maxLength: 20
+            maxLength: 20,
           }}
           onKeyPress={(e) => {
             keyValidation(e, 2);
           }}
           onChange={(e) => {
             pasteValidation(e, 2);
-            setUsuarioDatos({ 
+            setUsuarioDatos({
               ...usuarioDatos,
-              celular: e.target.value
+              celular: e.target.value,
             });
           }}
         />
@@ -1743,9 +1786,9 @@ function CrearUsuario(props) {
             shrink: true,
           }}
           onChange={(e) => {
-            setUsuarioDatos({ 
+            setUsuarioDatos({
               ...usuarioDatos,
-              perfil: e.target.value
+              perfil: e.target.value,
             });
           }}
         >
@@ -1756,7 +1799,13 @@ function CrearUsuario(props) {
       <Grid item xs={12}>
         <Button
           variant="contained"
-          style={{ background: "#17A2B8", color: "#FFFFFF", float: "right", marginBottom: "10px" }}
+          disabled={permisosSubmenu < 2 || statusEmpresa !== 1}
+          style={{
+            background: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#17A2B8",
+            color: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#FFFFFF",
+            float: "right",
+            marginBottom: "10px",
+          }}
           onClick={() => {
             agregarNuevoUsuario();
           }}
@@ -1770,6 +1819,7 @@ function CrearUsuario(props) {
 
 function VincularUsuario(props) {
   const classes = useStyles();
+  const permisosSubmenu = props.permisosSubmenu;
   const setShowComponent = props.setShowComponent;
   const executeListaUsuariosEmpresa = props.executeListaUsuariosEmpresa;
   const idUsuario = props.idUsuario;
@@ -1780,6 +1830,7 @@ function VincularUsuario(props) {
   const nombreEmpresa = props.nombreEmpresa;
   const idSubmenu = props.idSubmenu;
   const setLoading = props.setLoading;
+  const statusEmpresa = props.statusEmpresa;
   const [correo, setCorreo] = useState("");
   const [perfil, setPerfil] = useState("0");
   const [
@@ -1800,14 +1851,19 @@ function VincularUsuario(props) {
     }
   );
   const [
-    { data: vincularUsuarioData, loading: vincularUsuarioLoading, error: vincularUsuarioError }, executeVincularUsuario,
+    {
+      data: vincularUsuarioData,
+      loading: vincularUsuarioLoading,
+      error: vincularUsuarioError,
+    },
+    executeVincularUsuario,
   ] = useAxios(
     {
       url: API_BASE_URL + `/vincularUsuario`,
-      method: "POST"
+      method: "POST",
     },
     {
-      manual: true
+      manual: true,
     }
   );
 
@@ -1828,8 +1884,7 @@ function VincularUsuario(props) {
       if (vincularUsuarioData) {
         if (vincularUsuarioData.error !== 0) {
           swal("Error", dataBaseErrores(vincularUsuarioData.error), "warning");
-        }
-        else {
+        } else {
           swal("Usuario vinculado", "Usuario vinculado con éxito", "success");
           executeListaUsuariosEmpresa();
         }
@@ -1860,16 +1915,13 @@ function VincularUsuario(props) {
   };
 
   const vincularUsuario = () => {
-    if(correo.trim() === "") {
+    if (correo.trim() === "") {
       swal("Error", "Ingrese un correo", "warning");
-    }
-    else if(!validarCorreo(correo.trim())) {
+    } else if (!validarCorreo(correo.trim())) {
       swal("Error", "Ingrese un correo valido", "warning");
-    }
-    else if(perfil === "0") {
+    } else if (perfil === "0") {
       swal("Error", "Seleccione un perfil", "warning");
-    }
-    else {
+    } else {
       executeVincularUsuario({
         data: {
           usuario: usuario,
@@ -1881,11 +1933,11 @@ function VincularUsuario(props) {
           idempresa: idEmpresa,
           nombreempresa: nombreEmpresa,
           fecha_vinculacion: moment().format("YYYY-MM-DD"),
-          idusuario_vinculador: idUsuario
-        }
+          idusuario_vinculador: idUsuario,
+        },
       });
     }
-  }
+  };
 
   return (
     <Grid container justify="center" spacing={3}>
@@ -1950,10 +2002,11 @@ function VincularUsuario(props) {
       </Grid>
       <Grid item xs={12}>
         <Button
+          disabled={permisosSubmenu < 2 || statusEmpresa !== 1}
           variant="contained"
           style={{
-            background: "#17A2B8",
-            color: "#FFFFFF",
+            background: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#17A2B8",
+            color: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#FFFFFF",
             float: "right",
             marginBottom: "10px",
           }}

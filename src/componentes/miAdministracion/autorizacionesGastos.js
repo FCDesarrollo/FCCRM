@@ -158,7 +158,7 @@ function createData(
     gasto,
     requerimiento,
     estatusProcesado,
-    estatusProcesadoEscrito
+    estatusProcesadoEscrito,
   };
 }
 
@@ -306,10 +306,12 @@ export default function AutorizacionesGastos(props) {
   const setLoading = props.setLoading;
   const usuarioDatos = props.usuarioDatos;
   const empresaDatos = props.empresaDatos;
+  console.log(empresaDatos);
   const usuario = usuarioDatos.correo;
   const usuarioPassword = usuarioDatos.password;
   const rfcEmpresa = empresaDatos.RFC;
   const sucursales = empresaDatos.sucursales;
+  const statusEmpresa = empresaDatos.statusempresa;
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [busquedaFiltro, setBusquedaFiltro] = useState("");
@@ -591,7 +593,7 @@ export default function AutorizacionesGastos(props) {
                     setIdModulo(content.idModulo);
                     setIdMenu(content.submenu.idmenu);
                     setIdSubmenu(content.submenu.idsubmenu);
-                    setEstatusRequerimiento(1);
+                    setEstatusRequerimiento(content.submenu.idsubmenu !== 44 ? 1 : 2);
                     setRadioTipo(
                       content.submenu.idsubmenu !== 44
                         ? "requerimientos"
@@ -648,6 +650,7 @@ export default function AutorizacionesGastos(props) {
             radioTipo={radioTipo}
             setRadioTipo={setRadioTipo}
             estatusRequerimiento={estatusRequerimiento}
+            statusEmpresa={statusEmpresa}
           />
         ) : showComponent === 2 ? (
           <FormularioAYG
@@ -670,6 +673,7 @@ export default function AutorizacionesGastos(props) {
             estatusRequerimiento={estatusRequerimiento}
             permisosSubmenu={permisosSubmenu}
             radioTipo={radioTipo}
+            statusEmpresa={statusEmpresa}
           />
         ) : null}
       </Card>
@@ -698,6 +702,7 @@ function TablaAYG(props) {
   const rfcEmpresa = empresaDatos.RFC;
   const usuarioStorage = empresaDatos.usuario_storage;
   const passwordStorage = empresaDatos.password_storage;
+  const statusEmpresa = props.statusEmpresa;
   const idModulo = props.idModulo;
   const idMenu = props.idMenu;
   const idSubmenu = props.idSubmenu;
@@ -1018,7 +1023,7 @@ function TablaAYG(props) {
                     <span>
                       <IconButton
                         aria-label="nuevo"
-                        disabled={permisosSubmenu < 2}
+                        disabled={permisosSubmenu < 2 || statusEmpresa !== 1}
                         onClick={() => {
                           setShowComponent(2);
                           setAccionAG(1);
@@ -1046,7 +1051,10 @@ function TablaAYG(props) {
                       >
                         <AddCircleIcon
                           style={{
-                            color: permisosSubmenu >= 2 ? "#4caf50" : "",
+                            color:
+                              permisosSubmenu < 2 || statusEmpresa !== 1
+                                ? "disabled"
+                                : "#4caf50",
                           }}
                         />
                       </IconButton>
@@ -1136,7 +1144,9 @@ function TablaAYG(props) {
                         <TableCell align="right">{row.sucursal}</TableCell>
                         <TableCell align="right">{row.detalle}</TableCell>
                         <TableCell align="right">{row.importe}</TableCell>
-                        <TableCell align="right">{row.estatusProcesadoEscrito}</TableCell>
+                        <TableCell align="right">
+                          {row.estatusProcesadoEscrito}
+                        </TableCell>
                         <TableCell align="right">
                           {radioTipo !== "gastos"
                             ? row.status === 1
@@ -1162,10 +1172,17 @@ function TablaAYG(props) {
                         </TableCell>
                         <TableCell align="right">
                           <div>
-                            <Tooltip title="Editar requerimiento">
+                            <Tooltip
+                              title={
+                                radioTipo === "requerimientos"
+                                  ? "Editar requerimiento"
+                                  : "Editar gasto"
+                              }
+                            >
                               <span>
                                 <IconButton
-                                  disabled={permisosSubmenu < 2}
+                                  disabled={
+                                    permisosSubmenu < 2 }
                                   onClick={() => {
                                     setAccionAG(2);
                                     setShowComponent(2);
@@ -1194,7 +1211,9 @@ function TablaAYG(props) {
                                   <EditIcon
                                     style={{
                                       color:
-                                        permisosSubmenu >= 2 ? "black" : "",
+                                        permisosSubmenu < 2
+                                          ? "disabled"
+                                          : "black",
                                     }}
                                   />
                                 </IconButton>
@@ -1203,7 +1222,9 @@ function TablaAYG(props) {
                             <Tooltip title="Eliminar requerimiento">
                               <span>
                                 <IconButton
-                                  disabled={permisosSubmenu < 3}
+                                  disabled={
+                                    permisosSubmenu < 3 || statusEmpresa !== 1
+                                  }
                                   onClick={() => {
                                     eliminarRequerimiento(
                                       row.id,
@@ -1216,9 +1237,9 @@ function TablaAYG(props) {
                                 >
                                   <DeleteIcon
                                     color={
-                                      permisosSubmenu >= 3
-                                        ? "secondary"
-                                        : "inherit"
+                                      permisosSubmenu < 3 || statusEmpresa !== 1
+                                        ? "disabled"
+                                        : "secondary"
                                     }
                                   />
                                 </IconButton>
@@ -1231,7 +1252,7 @@ function TablaAYG(props) {
                   })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8}>
+                  <TableCell colSpan={9}>
                     <Typography variant="subtitle1">
                       <ErrorIcon
                         style={{ color: "red", verticalAlign: "sub" }}
@@ -1299,6 +1320,7 @@ function FormularioAYG(props) {
   const empresaId = empresaDatos.idempresa;
   const usuarioStorage = empresaDatos.usuario_storage;
   const passwordStorage = empresaDatos.password_storage;
+  const statusEmpresa = props.statusEmpresa;
   const usuario = usuarioDatos.correo;
   const usuarioPassword = usuarioDatos.password;
   const usuarioNombreCompleto = `${usuarioDatos.nombre} ${usuarioDatos.apellidop} ${usuarioDatos.apellidom}`;
@@ -1702,7 +1724,7 @@ function FormularioAYG(props) {
     if (RADatos.serie.trim() !== "" /* && RADatos.folio.trim() === "" */) {
       executeTraerRequerimientoPorSerie();
     }
-  }, [RADatos.serie/* , RADatos.folio */, executeTraerRequerimientoPorSerie]);
+  }, [RADatos.serie /* , RADatos.folio */, executeTraerRequerimientoPorSerie]);
 
   useEffect(() => {
     function checkData() {
@@ -1722,7 +1744,7 @@ function FormularioAYG(props) {
                 ) + 1
               : 1
           );
-          if(accionAG === 1) {
+          if (accionAG === 1) {
             inputSerie.current.focus();
           }
           /* setRADatos(R => ({
@@ -3705,6 +3727,7 @@ function FormularioAYG(props) {
           <Grid item xs={12} sm={4} md={3}>
             <Button
               color="primary"
+              disabled={statusEmpresa !== 1}
               variant="contained"
               className={classes.formButtons}
               onClick={() => {
@@ -3717,10 +3740,10 @@ function FormularioAYG(props) {
           <Grid item xs={12} sm={4} md={3}>
             <Button
               className={classes.formButtons}
-              disabled={accionAG !== 2}
+              disabled={accionAG !== 2 || statusEmpresa !== 1}
               style={{
-                background: accionAG === 2 ? "#4caf50" : "",
-                color: accionAG === 2 ? "#ffffff" : "",
+                background: accionAG !== 2 || statusEmpresa !== 1 ? "disabled" : "#4caf50",
+                color: accionAG !== 2 || statusEmpresa !== 1 ? "disabled" : "#ffffff",
               }}
               variant="contained"
               onClick={() => {
@@ -3756,7 +3779,7 @@ function FormularioAYG(props) {
               color="secondary"
               variant="contained"
               className={classes.formButtons}
-              disabled={accionAG !== 2 || permisosSubmenu < 3}
+              disabled={accionAG !== 2 || permisosSubmenu < 3 || statusEmpresa !== 1}
               onClick={() => {
                 eliminarRequerimiento();
               }}
@@ -3787,7 +3810,7 @@ function FormularioAYG(props) {
               variant="outlined"
               className={classes.formButtons}
               style={{ float: "right", height: "100%" }}
-              disabled={accionAG !== 2}
+              disabled={accionAG !== 2 || statusEmpresa !== 1}
               onClick={() => {
                 handleOpenMenuReenviarNotificacion();
               }}
@@ -3919,7 +3942,7 @@ function FormularioAYG(props) {
               type="text"
               inputProps={{
                 maxLength: 20,
-                ref: inputSerie
+                ref: inputSerie,
               }}
               value={RADatos.serie}
               disabled={accionAG === 2}
@@ -3940,10 +3963,14 @@ function FormularioAYG(props) {
               className={classes.textFields}
               id="folio"
               variant="outlined"
-              label={accionAG !== 1 ? `Folio` : `Folio (Recomendado ${siguienteFolio})`}
+              label={
+                accionAG !== 1
+                  ? `Folio`
+                  : `Folio (Recomendado ${siguienteFolio})`
+              }
               type="text"
               inputProps={{
-                maxLength: 30
+                maxLength: 30,
               }}
               value={RADatos.folio}
               disabled={accionAG === 2}
@@ -4044,7 +4071,8 @@ function FormularioAYG(props) {
                   accionAG !== 2 ||
                   //idUsuarioLogueado !== idUsuarioRequerimiento ||
                   historial.length === 1 ||
-                  permisosSubmenu < 3
+                  permisosSubmenu < 3 ||
+                  statusEmpresa !== 1
                 }
                 onClick={() => {
                   eliminarHistorialRequerimiento();
@@ -4626,7 +4654,7 @@ function FormularioAYG(props) {
                   className={classes.formButtons}
                   color="secondary"
                   variant="contained"
-                  disabled={accionAG !== 2 || permisosSubmenu < 3}
+                  disabled={accionAG !== 2 || permisosSubmenu < 3 || statusEmpresa !== 1}
                   onClick={() => {
                     eliminarDocumentoPrincipal();
                   }}
@@ -4681,7 +4709,7 @@ function FormularioAYG(props) {
                   className={classes.formButtons}
                   color="secondary"
                   variant="contained"
-                  disabled={accionAG !== 2 || permisosSubmenu < 3}
+                  disabled={accionAG !== 2 || permisosSubmenu < 3 || statusEmpresa !== 1}
                   onClick={() => {
                     eliminarDocumentoSecundario();
                   }}
@@ -4772,6 +4800,7 @@ function FormularioAYG(props) {
           </Button>
           <Button
             variant="contained"
+            disabled={statusEmpresa !== 1}
             color="primary"
             onClick={() => {
               reenviarNotificacionUsuarios();

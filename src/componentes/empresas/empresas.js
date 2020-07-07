@@ -13,13 +13,14 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Tooltip
+  Tooltip,
 } from "@material-ui/core";
 import {
   Person as PersonIcon,
   Add as AddIcon,
   Link as LinkIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  SupervisorAccount as SupervisorAccountIcon,
 } from "@material-ui/icons";
 import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
@@ -31,10 +32,10 @@ const jwt = require("jsonwebtoken");
 
 const useStyles = makeStyles({
   root: {
-    padding: "40px"
+    padding: "40px",
   },
   table: {
-    minWidth: 650
+    minWidth: 650,
   },
   toolbarLink1: {
     fontSize: "14px",
@@ -42,8 +43,8 @@ const useStyles = makeStyles({
     color: "#428bca",
     textAlign: "center",
     "&:hover": {
-      color: "black"
-    }
+      color: "black",
+    },
   },
   toolbarLink2: {
     fontSize: "14px",
@@ -51,8 +52,8 @@ const useStyles = makeStyles({
     color: "dimgray",
     textAlign: "center",
     "&:hover": {
-      color: "black"
-    }
+      color: "black",
+    },
   },
   toolbarLink3: {
     fontSize: "14px",
@@ -60,24 +61,33 @@ const useStyles = makeStyles({
     color: "crimson",
     textAlign: "center",
     "&:hover": {
-      color: "black"
-    }
+      color: "black",
+    },
+  },
+  toolbarLink4: {
+    fontSize: "14px",
+    cursor: "pointer",
+    color: "#009688",
+    textAlign: "center",
+    "&:hover": {
+      color: "black",
+    },
   },
   toolbarIconLinks: {
     verticalAlign: "text-bottom",
-    fontSize: "20px"
+    fontSize: "20px",
   },
   links: {
-    textDecoration: "none"
+    textDecoration: "none",
   },
   tableRowLinks: {
     textDecoration: "none",
     color: "#428bca",
     "&:hover": {
       color: "#2a6496",
-      textDecoration: "underline"
-    }
-  }
+      textDecoration: "underline",
+    },
+  },
 });
 
 export default function Empresas() {
@@ -85,6 +95,7 @@ export default function Empresas() {
   let userEmail = "";
   let userPassword = "";
   let nombreUsuario = "";
+  let tipoUsuario = 0;
   const [userAuth, setUserAuth] = useState(true);
   if (localStorage.getItem("token")) {
     try {
@@ -95,25 +106,27 @@ export default function Empresas() {
       userEmail = decodedToken.userData.correo;
       userPassword = decodedToken.userData.password;
       nombreUsuario = `${decodedToken.userData.nombre} ${decodedToken.userData.apellidop} ${decodedToken.userData.apellidom}`;
+      tipoUsuario = decodedToken.userData.tipo;
     } catch (err) {
       localStorage.removeItem("token");
       localStorage.removeItem("emToken");
       setUserAuth(false);
     }
   }
+  localStorage.removeItem("menuTemporal");//nuevo
   const [
-    { data: empresasData, loading: empresasLoading, error: empresasError }
+    { data: empresasData, loading: empresasLoading, error: empresasError },
   ] = useAxios(
     {
       url: API_BASE_URL + `/listaEmpresasUsuario`,
       method: "GET",
       params: {
         usuario: userEmail,
-        pwd: userPassword
-      }
+        pwd: userPassword,
+      },
     },
     {
-      useCache: false
+      useCache: false,
     }
   );
 
@@ -158,13 +171,16 @@ export default function Empresas() {
     return <ErrorQueryDB />;
   }
 
-  if(localStorage.getItem("notificacionData")) {
+  if (localStorage.getItem("notificacionData")) {
     const decodedToken = jwt.verify(
       localStorage.getItem("notificacionData"),
       "mysecretpassword"
     );
-    for(let x=0 ; x<empresasData.empresas.length ; x++) {
-      if(parseInt(decodedToken.notificacionData.idEmpresa) === empresasData.empresas[x].idempresa){
+    for (let x = 0; x < empresasData.empresas.length; x++) {
+      if (
+        parseInt(decodedToken.notificacionData.idEmpresa) ===
+        empresasData.empresas[x].idempresa
+      ) {
         const token = jwt.sign(
           { empresaData: empresasData.empresas[x] },
           "mysecretpassword"
@@ -173,15 +189,15 @@ export default function Empresas() {
         break;
       }
     }
-    return <Redirect to="autorizacionesGastos" />
+    return <Redirect to="autorizacionesGastos" />;
   }
 
   const closeSesion = () => {
     swal({
       text: "¿Está seguro de cerrar sesión?",
       buttons: ["No", "Sí"],
-      dangerMode: true
-    }).then(value => {
+      dangerMode: true,
+    }).then((value) => {
       if (value) {
         localStorage.removeItem("token");
         localStorage.removeItem("emToken");
@@ -198,7 +214,7 @@ export default function Empresas() {
       </Grid>
       <Grid item xs={12} md={9} style={{ marginTop: "15px" }}>
         <Toolbar style={{ background: "#FFFFFF", padding: "10px" }}>
-          <Grid container spacing={1}>
+          <Grid container spacing={1} justify="center">
             <Grid item xs={12} sm={6} md={3}>
               <Typography variant="subtitle1" style={{ textAlign: "center" }}>
                 <PersonIcon className={classes.toolbarIconLinks} />{" "}
@@ -217,12 +233,13 @@ export default function Empresas() {
             </Grid>
             <Grid item xs={12} sm={6} md={3} style={{ alignSelf: "center" }}>
               <Link to="/vincularEmpresa" className={classes.links}>
-              <Tooltip title="Vincular Empresa">
-                <Typography className={classes.toolbarLink2}>
-                  <LinkIcon className={classes.toolbarIconLinks} /> Vincular
-                  Empresa
-                </Typography>
-              </Tooltip></Link>
+                <Tooltip title="Vincular Empresa">
+                  <Typography className={classes.toolbarLink2}>
+                    <LinkIcon className={classes.toolbarIconLinks} /> Vincular
+                    Empresa
+                  </Typography>
+                </Tooltip>
+              </Link>
             </Grid>
             <Grid item xs={12} sm={6} md={3} style={{ alignSelf: "center" }}>
               <Tooltip title="Cerrar Sesión" onClick={closeSesion}>
@@ -232,6 +249,20 @@ export default function Empresas() {
                 </Typography>
               </Tooltip>
             </Grid>
+            {tipoUsuario === 4 ? (
+              <Grid item xs={12} md={4} style={{ alignSelf: "center" }}>
+                <Link to="/cPanel" className={classes.links}>
+                  <Tooltip title="Cambiar a panel de proveedor">
+                    <Typography className={classes.toolbarLink4}>
+                      <SupervisorAccountIcon
+                        className={classes.toolbarIconLinks}
+                      />{" "}
+                      Cambiar a panel de proveedor
+                    </Typography>
+                  </Tooltip>
+                </Link>
+              </Grid>
+            ) : null}
           </Grid>
         </Toolbar>
         <TableContainer component={Paper}>

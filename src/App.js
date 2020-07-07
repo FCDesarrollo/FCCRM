@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import {
   /*BrowserRouter as Router,*/ Switch,
   Route,
-  HashRouter
+  HashRouter,
 } from "react-router-dom";
 import Header from "./componentes/header/header";
 import Login from "./componentes/login/login";
@@ -11,6 +11,11 @@ import VerificarCodigo from "./componentes/login/verificarCodigo";
 import ReenviarCodigoVerificacion from "./componentes/login/reenviarCodigoVerificacion";
 import CambiarContra from "./componentes/login/cambiarContra";
 import Empresas from "./componentes/empresas/empresas";
+import CPanel from "./componentes/proveedores/cPanel";
+import PUsuarios from "./componentes/proveedores/usuarios";
+import PEmpresas from "./componentes/proveedores/empresas";
+import PPerfiles from "./componentes/proveedores/perfiles";
+import PServicios from "./componentes/proveedores/servicios";
 import AgregarEmpresa from "./componentes/empresas/agregarEmpresa";
 import VincularEmpresa from "./componentes/empresas/vincularEmpresa";
 import Home from "./componentes/home/home";
@@ -61,6 +66,76 @@ function App() {
         </Route>
         <Route exact path="/empresas">
           <Empresas />
+        </Route>
+        <Route exact path="/cpanel">
+          <CPanel
+            usuarioDatos={usuarioDatos}
+            setUsuarioDatos={setUsuarioDatos}
+          />
+        </Route>
+        <Route exact path="/proveedores/usuarios">
+          <CPanel
+            usuarioDatos={usuarioDatos}
+            setUsuarioDatos={setUsuarioDatos}
+            loading={loading}
+            setLoading={setLoading}
+            component={
+              <PUsuarios
+                usuarioDatos={usuarioDatos}
+                setUsuarioDatos={setUsuarioDatos}
+                loading={loading}
+                setLoading={setLoading}
+              />
+            }
+          />
+        </Route>
+        <Route exact path="/proveedores/empresas">
+          <CPanel
+            usuarioDatos={usuarioDatos}
+            setUsuarioDatos={setUsuarioDatos}
+            loading={loading}
+            setLoading={setLoading}
+            component={
+              <PEmpresas
+                usuarioDatos={usuarioDatos}
+                setUsuarioDatos={setUsuarioDatos}
+                loading={loading}
+                setLoading={setLoading}
+              />
+            }
+          />
+        </Route>
+        <Route exact path="/proveedores/perfiles">
+          <CPanel
+            usuarioDatos={usuarioDatos}
+            setUsuarioDatos={setUsuarioDatos}
+            loading={loading}
+            setLoading={setLoading}
+            component={
+              <PPerfiles
+                usuarioDatos={usuarioDatos}
+                setUsuarioDatos={setUsuarioDatos}
+                loading={loading}
+                setLoading={setLoading}
+              />
+            }
+          />
+        </Route>
+        <Route exact path="/proveedores/servicios">
+          <CPanel
+            usuarioDatos={usuarioDatos}
+            setUsuarioDatos={setUsuarioDatos}
+            loading={loading}
+            setLoading={setLoading}
+            component={
+              <PServicios
+                usuarioDatos={usuarioDatos}
+                setUsuarioDatos={setUsuarioDatos}
+                loading={loading}
+                setLoading={setLoading}
+              />
+            }
+          />
         </Route>
         <Route exact path="/agregarEmpresa">
           <AgregarEmpresa />
