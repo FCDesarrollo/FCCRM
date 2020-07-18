@@ -258,7 +258,7 @@ export default function AgregarEmpresa() {
   const handleNext = () => {
     if (activeStep === 0) {
       const { certificado, key, passwordcertificado } = paso1Datos;
-      if (certificado === null) {
+      if (certificado === null || !certificado) {
         swal("Faltan llenar campos", "Seleccione un archivo .cer", "warning");
       } else if (!verificarArchivoCer(certificado.name)) {
         swal(
@@ -266,7 +266,7 @@ export default function AgregarEmpresa() {
           "Extensión no valida, seleccione un archivo .cer",
           "warning"
         );
-      } else if (key === null) {
+      } else if (key === null || !key) {
         swal("Faltan llenar campos", "Seleccione un archivo .key", "warning");
       } else if (!verificarArchivoKey(key.name)) {
         swal(

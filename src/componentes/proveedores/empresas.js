@@ -39,7 +39,7 @@ import {
   SettingsEthernet as SettingsEthernetIcon,
   ClearAll as ClearAllIcon,
   ExpandMore as ExpandMoreIcon,
-  /* AddCircle as AddCircleIcon, */
+  AddCircle as AddCircleIcon,
   ArrowBack as ArrowBackIcon,
   Clear as ClearIcon,
 } from "@material-ui/icons";
@@ -200,10 +200,24 @@ function createDataMovimientos(
   };
 }
 
+function createDataServicios(
+  id,
+  servicio,
+  precio,
+  descripcion,
+  tipo,
+  fecha,
+  estatus,
+  acciones
+) {
+  return { id, servicio, precio, descripcion, tipo, fecha, estatus, acciones };
+}
+
 let filterRows = [];
 let filterRowsUsuarios = [];
 let filterRowsNotificaciones = [];
 let filterRowsMovimientos = [];
+let filterRowsServicios = [];
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -456,6 +470,58 @@ const headCellsMovimientosAsociacion = [
   },
 ];
 
+const headCellsServicios = [
+  {
+    id: "servicio",
+    align: "left",
+    sortHeadCell: true,
+    disablePadding: true,
+    label: "Servicio",
+  },
+  {
+    id: "precio",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Precio",
+  },
+  {
+    id: "descripcion",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Descripción",
+  },
+  {
+    id: "tipo",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Tipo",
+  },
+  {
+    id: "fecha",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Fecha",
+  },
+  {
+    id: "estatus",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Estatus",
+  },
+  {
+    id: "acciones",
+    align: "right",
+    sortHeadCell: false,
+    disablePadding: false,
+    label: <SettingsIcon style={{ color: "black" }} />,
+  },
+];
+
 function EnhancedTableHead(props) {
   const { classes, order, orderBy, onRequestSort, headCells } = props;
   const createSortHandler = (property) => (event) => {
@@ -516,6 +582,9 @@ export default function Empresas(props) {
   const [busquedaFiltroMovimientos, setBusquedaFiltroMovimientos] = useState(
     ""
   );
+  const [rowsServicios, setRowsServicios] = useState([]);
+  const [pageServicios, setPageServicios] = useState(0);
+  const [busquedaFiltroServicios, setBusquedaFiltroServicios] = useState("");
   const [baseDatosEmpresa, setBaseDatosEmpresa] = useState("");
   const [nombreEmpresa, setNombreEmpresa] = useState("");
 
@@ -559,6 +628,10 @@ export default function Empresas(props) {
             decodedToken.menuTemporal.busquedaFiltroUsuarios
           );
           setPageUsuarios(decodedToken.menuTemporal.pageUsuarios);
+          setBusquedaFiltroServicios(
+            decodedToken.menuTemporal.busquedaFiltroServicios
+          );
+          setPageServicios(decodedToken.menuTemporal.pageServicios);
           setBusquedaFiltroMovimientos(
             decodedToken.menuTemporal.busquedaFiltroMovimientos
           );
@@ -576,6 +649,8 @@ export default function Empresas(props) {
                 page: 0,
                 busquedaFiltroUsuarios: "",
                 pageUsuarios: 0,
+                busquedaFiltroServicios: "",
+                pageServicios: 0,
                 busquedaFiltroMovimientos: "",
                 pageMovimientos: 0,
               },
@@ -600,6 +675,8 @@ export default function Empresas(props) {
             page: 0,
             busquedaFiltroUsuarios: "",
             pageUsuarios: 0,
+            busquedaFiltroServicios: "",
+            pageServicios: 0,
             busquedaFiltroMovimientos: "",
             pageMovimientos: 0,
           },
@@ -712,6 +789,24 @@ export default function Empresas(props) {
           pageMovimientos={pageMovimientos}
           setPageMovimientos={setPageMovimientos}
         />
+      ) : showComponent === 4 ? (
+        <ServiciosEmpresa
+          correo={correo}
+          password={password}
+          setLoading={setLoading}
+          setShowComponent={setShowComponent}
+          idEmpresa={idEmpresa}
+          rows={rowsServicios}
+          setRows={setRowsServicios}
+          page={page}
+          pageServicios={pageServicios}
+          setPageServicios={setPageServicios}
+          busquedaFiltro={busquedaFiltro}
+          busquedaFiltroServicios={busquedaFiltroServicios}
+          setBusquedaFiltroServicios={setBusquedaFiltroServicios}
+          baseDatosEmpresa={baseDatosEmpresa}
+          nombreEmpresa={nombreEmpresa}
+        />
       ) : null}
     </div>
   );
@@ -802,6 +897,8 @@ function ListaEmpresas(props) {
               : 0,
           busquedaFiltroUsuarios: "",
           pageUsuarios: 0,
+          busquedaFiltroServicios: "",
+          pageServicios: 0,
           busquedaFiltroMovimientos: "",
           pageMovimientos: 0,
         },
@@ -831,6 +928,8 @@ function ListaEmpresas(props) {
           page: newPage,
           busquedaFiltroUsuarios: "",
           pageUsuarios: 0,
+          busquedaFiltroServicios: "",
+          pageServicios: 0,
           busquedaFiltroMovimientos: "",
           pageMovimientos: 0,
         },
@@ -855,6 +954,8 @@ function ListaEmpresas(props) {
           page: page,
           busquedaFiltroUsuarios: "",
           pageUsuarios: 0,
+          busquedaFiltroServicios: "",
+          pageServicios: 0,
           busquedaFiltroMovimientos: "",
           pageMovimientos: 0,
         },
@@ -921,6 +1022,8 @@ function ListaEmpresas(props) {
                           page: 0,
                           busquedaFiltroUsuarios: "",
                           pageUsuarios: 0,
+                          busquedaFiltroServicios: "",
+                pageServicios: 0,
                           busquedaFiltroMovimientos: "",
                           pageMovimientos: 0,
                         },
@@ -1051,6 +1154,8 @@ function ListaEmpresas(props) {
                   page: page,
                   busquedaFiltroUsuarios: "",
                   pageUsuarios: 0,
+                  busquedaFiltroServicios: "",
+                  pageServicios: 0,
                   busquedaFiltroMovimientos: "",
                   pageMovimientos: 0,
                 },
@@ -1078,6 +1183,8 @@ function ListaEmpresas(props) {
                   page: page,
                   busquedaFiltroUsuarios: "",
                   pageUsuarios: 0,
+                  busquedaFiltroServicios: "",
+                  pageServicios: 0,
                   busquedaFiltroMovimientos: "",
                   pageMovimientos: 0,
                 },
@@ -1105,6 +1212,8 @@ function ListaEmpresas(props) {
                   page: page,
                   busquedaFiltroUsuarios: "",
                   pageUsuarios: 0,
+                  busquedaFiltroServicios: "",
+                  pageServicios: 0,
                   busquedaFiltroMovimientos: "",
                   pageMovimientos: 0,
                 },
@@ -1116,6 +1225,35 @@ function ListaEmpresas(props) {
           }}
         >
           <ListItemText primary="Estado De Cuenta" />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleCloseMenu();
+            const token = jwt.sign(
+              {
+                menuTemporal: {
+                  modulo: "empresas",
+                  showComponent: 4,
+                  idEmpresa: idEmpresa,
+                  baseDatosEmpresa: baseDatosEmpresa,
+                  nombreEmpresa: nombreEmpresa,
+                  busquedaFiltro: busquedaFiltro,
+                  page: page,
+                  busquedaFiltroUsuarios: "",
+                  pageUsuarios: 0,
+                  busquedaFiltroServicios: "",
+                  pageServicios: 0,
+                  busquedaFiltroMovimientos: "",
+                  pageMovimientos: 0,
+                },
+              },
+              "mysecretpassword"
+            );
+            localStorage.setItem("menuTemporal", token);
+            setShowComponent(4);
+          }}
+        >
+          <ListItemText primary="Servicios" />
         </MenuItem>
       </StyledMenu>
     </div>
@@ -1258,6 +1396,8 @@ function ListaUsuariosPorEmpresa(props) {
               : decodedToken.menuTemporal.pageUsuarios
               ? decodedToken.menuTemporal.pageUsuarios
               : 0,
+          busquedaFiltroServicios: "",
+          pageServicios: 0,
           busquedaFiltroMovimientos: "",
           pageMovimientos: 0,
         },
@@ -1361,6 +1501,8 @@ function ListaUsuariosPorEmpresa(props) {
                             page: page,
                             busquedaFiltroUsuarios: "",
                             pageUsuarios: 0,
+                            busquedaFiltroServicios: "",
+                            pageServicios: 0,
                             busquedaFiltroMovimientos: "",
                             pageMovimientos: 0,
                           },
@@ -1373,7 +1515,7 @@ function ListaUsuariosPorEmpresa(props) {
                     <ArrowBackIcon color="primary" />
                   </IconButton>
                 </Tooltip>
-                Lista De Usuarios de {nombreEmpresa}
+                Lista De Usuarios De {nombreEmpresa}
               </Typography>
             </Grid>
             <Grid
@@ -2624,6 +2766,8 @@ function EstadoDeCuenta(props) {
                         page: pageEmpresas,
                         busquedaFiltroUsuarios: "",
                         pageUsuarios: 0,
+                        busquedaFiltroServicios: "",
+                        pageServicios: 0,
                         busquedaFiltroMovimientos: "",
                         pageMovimientos: 0,
                       },
@@ -3536,6 +3680,8 @@ function MovimientosEmpresa(props) {
               : decodedToken.menuTemporal.pageMovimientos
               ? decodedToken.menuTemporal.pageMovimientos
               : 0,
+          busquedaFiltroServicios: "",
+          pageServicios: 0,
           busquedaFiltroMovimientos: busquedaFiltroMovimientos,
           pageMovimientos: pageMovimientos,
         },
@@ -3797,7 +3943,7 @@ function MovimientosEmpresa(props) {
         }
       }
       const codigoFecha =
-          moment(fechaMovimiento).format("DDMMYYYY") + moment().format("Hmmss");
+        moment(fechaMovimiento).format("DDMMYYYY") + moment().format("Hmmss");
       if (accion === 1) {
         const formData = new FormData();
         formData.append("usuario", correo);
@@ -3830,7 +3976,6 @@ function MovimientosEmpresa(props) {
           },
         });
       } else {
-        console.log(correo, password);
         const formData = new FormData();
         formData.append("usuario", correo);
         formData.append("pwd", password);
@@ -3858,7 +4003,7 @@ function MovimientosEmpresa(props) {
           data: formData,
           headers: {
             "Content-Type": "multipart/form-data",
-          },/* {
+          } /* {
             usuario: correo,
             pwd: password,
             idmovimiento: idMovimiento,
@@ -3870,7 +4015,7 @@ function MovimientosEmpresa(props) {
             abonos: infoAbonos.abonos,
             pendientes: infoAbonos.pendientes,
             asociados: numeroAsociados,
-          }, */
+          }, */,
         });
       }
     }
@@ -5249,5 +5394,704 @@ function MovimientosAsociacionesEmpresa(props) {
         </Grid>
       </Grid>
     </Card>
+  );
+}
+
+function ServiciosEmpresa(props) {
+  const classes = useStyles();
+  const theme = useTheme();
+  const fullScreenDialog = useMediaQuery(theme.breakpoints.down("xs"));
+  const correo = props.correo;
+  const password = props.password;
+  const setLoading = props.setLoading;
+  const setShowComponent = props.setShowComponent;
+  const idEmpresa = props.idEmpresa;
+  const rows = props.rows;
+  const setRows = props.setRows;
+  const page = props.page;
+  const pageServicios = props.pageServicios;
+  const setPageServicios = props.setPageServicios;
+  const busquedaFiltro = props.busquedaFiltro;
+  const busquedaFiltroServicios = props.busquedaFiltroServicios;
+  const setBusquedaFiltroServicios = props.setBusquedaFiltroServicios;
+  const baseDatosEmpresa = props.baseDatosEmpresa;
+  const nombreEmpresa = props.nombreEmpresa;
+  const [order, setOrder] = useState("desc");
+  const [orderBy, setOrderBy] = useState("id");
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [openMenuAgregarServicio, setOpenMenuAgregarServicio] = useState(false);
+  const [serviciosNoContratados, setServiciosNoContratados] = useState([]);
+  const [serviciosElegidos, setServiciosElegidos] = useState([]);
+  const [anchorMenuEl, setAnchorMenuEl] = useState(null);
+  const [idServicio, setIdServicio] = useState(0);
+
+  const [
+    {
+      data: getServiciosEmpresaData,
+      loading: getServiciosEmpresaLoading,
+      error: getServiciosEmpresaError,
+    },
+    executeGetServiciosEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getServiciosEmpresa`,
+      method: "GET",
+      params: {
+        usuario: correo,
+        pwd: password,
+        idempresa: idEmpresa,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+  const [
+    {
+      data: getServiciosNoContratadosEmpresaData,
+      loading: getServiciosNoContratadosEmpresaLoading,
+      error: getServiciosNoContratadosEmpresaError,
+    },
+    executeGetServiciosNoContratadosEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getServiciosNoContratadosEmpresa`,
+      method: "GET",
+      params: {
+        usuario: correo,
+        pwd: password,
+        idempresa: idEmpresa,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+  const [
+    {
+      data: agregarServiciosEmpresaData,
+      loading: agregarServiciosEmpresaLoading,
+      error: agregarServiciosEmpresaError,
+    },
+    executeAgregarServiciosEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/agregarServiciosEmpresa`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+  const [
+    {
+      data: eliminarServicioEmpresaData,
+      loading: eliminarServicioEmpresaLoading,
+      error: eliminarServicioEmpresaError,
+    },
+    executeEliminarServicioEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/eliminarServicioEmpresa`,
+      method: "DELETE",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  useEffect(() => {
+    if (getServiciosEmpresaData) {
+      if (getServiciosEmpresaData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(getServiciosEmpresaData.error),
+          "warning"
+        );
+      } else {
+        filterRowsServicios = [];
+        getServiciosEmpresaData.servicios.map((servicio) => {
+          return filterRowsServicios.push(
+            createDataServicios(
+              servicio.id,
+              servicio.nombreservicio,
+              servicio.precio,
+              servicio.descripcion,
+              servicio.tipo,
+              servicio.fecha,
+              servicio.status,
+              <IconButton>
+                <SettingsEthernetIcon style={{ color: "black" }} />
+              </IconButton>
+            )
+          );
+        });
+        setRows(filterRowsServicios);
+      }
+    }
+  }, [getServiciosEmpresaData, setRows]);
+
+  useEffect(() => {
+    if (getServiciosNoContratadosEmpresaData) {
+      if (getServiciosNoContratadosEmpresaData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(getServiciosNoContratadosEmpresaData.error),
+          "warning"
+        );
+      } else {
+        setServiciosNoContratados(
+          getServiciosNoContratadosEmpresaData.servicios
+        );
+        let iniciarServiciosNoContratados = [];
+        for (
+          let x = 0;
+          x < getServiciosNoContratadosEmpresaData.servicios.length;
+          x++
+        ) {
+          iniciarServiciosNoContratados.push(0);
+        }
+        setServiciosElegidos(iniciarServiciosNoContratados);
+      }
+    }
+  }, [getServiciosNoContratadosEmpresaData]);
+
+  useEffect(() => {
+    if (agregarServiciosEmpresaData) {
+      if (agregarServiciosEmpresaData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(agregarServiciosEmpresaData.error),
+          "warning"
+        );
+      } else {
+        swal(
+          "Servicio(s) Agregado(s)",
+          "Servicio(s) agregado(s) con éxito",
+          "success"
+        );
+        executeGetServiciosEmpresa();
+        executeGetServiciosNoContratadosEmpresa();
+      }
+    }
+  }, [
+    agregarServiciosEmpresaData,
+    executeGetServiciosEmpresa,
+    executeGetServiciosNoContratadosEmpresa,
+  ]);
+
+  useEffect(() => {
+    if (eliminarServicioEmpresaData) {
+      if (eliminarServicioEmpresaData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(eliminarServicioEmpresaData.error),
+          "warning"
+        );
+      } else {
+        swal("Servicio eliminado", "Servicio eliminado con éxito", "success");
+        executeGetServiciosEmpresa();
+        executeGetServiciosNoContratadosEmpresa();
+      }
+    }
+  }, [
+    eliminarServicioEmpresaData,
+    executeGetServiciosEmpresa,
+    executeGetServiciosNoContratadosEmpresa,
+  ]);
+
+  useEffect(() => {
+    function getFilterRows() {
+      let dataFilter = [];
+      for (let x = 0; x < filterRowsServicios.length; x++) {
+        if (
+          filterRowsServicios[x].servicio
+            .toLowerCase()
+            .indexOf(busquedaFiltroServicios.toLowerCase()) !== -1 ||
+          filterRowsServicios[x].precio
+            .toString()
+            .toLowerCase()
+            .indexOf(busquedaFiltroServicios.toLowerCase()) !== -1 ||
+          filterRowsServicios[x].descripcion
+            .toLowerCase()
+            .indexOf(busquedaFiltroServicios.toLowerCase()) !== -1 ||
+          filterRowsServicios[x].tipo
+            .toString()
+            .toLowerCase()
+            .indexOf(busquedaFiltroServicios.toLowerCase()) !== -1 ||
+          filterRowsServicios[x].fecha
+            .toLowerCase()
+            .indexOf(busquedaFiltroServicios.toLowerCase()) !== -1 ||
+          moment(filterRowsServicios[x].fecha)
+            .format("DD/MM/YYYY h:mm:ss a")
+            .indexOf(busquedaFiltroServicios.toLowerCase()) !== -1
+        ) {
+          dataFilter.push(filterRowsServicios[x]);
+        }
+      }
+      return dataFilter;
+    }
+
+    const decodedToken = jwt.verify(
+      localStorage.getItem("menuTemporal"),
+      "mysecretpassword"
+    );
+    setRows(
+      busquedaFiltroServicios.trim() !== ""
+        ? getFilterRows()
+        : filterRowsServicios
+    );
+    setPageServicios(
+      rows.length < rowsPerPage
+        ? 0
+        : decodedToken.menuTemporal.pageServicios
+        ? decodedToken.menuTemporal.pageServicios
+        : 0
+    );
+
+    const token = jwt.sign(
+      {
+        menuTemporal: {
+          modulo: "empresas",
+          showComponent: 4,
+          idEmpresa: idEmpresa,
+          baseDatosEmpresa: baseDatosEmpresa,
+          nombreEmpresa: nombreEmpresa,
+          busquedaFiltro: busquedaFiltro,
+          page: page,
+          busquedaFiltroUsuarios: "",
+          pageUsuarios: 0,
+          busquedaFiltroServicios: busquedaFiltroServicios,
+          pageServicios:
+            rows.length < rowsPerPage && rows.length !== 0
+              ? 0
+              : decodedToken.menuTemporal.pageUsuarios
+              ? decodedToken.menuTemporal.pageUsuarios
+              : 0,
+          busquedaFiltroMovimientos: "",
+          pageMovimientos: 0,
+        },
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("menuTemporal", token);
+  }, [
+    busquedaFiltro,
+    busquedaFiltroServicios,
+    setRows,
+    rows.length,
+    rowsPerPage,
+    setPageServicios,
+    idEmpresa,
+    baseDatosEmpresa,
+    nombreEmpresa,
+    page,
+  ]);
+
+  if (
+    getServiciosEmpresaLoading ||
+    getServiciosNoContratadosEmpresaLoading ||
+    agregarServiciosEmpresaLoading ||
+    eliminarServicioEmpresaLoading
+  ) {
+    setLoading(true);
+    return <div></div>;
+  } else {
+    setLoading(false);
+  }
+  if (
+    getServiciosEmpresaError ||
+    getServiciosNoContratadosEmpresaError ||
+    agregarServiciosEmpresaError ||
+    eliminarServicioEmpresaError
+  ) {
+    return <ErrorQueryDB />;
+  }
+
+  const handleRequestSort = (event, property) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
+
+  const handleChangePage = (event, newPage) => {
+    setPageServicios(newPage);
+    /* const token = jwt.sign(
+      {
+        menuTemporal: {
+          modulo: "usuarios",
+          showComponent: 0,
+          idUsuario: idUsuario,
+          busquedaFiltro: busquedaFiltro,
+          page: newPage,
+        },
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("menuTemporal", token); */
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPageServicios(0);
+    /* const token = jwt.sign(
+      {
+        menuTemporal: {
+          modulo: "usuarios",
+          showComponent: 0,
+          idUsuario: idUsuario,
+          busquedaFiltro: busquedaFiltro,
+          page: 0,
+        },
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("menuTemporal", token); */
+  };
+
+  const handleOpenMenuAgregarServicio = () => {
+    setOpenMenuAgregarServicio(true);
+  };
+
+  const handleCloseMenuAgregarServicio = () => {
+    setOpenMenuAgregarServicio(false);
+  };
+
+  const handleOpenMenu = (event) => {
+    setAnchorMenuEl(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorMenuEl(null);
+  };
+
+  const agregarServicio = () => {
+    let nuevosServicios = [];
+    for (let x = 0; x < serviciosElegidos.length; x++) {
+      if (serviciosElegidos[x] !== 0) {
+        nuevosServicios.push(serviciosElegidos[x]);
+      }
+    }
+    if (nuevosServicios.length === 0) {
+      swal("Error", "Seleccione por lo menos un servicio", "warning");
+    } else {
+      executeAgregarServiciosEmpresa({
+        data: {
+          usuario: correo,
+          pwd: password,
+          idempresa: idEmpresa,
+          servicios: nuevosServicios,
+          fecha: moment().format("YYYY-MM-DD"),
+        },
+      });
+    }
+  };
+
+  return (
+    <div>
+      <Paper className={classes.paper}>
+        <Toolbar>
+          <Grid container alignItems="center">
+            <Grid item xs={8} sm={6} md={6}>
+              <Typography
+                className={classes.titleTable}
+                variant="h6"
+                style={{ alignSelf: "center" }}
+                id="tableTitle"
+              >
+                <Tooltip title="Regresar">
+                  <IconButton
+                    aria-label="regresar"
+                    onClick={() => {
+                      setShowComponent(0);
+                      //setIdUsuario(0);
+                      setBusquedaFiltroServicios("");
+                      setPageServicios(0);
+                      const token = jwt.sign(
+                        {
+                          menuTemporal: {
+                            modulo: "empresas",
+                            showComponent: 0,
+                            idEmpresa: 0,
+                            baseDatosEmpresa: "",
+                            nombreEmpresa: "",
+                            busquedaFiltro: busquedaFiltro,
+                            page: page,
+                            busquedaFiltroUsuarios: "",
+                            pageUsuarios: 0,
+                            busquedaFiltroServicios: "",
+                            pageServicios: "",
+                            busquedaFiltroMovimientos: "",
+                            pageMovimientos: 0,
+                          },
+                        },
+                        "mysecretpassword"
+                      );
+                      localStorage.setItem("menuTemporal", token);
+                    }}
+                  >
+                    <ArrowBackIcon color="primary" />
+                  </IconButton>
+                </Tooltip>
+                Lista De Servicios De {nombreEmpresa}
+              </Typography>
+            </Grid>
+            <Grid
+              item
+              xs={4}
+              sm={6}
+              md={2}
+              style={{ alignSelf: "flex-end", textAlign: "center" }}
+            >
+              <Tooltip title="Limpiar Filtro">
+                <IconButton
+                  aria-label="filtro"
+                  style={{ float: "right" }}
+                  onClick={() => {
+                    setBusquedaFiltroServicios("");
+                  }}
+                >
+                  <ClearAllIcon style={{ color: "black" }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Agregar Servicio">
+                <IconButton
+                  aria-label="agregarServicio"
+                  style={{ float: "right" }}
+                  onClick={() => {
+                    handleOpenMenuAgregarServicio();
+                  }}
+                >
+                  <AddCircleIcon
+                    style={{
+                      color: "#4caf50",
+                    }}
+                  />
+                </IconButton>
+              </Tooltip>
+            </Grid>
+            <Grid item xs={12} sm={12} md={4}>
+              <TextField
+                className={classes.textFields}
+                label="Escriba algo para filtrar"
+                type="text"
+                margin="normal"
+                value={busquedaFiltroServicios}
+                inputProps={{
+                  maxLength: 20,
+                }}
+                onChange={(e) => {
+                  setBusquedaFiltroServicios(e.target.value);
+                }}
+              />
+            </Grid>
+          </Grid>
+        </Toolbar>
+        <TableContainer>
+          <Table
+            className={classes.table}
+            aria-labelledby="tableTitle"
+            size={"medium"}
+            aria-label="enhanced table"
+          >
+            <EnhancedTableHead
+              classes={classes}
+              order={order}
+              orderBy={orderBy}
+              onRequestSort={handleRequestSort}
+              rowCount={rows.length}
+              headCells={headCellsServicios}
+            />
+            <TableBody>
+              {rows.length > 0 ? (
+                stableSort(rows, getComparator(order, orderBy))
+                  .slice(
+                    pageServicios * rowsPerPage,
+                    pageServicios * rowsPerPage + rowsPerPage
+                  )
+                  .map((row, index) => {
+                    const labelId = `enhanced-table-checkbox-${index}`;
+
+                    return (
+                      <TableRow hover role="checkbox" tabIndex={-1} key={index}>
+                        <TableCell padding="checkbox" />
+                        <TableCell component="th" id={labelId} scope="row">
+                          {row.servicio}
+                        </TableCell>
+                        <TableCell align="right">{`$${row.precio}`}</TableCell>
+                        <TableCell align="right">{row.descripcion}</TableCell>
+                        <TableCell align="right">{row.tipo}</TableCell>
+                        <TableCell align="right">{row.fecha}</TableCell>
+                        <TableCell align="right">
+                          {row.estatus === 1 ? "Activo" : "Inactivo"}
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          onClick={(e) => {
+                            handleOpenMenu(e);
+                            setIdServicio(row.id);
+                          }}
+                        >
+                          {row.acciones}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <Typography variant="subtitle1">
+                      <ErrorIcon
+                        style={{ color: "red", verticalAlign: "sub" }}
+                      />
+                      No hay servicios disponibles
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <TablePagination
+          rowsPerPageOptions={[10, 25, 50]}
+          component="div"
+          labelRowsPerPage="Filas por página"
+          labelDisplayedRows={(e) => {
+            return `${e.from}-${e.to} de ${e.count}`;
+          }}
+          count={rows.length}
+          rowsPerPage={rowsPerPage}
+          page={
+            rows.length > 0 && rows.length >= rowsPerPage ? pageServicios : 0
+          }
+          onChangePage={handleChangePage}
+          onChangeRowsPerPage={handleChangeRowsPerPage}
+        />
+      </Paper>
+      <Dialog
+        onClose={handleCloseMenuAgregarServicio}
+        aria-labelledby="simple-dialog-title"
+        fullScreen={fullScreenDialog}
+        open={openMenuAgregarServicio}
+        maxWidth="lg"
+      >
+        <DialogTitle id="simple-dialog-title">Agregar Servicio</DialogTitle>
+        <DialogContent dividers>
+          <Grid container justify="center" spacing={3}>
+            <Grid item xs={12} md={12}>
+              <TableContainer component={Paper}>
+                <Table className={classes.table} aria-label="simple table">
+                  <TableHead style={{ background: "#FAFAFA" }}>
+                    <TableRow>
+                      <TableCell></TableCell>
+                      <TableCell align="right">
+                        <strong>Servicio</strong>
+                      </TableCell>
+                      <TableCell align="right">
+                        <strong>Descripción</strong>
+                      </TableCell>
+                      <TableCell align="right">
+                        <strong>Precio</strong>
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {serviciosNoContratados.length > 0 ? (
+                      serviciosNoContratados.map((servicio, index) => (
+                        <TableRow hover role="checkbox" key={index}>
+                          <TableCell padding="checkbox">
+                            <Checkbox
+                              onChange={(e) => {
+                                let nuevosServiciosElegidos = serviciosElegidos;
+                                nuevosServiciosElegidos[index] = e.target
+                                  .checked
+                                  ? servicio.id
+                                  : 0;
+                                setServiciosElegidos(nuevosServiciosElegidos);
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            {servicio.nombreservicio}
+                          </TableCell>
+                          <TableCell align="right">
+                            {servicio.descripcion}
+                          </TableCell>
+                          <TableCell align="right">{`$${servicio.precio}`}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4}>
+                          <Typography variant="subtitle1">
+                            <ErrorIcon
+                              style={{ color: "red", verticalAlign: "sub" }}
+                            />
+                            No hay servicios disponibles
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              handleCloseMenuAgregarServicio();
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              agregarServicio();
+            }}
+          >
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <StyledMenu
+        id="customized-menu"
+        anchorEl={anchorMenuEl}
+        keepMounted
+        open={Boolean(anchorMenuEl)}
+        onClose={handleCloseMenu}
+      >
+        <MenuItem
+          onClick={() => {
+            handleCloseMenu();
+            swal({
+              text: "¿Está seguro de eliminar este servicio de la empresa?",
+              buttons: ["No", "Sí"],
+              dangerMode: true,
+            }).then((value) => {
+              if (value) {
+                executeEliminarServicioEmpresa({
+                  data: {
+                    usuario: correo,
+                    pwd: password,
+                    idempresa: idEmpresa,
+                    idservicio: idServicio,
+                  },
+                });
+              }
+            });
+          }}
+        >
+          <ListItemText primary="Eliminar" />
+        </MenuItem>
+      </StyledMenu>
+    </div>
   );
 }

@@ -47,6 +47,7 @@ import { dataBaseErrores } from "../../helpers/erroresDB";
 import swal from "sweetalert";
 import { keyValidation, pasteValidation } from "../../helpers/inputHelpers";
 import { verificarArchivoLote } from "../../helpers/extensionesArchivos";
+import jwt from "jsonwebtoken";
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -315,6 +316,29 @@ export default function RecepcionPorLotes(props) {
   );
 
   useEffect(() => {
+    if (
+      idLote === 0 &&
+      showComponent === 0 &&
+      tittleTableComponent === "" &&
+      idSubmenu === 0
+    ) {
+      if (localStorage.getItem("menuTemporal")) {
+        try {
+          const decodedToken = jwt.verify(
+            localStorage.getItem("menuTemporal"),
+            "mysecretpassword"
+          );
+          setShowComponent(decodedToken.menuTemporal.showComponent);
+          setTittleTableComponent(decodedToken.menuTemporal.tableTittle);
+          setIdSubmenu(decodedToken.menuTemporal.idSubmenu);
+        } catch (err) {
+          localStorage.removeItem("menuTemporal");
+        }
+      }
+    }
+  }, [idLote, showComponent, tittleTableComponent, idSubmenu]);
+
+  useEffect(() => {
     for (let x = 0; x < submenuContent.length; x++) {
       if (submenuContent[x].submenu.idsubmenu === parseInt(idSubmenu)) {
         setPermisosSubmenu(submenuContent[x].permisos);
@@ -434,6 +458,17 @@ export default function RecepcionPorLotes(props) {
                     setShowComponent(1);
                     setTittleTableComponent(content.submenu.nombre_submenu);
                     setIdSubmenu(content.submenu.idsubmenu);
+                    const token = jwt.sign(
+                      {
+                        menuTemporal: {
+                          tableTittle: content.submenu.nombre_submenu,
+                          showComponent: 1,
+                          idSubmenu: content.submenu.idsubmenu
+                        },
+                      },
+                      "mysecretpassword"
+                    );
+                    localStorage.setItem("menuTemporal", token);
                   }}
                 >
                   {content.submenu.nombre_submenu}
@@ -895,6 +930,17 @@ function TablaRPL(props) {
                 aria-label="cerrar"
                 onClick={() => {
                   setShowComponent(0);
+                  const token = jwt.sign(
+                    {
+                      menuTemporal: {
+                        tableTittle: "",
+                        showComponent: 0,
+                        idSubmenu: 0
+                      },
+                    },
+                    "mysecretpassword"
+                  );
+                  localStorage.setItem("menuTemporal", token);
                 }}
               >
                 <CloseIcon color="secondary" />
