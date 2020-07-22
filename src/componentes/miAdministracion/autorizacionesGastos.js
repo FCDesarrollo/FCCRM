@@ -306,7 +306,6 @@ export default function AutorizacionesGastos(props) {
   const setLoading = props.setLoading;
   const usuarioDatos = props.usuarioDatos;
   const empresaDatos = props.empresaDatos;
-  console.log(empresaDatos);
   const usuario = usuarioDatos.correo;
   const usuarioPassword = usuarioDatos.password;
   const rfcEmpresa = empresaDatos.RFC;
@@ -1721,7 +1720,7 @@ function FormularioAYG(props) {
   );
 
   useEffect(() => {
-    if (RADatos.serie.trim() !== "" /* && RADatos.folio.trim() === "" */) {
+    if (RADatos.serie/* .trim() */ !== "" /* && RADatos.folio.trim() === "" */) {
       executeTraerRequerimientoPorSerie();
     }
   }, [RADatos.serie /* , RADatos.folio */, executeTraerRequerimientoPorSerie]);
@@ -3944,7 +3943,7 @@ function FormularioAYG(props) {
                 maxLength: 20,
                 ref: inputSerie,
               }}
-              value={RADatos.serie}
+              value={RADatos.serie || ""}
               disabled={accionAG === 2}
               onKeyPress={(e) => {
                 keyValidation(e, 5);
@@ -3972,7 +3971,7 @@ function FormularioAYG(props) {
               inputProps={{
                 maxLength: 30,
               }}
-              value={RADatos.folio}
+              value={RADatos.folio || ""}
               disabled={accionAG === 2}
               onKeyPress={(e) => {
                 keyValidation(e, 2);

@@ -61,6 +61,7 @@ import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
 import { dataBaseErrores } from "../../helpers/erroresDB";
 import jwt from "jsonwebtoken";
 import swal from "sweetalert";
+import swalReact from "@sweetalert/with-react";
 import moment from "moment";
 import {
   verificarArchivoCer,
@@ -198,7 +199,7 @@ export default function Empresa(props) {
             <ExpansionPanel
               square
               disabled={content.permisos === 0}
-              expanded={expanded === content.submenu.orden} 
+              expanded={expanded === content.submenu.orden}
               onChange={handleChange(content.submenu.orden)}
               key={index}
               onClick={() => {
@@ -912,7 +913,8 @@ function ServiciosContratados(props) {
   const rfc = props.rfc;
   const idSubmenu = props.idSubmenu;
   const [servicios, setServicios] = useState([]);
-  const [pagoMensual, setPagoMenual] = useState(0)
+  const [pagoMensual, setPagoMenual] = useState(0);
+  const [validacionAgregarServicio, setValidacionAgregarServicio] = useState(false);
 
   const [
     {
@@ -973,9 +975,17 @@ function ServiciosContratados(props) {
       } else {
         setServicios(getServiciosEmpresaClienteData.servicios);
         let cantidad = 0;
-        for(let x=0 ; x<getServiciosEmpresaClienteData.servicios.length ; x++) {
-          if(getServiciosEmpresaClienteData.servicios[x].serviciocontratado !== null) {
-            cantidad = cantidad + getServiciosEmpresaClienteData.servicios[x].precio;
+        for (
+          let x = 0;
+          x < getServiciosEmpresaClienteData.servicios.length;
+          x++
+        ) {
+          if (
+            getServiciosEmpresaClienteData.servicios[x].serviciocontratado !==
+            null
+          ) {
+            cantidad =
+              cantidad + getServiciosEmpresaClienteData.servicios[x].precio;
           }
         }
         setPagoMenual(cantidad);
@@ -992,11 +1002,18 @@ function ServiciosContratados(props) {
           "warning"
         );
       } else {
-        swal("Servicio Agregado", "Servicio agregado con éxito", "success");
-        executeGetServiciosEmpresa();
+        setValidacionAgregarServicio(true);
       }
     }
-  }, [agregarServicioEmpresaClienteData, executeGetServiciosEmpresa]);
+  }, [agregarServicioEmpresaClienteData]);
+
+  useEffect(() => {
+    if(validacionAgregarServicio) {
+      swal("Servicio Agregado", "Servicio agregado con éxito", "success");
+      executeGetServiciosEmpresa();
+      setValidacionAgregarServicio(false);
+    }
+  }, [validacionAgregarServicio, executeGetServiciosEmpresa])
 
   if (
     getServiciosEmpresaClienteLoading ||
@@ -1054,13 +1071,71 @@ function ServiciosContratados(props) {
                   style={{ flex: "auto" }}
                   onClick={() => {
                     if (servicio.serviciocontratado === null) {
-                      swal({
+                      /* swal({
                         text: "¿Está seguro de contratar este servicio? "+pagoMensual,
                         buttons: ["No", "Sí"],
                         dangerMode: true,
                       }).then((value) => {
                         if (value) {
                           console.log(servicio.id, idEmpresa);
+                          executeAgregarServicioEmpresaCliente({
+                            data: {
+                              usuario: correo,
+                              pwd: password,
+                              rfc: rfc,
+                              idsubmenu: idSubmenu,
+                              idempresa: idEmpresa,
+                              idservicio: servicio.id,
+                              fecha: moment().format("YYYY-MM-DD"),
+                            },
+                          });
+                        }
+                      }); */
+                      swalReact({
+                        title: "Confirmación de Contratación",
+                        buttons: {
+                          confirm: "Confirmar la contratación",
+                          cancel: "Cancelar",
+                        },
+                        closeOnClickOutside: false,
+                        closeOnEsc: false,
+                        content: (
+                          <TableContainer component={Paper}>
+                            <Table
+                              className={classes.table}
+                              aria-label="simple table"
+                            >
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell>
+                                    <strong>{`Precio de servicio ${servicio.nombreservicio}:`}</strong>
+                                  </TableCell>
+                                  <TableCell align="right">{`$${servicio.precio}`}</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                <TableRow>
+                                  <TableCell component="th" scope="row">
+                                    <strong>Pago mensual actual:</strong>
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    {`$${pagoMensual}`}
+                                  </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell component="th" scope="row">
+                                    <strong>Nuevo pago mensual:</strong>
+                                  </TableCell>
+                                  <TableCell align="right">{`$${
+                                    pagoMensual + servicio.precio
+                                  }`}</TableCell>
+                                </TableRow>
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        ),
+                      }).then((value) => {
+                        if (value) {
                           executeAgregarServicioEmpresaCliente({
                             data: {
                               usuario: correo,
