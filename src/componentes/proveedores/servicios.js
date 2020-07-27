@@ -17,10 +17,16 @@ import {
   DialogTitle,
   DialogActions,
   useMediaQuery,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
 } from "@material-ui/core";
 import {
   ArrowBack as ArrowBackIcon,
   AddCircle as AddCircleIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from "@material-ui/icons";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import { API_BASE_URL } from "../../config";
@@ -36,6 +42,8 @@ import {
 } from "../../helpers/inputHelpers";
 import jwt from "jsonwebtoken";
 import serviciosImage from "../../assets/images/servicios.jpg";
+import moment from "moment";
+import { verificarImagenesServicios } from "../../helpers/extensionesArchivos";
 
 const useStyles = makeStyles((theme) => ({
   title: {
@@ -90,6 +98,17 @@ export default function Servicios(props) {
   const [idServicio, setIdServicio] = useState(0);
   const [servicios, setServicios] = useState([]);
   const [openDialogCambiarImagen, setOpenDialogCambiarImagen] = useState(false);
+  const [openDialogContenido, setOpenDialogContenido] = useState(false);
+  const [openDialogAgregarContenido, setOpenDialogAgregarContenido] = useState(
+    false
+  );
+  const [nuevaImagenServicio, setNuevaImagenervicio] = useState(null);
+  const [nombreImagen, setNombreImagen] = useState("");
+  const [contenido, setContenido] = useState([]);
+  const [idContenido, setIdContenido] = useState(0);
+  const [nombreContenido, setNombreContenido] = useState("");
+  const [urlContenido, setUrlContenido] = useState("");
+  const [validacionContenido, setValidacionContenido] = useState(false);
 
   const [
     {
@@ -114,6 +133,22 @@ export default function Servicios(props) {
   );
   const [
     {
+      data: cambiarImagenServicioData,
+      loading: cambiarImagenServicioLoading,
+      error: cambiarImagenServicioError,
+    },
+    executeCambiarImagenServicio,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/cambiarImagenServicio`,
+      method: "POST",
+    },
+    {
+      manual: true,
+    }
+  );
+  const [
+    {
       data: cambiarStatusServicioData,
       loading: cambiarStatusServicioLoading,
       error: cambiarStatusServicioError,
@@ -125,6 +160,65 @@ export default function Servicios(props) {
       method: "PUT",
     },
     {
+      manual: true,
+    }
+  );
+  const [
+    {
+      data: getContenidoServicioData,
+      loading: getContenidoServicioLoading,
+      error: getContenidoServicioError,
+    },
+    executeGetContenidoServicio,
+    ,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getContenidoServicio`,
+      method: "GET",
+      params: {
+        usuario: correo,
+        pwd: password,
+        idservicio: idServicio,
+      },
+    },
+    {
+      useCache: false,
+      /* manual: true, */
+    }
+  );
+  const [
+    {
+      data: guardarContenidoServicioData,
+      loading: guardarContenidoServicioLoading,
+      error: guardarContenidoServicioError,
+    },
+    executeGuardarContenidoServicio,
+    ,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/guardarContenidoServicio`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+  const [
+    {
+      data: borrarContenidoServicioData,
+      loading: borrarContenidoServicioLoading,
+      error: borrarContenidoServicioError,
+    },
+    executeBorrarContenidoServicio,
+    ,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/borrarContenidoServicio`,
+      method: "DELETE",
+    },
+    {
+      useCache: false,
       manual: true,
     }
   );
@@ -188,6 +282,25 @@ export default function Servicios(props) {
 
   useEffect(() => {
     function checkData() {
+      if (cambiarImagenServicioData) {
+        if (cambiarImagenServicioData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(cambiarImagenServicioData.error),
+            "warning"
+          );
+        } else {
+          swal("Imagen Guardada", "Imagen guardada con éxito", "success");
+          executeGetServicios();
+        }
+      }
+    }
+
+    checkData();
+  }, [cambiarImagenServicioData, executeGetServicios]);
+
+  useEffect(() => {
+    function checkData() {
       if (cambiarStatusServicioData) {
         if (cambiarStatusServicioData.error !== 0) {
           swal(
@@ -213,13 +326,78 @@ export default function Servicios(props) {
     checkData();
   }, [cambiarStatusServicioData, executeGetServicios]);
 
-  if (getServiciosLoading || cambiarStatusServicioLoading) {
+  useEffect(() => {
+    if (getContenidoServicioData) {
+      if (getContenidoServicioData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(getContenidoServicioData.error),
+          "warning"
+        );
+      } else {
+        setContenido(getContenidoServicioData.contenido);
+      }
+    }
+  }, [getContenidoServicioData]);
+
+  useEffect(() => {
+    if (guardarContenidoServicioData) {
+      if (guardarContenidoServicioData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(guardarContenidoServicioData.error),
+          "warning"
+        );
+      } else {
+        swal("Contenido Guardado", "Contenido guardado con éxito", "success");
+        setValidacionContenido(true);
+      }
+    }
+  }, [guardarContenidoServicioData]);
+
+  useEffect(() => {
+    if (borrarContenidoServicioData) {
+      if (borrarContenidoServicioData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(borrarContenidoServicioData.error),
+          "warning"
+        );
+      } else {
+        swal("Contenido eliminado", "Contenido eliminado con éxito", "success");
+        setValidacionContenido(true);
+      }
+    }
+  }, [borrarContenidoServicioData]);
+
+  useEffect(() => {
+    if(validacionContenido) {
+      executeGetContenidoServicio();
+      setValidacionContenido(false);
+    }
+  },[validacionContenido, executeGetContenidoServicio])
+
+  if (
+    getServiciosLoading ||
+    cambiarImagenServicioLoading ||
+    cambiarStatusServicioLoading ||
+    getContenidoServicioLoading ||
+    guardarContenidoServicioLoading ||
+    borrarContenidoServicioLoading
+  ) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (getServiciosError || cambiarStatusServicioError) {
+  if (
+    getServiciosError ||
+    cambiarImagenServicioError ||
+    cambiarStatusServicioError ||
+    getContenidoServicioError ||
+    guardarContenidoServicioError ||
+    borrarContenidoServicioError
+  ) {
     return <ErrorQueryDB />;
   }
 
@@ -231,6 +409,31 @@ export default function Servicios(props) {
     setOpenDialogCambiarImagen(false);
   };
 
+  const handleOpenDialogContenido = () => {
+    setOpenDialogContenido(true);
+  };
+
+  const handleCloseDialogContenido = () => {
+    setOpenDialogContenido(false);
+  };
+
+  const handleOpenDialogAgregarContenido = () => {
+    setOpenDialogAgregarContenido(true);
+  };
+
+  const handleCloseDialogAgregarContenido = () => {
+    setOpenDialogAgregarContenido(false);
+    /* executeGetContenidoServicio({
+      params: {
+        usuario: correo,
+        pwd: password,
+        idservicio: idServicio,
+      },
+    }); */
+    setNombreContenido("");
+    setUrlContenido("");
+  };
+
   const getServicios = () => {
     if (servicios.length > 0) {
       return servicios.map((servicio, index) => {
@@ -240,8 +443,12 @@ export default function Servicios(props) {
               <CardActionArea>
                 <CardMedia
                   className={classes.media}
-                  image={serviciosImage}
-                  title="Servicio"
+                  image={
+                    servicio.download !== null && servicio.download !== ""
+                      ? `${servicio.download}/preview`
+                      : serviciosImage
+                  }
+                  title="Imagen Servicio"
                   style={{ height: "150px" }}
                 />
               </CardActionArea>
@@ -261,9 +468,30 @@ export default function Servicios(props) {
                   style={{ flex: "auto", textAlign: "center" }}
                   onClick={() => {
                     handleOpenDialogCambiarImagen();
+                    setIdServicio(servicio.id);
+                    setNombreImagen(servicio.imagen);
                   }}
                 >
                   Cambiar Imagen
+                </Button>
+                <Button
+                  size="small"
+                  color="primary"
+                  style={{ flex: "auto", textAlign: "center" }}
+                  onClick={() => {
+                    handleOpenDialogContenido();
+                    setIdServicio(servicio.id);
+                    /* executeGetContenidoServicio({
+                      params: {
+                        usuario: correo,
+                        pwd: password,
+                        idservicio: servicio.id,
+                      },
+                    }); */
+                    executeGetContenidoServicio();
+                  }}
+                >
+                  Contenido
                 </Button>
               </CardActions>
               <CardActions
@@ -335,6 +563,107 @@ export default function Servicios(props) {
     }
   };
 
+  const guardarNuevaImagenServicio = () => {
+    if (nuevaImagenServicio === null) {
+      swal("Error", "Seleccione una imagen o una imagen valida", "warning");
+    } else {
+      //console.log(nombreImagen, idServicio);
+      const formData = new FormData();
+      formData.append("usuario", correo);
+      formData.append("pwd", password);
+      formData.append("idservicio", idServicio);
+      formData.append("fecharegistro", moment().format("YYYYMMDDHHmmss"));
+      formData.append("nombreimagenantigua", nombreImagen);
+      formData.append("imagen", nuevaImagenServicio);
+      executeCambiarImagenServicio({
+        data: formData,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+    }
+  };
+
+  const getContenido = () => {
+    if (contenido.length > 0) {
+      return contenido.map((contenido, index) => {
+        return (
+          <ListItem
+            key={index}
+            button
+            onClick={() => {
+              window.open(contenido.url);
+            }}
+          >
+            <ListItemText primary={contenido.nombre} />
+            <ListItemSecondaryAction>
+              <Tooltip title="Editar">
+                <IconButton
+                  edge="end"
+                  onClick={(e) => {
+                    setIdContenido(contenido.id);
+                    setNombreContenido(contenido.nombre);
+                    setUrlContenido(contenido.url);
+                    handleOpenDialogAgregarContenido();
+                  }}
+                >
+                  <EditIcon style={{ color: "black" }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Eliminar">
+                <IconButton edge="end" onClick={(e) => {
+                  swal({
+                    text:
+                      "¿Está seguro de eliminar este contenido?",
+                    buttons: ["No", "Sí"],
+                    dangerMode: true,
+                  }).then((value) => {
+                    if (value) {
+                      executeBorrarContenidoServicio({
+                        data: {
+                          usuario: correo,
+                          pwd: password,
+                          idcontenido: contenido.id
+                        }
+                      });
+                    }
+                  }); 
+                }}>
+                  <DeleteIcon color="secondary" />
+                </IconButton>
+              </Tooltip>
+            </ListItemSecondaryAction>
+          </ListItem>
+        );
+      });
+    } else {
+      return (
+        <ListItem>
+          <ListItemText primary="Sin Contenido" />
+        </ListItem>
+      );
+    }
+  };
+
+  const guardarContenido = () => {
+    if (nombreContenido.trim() === "") {
+      swal("Error", "Agregue un nombre", "warning");
+    } else if (urlContenido.trim() === "") {
+      swal("Error", "Agregue una url", "warning");
+    } else {
+      executeGuardarContenidoServicio({
+        data: {
+          usuario: correo,
+          pwd: password,
+          idcontenido: idContenido,
+          idservicio: idServicio,
+          nombre: nombreContenido.trim(),
+          url: urlContenido.trim(),
+        },
+      });
+    }
+  };
+
   return (
     <div>
       {showComponent === 0 ? (
@@ -359,7 +688,7 @@ export default function Servicios(props) {
                           menuTemporal: {
                             modulo: "servicios",
                             showComponent: 1,
-                            idServicio: idServicio,
+                            idServicio: 0,
                             busquedaFiltro: busquedaFiltro,
                             page: page,
                           },
@@ -402,7 +731,43 @@ export default function Servicios(props) {
       >
         <DialogTitle id="simple-dialog-title">Cambiar Imagen</DialogTitle>
         <DialogContent dividers>
-          <Grid container justify="center" spacing={3}></Grid>
+          <Grid container justify="center" spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                id="imagenServicioNueva"
+                className={classes.textFields}
+                type="file"
+                margin="normal"
+                onChange={(e) => {
+                  if (
+                    e.target.files.length > 0 &&
+                    !verificarImagenesServicios(e.target.files[0].name)
+                  ) {
+                    swal(
+                      "Error de archivo",
+                      `Solo se permiten imágenes con extensiones .jpg y .png`,
+                      "warning"
+                    );
+                    setNuevaImagenervicio(null);
+                  } else if (
+                    e.target.files.length > 0 &&
+                    e.target.files[0].size > 5000000
+                  ) {
+                    swal(
+                      "Error de archivo",
+                      `Solo se permiten imágenes con un tamaño no mayor a los 5 MB.`,
+                      "warning"
+                    );
+                    setNuevaImagenervicio(null);
+                  } else {
+                    setNuevaImagenervicio(
+                      e.target.files.length > 0 ? e.target.files[0] : null
+                    );
+                  }
+                }}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions>
           <Button
@@ -418,7 +783,132 @@ export default function Servicios(props) {
             variant="contained"
             color="primary"
             onClick={() => {
-              handleCloseDialogCambiarImagen();
+              guardarNuevaImagenServicio();
+            }}
+          >
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        onClose={handleCloseDialogContenido}
+        aria-labelledby="simple-dialog-title"
+        open={openDialogContenido}
+        fullScreen={fullScreenDialog}
+        maxWidth="lg"
+        fullWidth="lg"
+      >
+        <DialogTitle id="simple-dialog-title">Contenido</DialogTitle>
+        <DialogContent dividers>
+          <Grid container justify="center" spacing={3}>
+            <Grid item xs={12}>
+              <Button
+                variant="contained"
+                color="primary"
+                style={{ float: "right" }}
+                onClick={() => {
+                  handleOpenDialogAgregarContenido();
+                  setIdContenido(0);
+                }}
+              >
+                Agregar Contenido
+              </Button>
+            </Grid>
+            <Grid item xs={12}>
+              <List
+                style={{
+                  height: "200px",
+                  maxHeight: "200px",
+                  overflow: "auto",
+                }}
+              >
+                {getContenido()}
+              </List>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              handleCloseDialogContenido();
+            }}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        onClose={handleCloseDialogAgregarContenido}
+        aria-labelledby="simple-dialog-title"
+        open={openDialogAgregarContenido}
+        fullScreen={fullScreenDialog}
+        maxWidth="lg"
+        fullWidth="lg"
+      >
+        <DialogTitle id="simple-dialog-title">{idContenido === 0 ? "Agregar Contenido" : "Editar Contenido"}</DialogTitle>
+        <DialogContent dividers>
+          <Grid container justify="center" spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                className={classes.textFields}
+                id="nombreContenido"
+                label="Nombre"
+                type="text"
+                required
+                margin="normal"
+                value={nombreContenido}
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 3);
+                }}
+                onChange={(e) => {
+                  pasteValidation(e, 3);
+                  setNombreContenido(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                className={classes.textFields}
+                id="urlContenido"
+                label="Url"
+                type="text"
+                required
+                margin="normal"
+                value={urlContenido}
+                inputProps={{
+                  maxLength: 250,
+                }}
+                /* onKeyPress={(e) => {
+                  keyValidation(e, 3);
+                }} */
+                onChange={(e) => {
+                  //pasteValidation(e, 3);
+                  setUrlContenido(e.target.value);
+                }}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              handleCloseDialogAgregarContenido();
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              guardarContenido();
             }}
           >
             Guardar
@@ -497,7 +987,6 @@ function GuardarServicio(props) {
         if (getServicioData.error !== 0) {
           swal("Error", dataBaseErrores(getServicioData.error), "warning");
         } else {
-          console.log(getServicioData.servicio[0]);
           setCodigoServicio(getServicioData.servicio[0].codigoservicio);
           setNombreServicio(getServicioData.servicio[0].nombreservicio);
           setPrecioServicio(getServicioData.servicio[0].precio);
@@ -528,13 +1017,33 @@ function GuardarServicio(props) {
           executeGetServicios();
           if (idServicio === 0) {
             setShowComponent(0);
+            const token = jwt.sign(
+              {
+                menuTemporal: {
+                  modulo: "servicios",
+                  showComponent: 0,
+                  idServicio: 0,
+                  busquedaFiltro: busquedaFiltro,
+                  page: page,
+                },
+              },
+              "mysecretpassword"
+            );
+            localStorage.setItem("menuTemporal", token);
           }
         }
       }
     }
 
     checkData();
-  }, [guardarServicioData, executeGetServicios, setShowComponent, idServicio]);
+  }, [
+    guardarServicioData,
+    executeGetServicios,
+    setShowComponent,
+    idServicio,
+    busquedaFiltro,
+    page,
+  ]);
 
   if (getServicioLoading || guardarServicioLoading) {
     setLoading(true);
@@ -547,7 +1056,8 @@ function GuardarServicio(props) {
   }
 
   const guardarServicio = () => {
-    /* if (codigoServicio.trim() === "") {
+    console.log(imagenServicio);
+    if (codigoServicio.trim() === "") {
       swal("Error", "Agregue un código", "warning");
     } else if (nombreServicio.trim() === "") {
       swal("Error", "Agregue un nombre", "warning");
@@ -559,7 +1069,7 @@ function GuardarServicio(props) {
       swal("Error", "Seleccione un tipo", "warning");
     } else if (actualizableServicio === "0") {
       swal("Error", "Seleccione un actualizable", "warning");
-    } else  */if (fechaServicio === "") {
+    } else if (fechaServicio === "") {
       swal("Error", "Seleccione una fecha", "warning");
     } else {
       const formData = new FormData();
@@ -573,7 +1083,8 @@ function GuardarServicio(props) {
       formData.append("actualizable", actualizableServicio);
       formData.append("fecha", fechaServicio);
       formData.append("idservicio", idServicio);
-      if(imagenServicio !== null) {
+      formData.append("fecharegistro", moment().format("YYYYMMDDHHmmss"));
+      if (imagenServicio !== null) {
         formData.append("imagen", imagenServicio);
       }
       executeGuardarServicio({
@@ -789,14 +1300,37 @@ function GuardarServicio(props) {
           />
         </Grid>
         <Grid item xs={12} sm={6}>
-        <TextField
+          <TextField
             id="imagenServicio"
             className={classes.textFields}
             type="file"
             margin="normal"
             onChange={(e) => {
-              console.log(e.target.files[0]);
-              setImagenServicio(e.target.files[0]);
+              if (
+                e.target.files.length > 0 &&
+                !verificarImagenesServicios(e.target.files[0].name)
+              ) {
+                swal(
+                  "Error de archivo",
+                  `Solo se permiten imágenes con extensiones .jpg y .png`,
+                  "warning"
+                );
+                setImagenServicio(null);
+              } else if (
+                e.target.files.length > 0 &&
+                e.target.files[0].size > 5000000
+              ) {
+                swal(
+                  "Error de archivo",
+                  `Solo se permiten imágenes con un tamaño no mayor a los 5 MB.`,
+                  "warning"
+                );
+                setImagenServicio(null);
+              } else {
+                setImagenServicio(
+                  e.target.files.length > 0 ? e.target.files[0] : null
+                );
+              }
             }}
           />
         </Grid>

@@ -3824,7 +3824,7 @@ function MovimientosEmpresa(props) {
                     setRutaArchivo(archivo.download);
                   }}
                 >
-                  <SettingsEthernetIcon sryle={{ color: "black" }} />
+                  <SettingsEthernetIcon style={{ color: "black" }} />
                 </IconButton>
               </Tooltip>
             </ListItemSecondaryAction>
@@ -3858,7 +3858,7 @@ function MovimientosEmpresa(props) {
                     setIdAbono(abono.iddocabono);
                   }}
                 >
-                  <SettingsEthernetIcon sryle={{ color: "black" }} />
+                  <SettingsEthernetIcon style={{ color: "black" }} />
                 </IconButton>
               </Tooltip>
             </ListItemSecondaryAction>
@@ -3892,7 +3892,7 @@ function MovimientosEmpresa(props) {
                     setIdAbono(cargo.iddocabono);
                   }}
                 >
-                  <SettingsEthernetIcon sryle={{ color: "black" }} />
+                  <SettingsEthernetIcon style={{ color: "black" }} />
                 </IconButton>
               </Tooltip>
             </ListItemSecondaryAction>

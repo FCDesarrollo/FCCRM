@@ -592,7 +592,9 @@ export default function AutorizacionesGastos(props) {
                     setIdModulo(content.idModulo);
                     setIdMenu(content.submenu.idmenu);
                     setIdSubmenu(content.submenu.idsubmenu);
-                    setEstatusRequerimiento(content.submenu.idsubmenu !== 44 ? 1 : 2);
+                    setEstatusRequerimiento(
+                      content.submenu.idsubmenu !== 44 ? 1 : 2
+                    );
                     setRadioTipo(
                       content.submenu.idsubmenu !== 44
                         ? "requerimientos"
@@ -1180,8 +1182,7 @@ function TablaAYG(props) {
                             >
                               <span>
                                 <IconButton
-                                  disabled={
-                                    permisosSubmenu < 2 }
+                                  disabled={permisosSubmenu < 2}
                                   onClick={() => {
                                     setAccionAG(2);
                                     setShowComponent(2);
@@ -1720,7 +1721,9 @@ function FormularioAYG(props) {
   );
 
   useEffect(() => {
-    if (RADatos.serie/* .trim() */ !== "" /* && RADatos.folio.trim() === "" */) {
+    if (
+      RADatos.serie /* .trim() */ !== "" /* && RADatos.folio.trim() === "" */
+    ) {
       executeTraerRequerimientoPorSerie();
     }
   }, [RADatos.serie /* , RADatos.folio */, executeTraerRequerimientoPorSerie]);
@@ -3019,7 +3022,7 @@ function FormularioAYG(props) {
                     handleOpenMenu(e);
                   }}
                 >
-                  <SettingsEthernetIcon sryle={{ color: "black" }} />
+                  <SettingsEthernetIcon style={{ color: "black" }} />
                 </IconButton>
               </Tooltip>
             </ListItemSecondaryAction>
@@ -3303,8 +3306,9 @@ function FormularioAYG(props) {
             idrequerimiento: idRequerimiento,
             fecha: moment().format("YYYY-MM-DD"),
             estatus:
-              parseInt(estatusRequerimiento) === 4 ||
-              parseInt(estatusRequerimiento) === 5
+              (parseInt(estatusRequerimiento) === 4 ||
+                parseInt(estatusRequerimiento) === 5) &&
+              idSubmenu === 44
                 ? estatusGasto
                 : parseInt(estatusRequerimiento),
             observaciones: observacionesHistorial,
@@ -3741,8 +3745,14 @@ function FormularioAYG(props) {
               className={classes.formButtons}
               disabled={accionAG !== 2 || statusEmpresa !== 1}
               style={{
-                background: accionAG !== 2 || statusEmpresa !== 1 ? "disabled" : "#4caf50",
-                color: accionAG !== 2 || statusEmpresa !== 1 ? "disabled" : "#ffffff",
+                background:
+                  accionAG !== 2 || statusEmpresa !== 1
+                    ? "disabled"
+                    : "#4caf50",
+                color:
+                  accionAG !== 2 || statusEmpresa !== 1
+                    ? "disabled"
+                    : "#ffffff",
               }}
               variant="contained"
               onClick={() => {
@@ -3778,7 +3788,9 @@ function FormularioAYG(props) {
               color="secondary"
               variant="contained"
               className={classes.formButtons}
-              disabled={accionAG !== 2 || permisosSubmenu < 3 || statusEmpresa !== 1}
+              disabled={
+                accionAG !== 2 || permisosSubmenu < 3 || statusEmpresa !== 1
+              }
               onClick={() => {
                 eliminarRequerimiento();
               }}
@@ -4653,7 +4665,9 @@ function FormularioAYG(props) {
                   className={classes.formButtons}
                   color="secondary"
                   variant="contained"
-                  disabled={accionAG !== 2 || permisosSubmenu < 3 || statusEmpresa !== 1}
+                  disabled={
+                    accionAG !== 2 || permisosSubmenu < 3 || statusEmpresa !== 1
+                  }
                   onClick={() => {
                     eliminarDocumentoPrincipal();
                   }}
@@ -4708,7 +4722,9 @@ function FormularioAYG(props) {
                   className={classes.formButtons}
                   color="secondary"
                   variant="contained"
-                  disabled={accionAG !== 2 || permisosSubmenu < 3 || statusEmpresa !== 1}
+                  disabled={
+                    accionAG !== 2 || permisosSubmenu < 3 || statusEmpresa !== 1
+                  }
                   onClick={() => {
                     eliminarDocumentoSecundario();
                   }}

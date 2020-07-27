@@ -86,6 +86,8 @@ export const dataBaseErrores = error => {
       return "Para eliminar un movimiento primero se tienen que eliminar todos sus abonos.";
     case 56:
       return "No se pueden eliminar ninguno de los cuatro perfiles principales.";
+    case 57:
+      return "No se pudo subir la imagen.";
     case -1:
       return "El teléfono ya existe.";
     case -2:

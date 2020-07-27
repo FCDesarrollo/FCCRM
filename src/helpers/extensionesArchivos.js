@@ -22,3 +22,8 @@ export const verificarArchivoMovimiento = fileName => {
     const extensionesPermitidas = /(.xml|.pdf)$/i;
     return extensionesPermitidas.exec(fileName);
 }
+
+export const verificarImagenesServicios = fileName => {
+    const extensionesPermitidas = /(.jpg|.png)$/i;
+    return extensionesPermitidas.exec(fileName);
+}
