@@ -1392,7 +1392,7 @@ function ServiciosContratados(props) {
         open={openDialogContenido}
         fullScreen={smScreen}
         maxWidth="lg"
-        fullWidth="lg"
+        fullWidth={true}
       >
         <DialogTitle id="simple-dialog-title">Contenido</DialogTitle>
         <DialogContent dividers>

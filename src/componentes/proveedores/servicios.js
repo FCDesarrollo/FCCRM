@@ -371,11 +371,11 @@ export default function Servicios(props) {
   }, [borrarContenidoServicioData]);
 
   useEffect(() => {
-    if(validacionContenido) {
+    if (validacionContenido) {
       executeGetContenidoServicio();
       setValidacionContenido(false);
     }
-  },[validacionContenido, executeGetContenidoServicio])
+  }, [validacionContenido, executeGetContenidoServicio]);
 
   if (
     getServiciosLoading ||
@@ -611,24 +611,26 @@ export default function Servicios(props) {
                 </IconButton>
               </Tooltip>
               <Tooltip title="Eliminar">
-                <IconButton edge="end" onClick={(e) => {
-                  swal({
-                    text:
-                      "¿Está seguro de eliminar este contenido?",
-                    buttons: ["No", "Sí"],
-                    dangerMode: true,
-                  }).then((value) => {
-                    if (value) {
-                      executeBorrarContenidoServicio({
-                        data: {
-                          usuario: correo,
-                          pwd: password,
-                          idcontenido: contenido.id
-                        }
-                      });
-                    }
-                  }); 
-                }}>
+                <IconButton
+                  edge="end"
+                  onClick={(e) => {
+                    swal({
+                      text: "¿Está seguro de eliminar este contenido?",
+                      buttons: ["No", "Sí"],
+                      dangerMode: true,
+                    }).then((value) => {
+                      if (value) {
+                        executeBorrarContenidoServicio({
+                          data: {
+                            usuario: correo,
+                            pwd: password,
+                            idcontenido: contenido.id,
+                          },
+                        });
+                      }
+                    });
+                  }}
+                >
                   <DeleteIcon color="secondary" />
                 </IconButton>
               </Tooltip>
@@ -728,6 +730,7 @@ export default function Servicios(props) {
         open={openDialogCambiarImagen}
         fullScreen={fullScreenDialog}
         maxWidth="lg"
+        fullWidth={true}
       >
         <DialogTitle id="simple-dialog-title">Cambiar Imagen</DialogTitle>
         <DialogContent dividers>
@@ -796,7 +799,7 @@ export default function Servicios(props) {
         open={openDialogContenido}
         fullScreen={fullScreenDialog}
         maxWidth="lg"
-        fullWidth="lg"
+        fullWidth={true}
       >
         <DialogTitle id="simple-dialog-title">Contenido</DialogTitle>
         <DialogContent dividers>
@@ -845,9 +848,11 @@ export default function Servicios(props) {
         open={openDialogAgregarContenido}
         fullScreen={fullScreenDialog}
         maxWidth="lg"
-        fullWidth="lg"
+        fullWidth={true}
       >
-        <DialogTitle id="simple-dialog-title">{idContenido === 0 ? "Agregar Contenido" : "Editar Contenido"}</DialogTitle>
+        <DialogTitle id="simple-dialog-title">
+          {idContenido === 0 ? "Agregar Contenido" : "Editar Contenido"}
+        </DialogTitle>
         <DialogContent dividers>
           <Grid container justify="center" spacing={3}>
             <Grid item xs={12}>
@@ -937,6 +942,14 @@ function GuardarServicio(props) {
   const [actualizableServicio, setActualizableServicio] = useState("0");
   const [fechaServicio, setfechaServicio] = useState("");
   const [imagenServicio, setImagenServicio] = useState(null);
+  const [fcModulos, setFcModulos] = useState([]);
+  const [modulos, setModulos] = useState([]);
+  const [menus, setMenus] = useState([]);
+  const [submenus, setSubmenus] = useState([]);
+  const [idFcModulo, setIdFcModulo] = useState("");
+  const [idModulo, setIdModulo] = useState("");
+  const [idMenu, setIdMenu] = useState("");
+  const [idSubmenu, setIdSubmenu] = useState("");
   const [
     {
       data: getServicioData,
@@ -955,7 +968,27 @@ function GuardarServicio(props) {
       },
     },
     {
+      useCache: false,
       manual: true,
+    }
+  );
+  const [
+    {
+      data: getModulosAndSubmenusData,
+      loading: getModulosAndSubmenusLoading,
+      error: getModulosAndSubmenusError,
+    },
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getModulosAndSubmenus`,
+      method: "GET",
+      params: {
+        usuario: correo,
+        pwd: password,
+      },
+    },
+    {
+      useCache: false,
     }
   );
   const [
@@ -971,6 +1004,7 @@ function GuardarServicio(props) {
       method: "POST",
     },
     {
+      useCache: false,
       manual: true,
     }
   );
@@ -994,12 +1028,54 @@ function GuardarServicio(props) {
           setTipoServicio(getServicioData.servicio[0].tipo);
           setActualizableServicio(getServicioData.servicio[0].actualizable);
           setfechaServicio(getServicioData.servicio[0].fecha);
+          setIdFcModulo(
+            getServicioData.servicio[0].idfcmodulo !== null
+              ? getServicioData.servicio[0].idfcmodulo
+              : "0"
+          );
+          setIdModulo(
+            getServicioData.servicio[0].idmodulo !== null
+              ? getServicioData.servicio[0].idmodulo
+              : "0"
+          );
+          setIdMenu(
+            getServicioData.servicio[0].idmenu !== null
+              ? getServicioData.servicio[0].idmenu
+              : "0"
+          );
+          setIdSubmenu(
+            getServicioData.servicio[0].idsubmenu !== null
+              ? getServicioData.servicio[0].idsubmenu
+              : "0"
+          );
         }
       }
     }
 
     checkData();
   }, [getServicioData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (getModulosAndSubmenusData) {
+        if (getModulosAndSubmenusData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(getModulosAndSubmenusData.error),
+            "warning"
+          );
+        } else {
+          console.log(getModulosAndSubmenusData);
+          setFcModulos(getModulosAndSubmenusData.fcmodulos);
+          setModulos(getModulosAndSubmenusData.modulos);
+          setMenus(getModulosAndSubmenusData.menus);
+          setSubmenus(getModulosAndSubmenusData.submenus);
+        }
+      }
+    }
+
+    checkData();
+  }, [getModulosAndSubmenusData]);
 
   useEffect(() => {
     function checkData() {
@@ -1045,18 +1121,21 @@ function GuardarServicio(props) {
     page,
   ]);
 
-  if (getServicioLoading || guardarServicioLoading) {
+  if (
+    getServicioLoading ||
+    getModulosAndSubmenusLoading ||
+    guardarServicioLoading
+  ) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (getServicioError || guardarServicioError) {
+  if (getServicioError || getModulosAndSubmenusError || guardarServicioError) {
     return <ErrorQueryDB />;
   }
 
   const guardarServicio = () => {
-    console.log(imagenServicio);
     if (codigoServicio.trim() === "") {
       swal("Error", "Agregue un código", "warning");
     } else if (nombreServicio.trim() === "") {
@@ -1071,6 +1150,14 @@ function GuardarServicio(props) {
       swal("Error", "Seleccione un actualizable", "warning");
     } else if (fechaServicio === "") {
       swal("Error", "Seleccione una fecha", "warning");
+    } else if (idFcModulo === "0" || idFcModulo === 0) {
+      swal("Error", "Seleccione un módulo desktop", "warning");
+    } else if (idModulo === "0" || idModulo === 0) {
+      swal("Error", "Seleccione un módulo", "warning");
+    } else if (idMenu === "0" || idMenu === 0) {
+      swal("Error", "Seleccione un menú", "warning");
+    } else if (idSubmenu === "0" || idSubmenu === 0) {
+      swal("Error", "Seleccione un submenu", "warning");
     } else {
       const formData = new FormData();
       formData.append("usuario", correo);
@@ -1084,6 +1171,10 @@ function GuardarServicio(props) {
       formData.append("fecha", fechaServicio);
       formData.append("idservicio", idServicio);
       formData.append("fecharegistro", moment().format("YYYYMMDDHHmmss"));
+      formData.append("fcmodulo", idFcModulo);
+      formData.append("modulo", idModulo);
+      formData.append("menu", idMenu);
+      formData.append("submenu", idSubmenu);
       if (imagenServicio !== null) {
         formData.append("imagen", imagenServicio);
       }
@@ -1107,6 +1198,70 @@ function GuardarServicio(props) {
           idservicio: idServicio,
         },
       }); */
+    }
+  };
+
+  const getFcModulos = () => {
+    if (fcModulos.length > 0) {
+      return fcModulos.map((fcModulo, index) => {
+        return (
+          <option key={index} value={fcModulo.idmodulo}>
+            {fcModulo.nombre_modulo}
+          </option>
+        );
+      });
+    } else {
+      return <option value="0">No hay módulos desktop disponibles</option>;
+    }
+  };
+
+  const getModulos = () => {
+    if (modulos.length > 0) {
+      return modulos.map((modulo, index) => {
+        return (
+          <option key={index} value={modulo.idmodulo}>
+            {modulo.nombre_modulo}
+          </option>
+        );
+      });
+    } else {
+      return <option value="0">No hay módulos disponibles</option>;
+    }
+  };
+
+  const getMenus = () => {
+    if (menus.length > 0) {
+      return menus.map((menu, index) => {
+        if (menu.idmodulo === parseInt(idModulo)) {
+          return (
+            <option key={index} value={menu.idmenu}>
+              {menu.nombre_menu}
+            </option>
+          );
+        } else {
+          return null;
+        }
+      });
+    } else {
+      return <option value="0">No hay menús disponibles</option>;
+    }
+  };
+
+  const getSubmenus = () => {
+    if (submenus.length > 0) {
+      return submenus.map((submenu, index) => {
+        if (submenu.idmenu === parseInt(idMenu)) {
+          return (
+            <option key={index} value={submenu.idsubmenu}>
+              {submenu.nombre_submenu}
+            </option>
+          );
+        } else {
+          return null;
+        }
+      });
+    } else {
+      return <option value="0">No hay submenus disponibles</option>;
     }
   };
 
@@ -1237,9 +1392,6 @@ function GuardarServicio(props) {
             }}
             margin="normal"
             value={tipoServicio}
-            inputProps={{
-              maxLength: 50,
-            }}
             onChange={(e) => {
               setTipoServicio(e.target.value);
             }}
@@ -1263,9 +1415,6 @@ function GuardarServicio(props) {
             }}
             margin="normal"
             value={actualizableServicio}
-            inputProps={{
-              maxLength: 50,
-            }}
             onChange={(e) => {
               setActualizableServicio(e.target.value);
             }}
@@ -1333,6 +1482,99 @@ function GuardarServicio(props) {
               }
             }}
           />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            className={classes.textFields}
+            id="idFcModulo"
+            label="Módulo Desktop"
+            type="text"
+            required
+            select
+            SelectProps={{
+              native: true,
+            }}
+            margin="normal"
+            value={idFcModulo}
+            onChange={(e) => {
+              setIdFcModulo(e.target.value);
+            }}
+          >
+            <option value="0">Seleccione un modulo</option>
+            {getFcModulos()}
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            className={classes.textFields}
+            id="idModulo"
+            label="Módulo"
+            type="text"
+            required
+            select
+            SelectProps={{
+              native: true,
+            }}
+            margin="normal"
+            value={idModulo}
+            onChange={(e) => {
+              setIdModulo(e.target.value);
+              if (e.target.value === "0") {
+                setIdMenu("0");
+                setIdSubmenu("0");
+              }
+            }}
+          >
+            <option value="0">Seleccione un modulo</option>
+            {getModulos()}
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            className={classes.textFields}
+            id="idMenu"
+            label="Menú"
+            type="text"
+            disabled={idModulo === "" || idModulo === "0"}
+            required
+            select
+            SelectProps={{
+              native: true,
+            }}
+            margin="normal"
+            value={idMenu}
+            onChange={(e) => {
+              setIdMenu(e.target.value);
+              if (e.target.value === "0") {
+                setIdSubmenu("0");
+              }
+            }}
+          >
+            <option value="0">Seleccione un menú</option>
+            {getMenus()}
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            className={classes.textFields}
+            id="idSubmenu"
+            label="Submenu"
+            type="text"
+            disabled={idMenu === "" || idMenu === "0"}
+            required
+            select
+            SelectProps={{
+              native: true,
+            }}
+            margin="normal"
+            value={idSubmenu}
+            onChange={(e) => {
+              setIdSubmenu(e.target.value);
+            }}
+          >
+            <option value="0">Seleccione un submenu</option>
+            {getSubmenus()}
+          </TextField>
         </Grid>
         <Grid item xs={12}>
           <Button

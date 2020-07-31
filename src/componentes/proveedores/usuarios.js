@@ -24,6 +24,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  FormControlLabel,
+  Checkbox,
 } from "@material-ui/core";
 import {
   Settings as SettingsIcon,
@@ -349,7 +351,7 @@ export default function Usuarios(props) {
   if (getUsuariosError) {
     return <ErrorQueryDB />;
   }
-  
+
   return (
     <div>
       {showComponent === 0 ? (
@@ -803,6 +805,7 @@ function AltaUsuarios(props) {
     tipoUsuario: "0",
     contra: "",
     repiteContra: "",
+    notificacionDB: 0,
   });
   const [celularAntiguo, setCelularAntiguo] = useState("");
   const [correoAntiguo, setCorreoAntiguo] = useState("");
@@ -822,8 +825,8 @@ function AltaUsuarios(props) {
       method: "GET",
       params: {
         usuario: correoUsuario,
-        pwd: password
-      }
+        pwd: password,
+      },
     },
     {
       useCache: false,
@@ -906,6 +909,7 @@ function AltaUsuarios(props) {
           tipoUsuario: getUsuarioData.usuario[0].tipo,
           contra: "",
           repiteContra: "",
+          notificacionDB: getUsuarioData.usuario[0].notificaciondb,
         });
         setCelularAntiguo(getUsuarioData.usuario[0].cel);
         setCorreoAntiguo(getUsuarioData.usuario[0].correo);
@@ -976,6 +980,14 @@ function AltaUsuarios(props) {
     setOpenMenuContra(false);
   };
 
+  const handleChangeNotificacion = (event) => {
+    console.log(event.target.checked);
+    setDatosUsuario({
+      ...datosUsuario,
+      notificacionDB: event.target.checked ? 1 : 0,
+    });
+  };
+
   const getPerfiles = () => {
     return getPerfilesData.perfiles.map((perfil, index) => {
       return (
@@ -996,6 +1008,7 @@ function AltaUsuarios(props) {
       tipoUsuario,
       contra,
       repiteContra,
+      notificacionDB
     } = datosUsuario;
     if (nombre.trim() === "") {
       swal("Error", "Agregue un nombre", "warning");
@@ -1033,6 +1046,7 @@ function AltaUsuarios(props) {
           correo: correo.trim(),
           password: contra.trim(),
           tipo: tipoUsuario,
+          notificaciondb: notificacionDB,
           accion: idUsuario === 0 ? 1 : 2,
           validacioncel: validacionCel,
           validacioncorreo: validacionCorreo,
@@ -1099,7 +1113,7 @@ function AltaUsuarios(props) {
               {idUsuario === 0 ? "Nuevo Usuario" : "Editar Usuario"}
             </Typography>
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={12} md={6}>
             <TextField
               id="nombre"
               className={classes.textFields}
@@ -1122,7 +1136,7 @@ function AltaUsuarios(props) {
               }}
             />
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={12} md={6}>
             <TextField
               id="apellidoPaterno"
               className={classes.textFields}
@@ -1145,7 +1159,7 @@ function AltaUsuarios(props) {
               }}
             />
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={12} md={6}>
             <TextField
               id="apellidoMaterno"
               className={classes.textFields}
@@ -1168,7 +1182,7 @@ function AltaUsuarios(props) {
               }}
             />
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={12} md={6}>
             <TextField
               id="celular"
               className={classes.textFields}
@@ -1191,7 +1205,7 @@ function AltaUsuarios(props) {
               }}
             />
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={12} md={6}>
             <TextField
               id="correo"
               className={classes.textFields}
@@ -1214,7 +1228,7 @@ function AltaUsuarios(props) {
               }}
             />
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={12} md={6}>
             <TextField
               id="tipoUsuario"
               className={classes.textFields}
@@ -1230,6 +1244,7 @@ function AltaUsuarios(props) {
                 setDatosUsuario({
                   ...datosUsuario,
                   tipoUsuario: e.target.value,
+                  notificacionDB: e.target.value !== 4 && e.target.value !== "4" ? 0 : datosUsuario.notificacionDB
                 });
               }}
             >
@@ -1239,7 +1254,7 @@ function AltaUsuarios(props) {
           </Grid>
           {idUsuario === 0 ? (
             <Fragment>
-              <Grid item xs={6}>
+              <Grid item xs={12} md={6}>
                 <TextField
                   id="contra"
                   className={classes.textFields}
@@ -1263,7 +1278,7 @@ function AltaUsuarios(props) {
                   }}
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} md={6}>
                 <TextField
                   id="repiteContra"
                   className={classes.textFields}
@@ -1288,6 +1303,22 @@ function AltaUsuarios(props) {
                 />
               </Grid>
             </Fragment>
+          ) : null}
+          {datosUsuario.tipoUsuario === 4 ||
+          datosUsuario.tipoUsuario === "4" ? (
+            <Grid item xs={12} md={6}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={datosUsuario.notificacionDB === 1}
+                    onChange={handleChangeNotificacion}
+                    name="checkedDB"
+                    color="primary"
+                  />
+                }
+                label="Notificar cuando se ocupe una base de datos"
+              />
+            </Grid>
           ) : null}
           <Grid item xs={12} style={{ marginBottom: "15px" }}>
             <Button

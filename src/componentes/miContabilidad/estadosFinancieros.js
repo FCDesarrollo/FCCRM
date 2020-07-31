@@ -30,6 +30,7 @@ import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
 import { dataBaseErrores } from "../../helpers/erroresDB";
 import swal from "sweetalert";
 import moment from "moment";
+import jwt from "jsonwebtoken";
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -78,8 +79,9 @@ const useStyles = makeStyles((theme) => ({
 function createData(
   id,
   servicio,
-  periodoEjercicio,
-  fechaEntrega,
+  periodo,
+  ejercicio,
+  fechaCorte,
   archivo,
   usuarioEntrego,
   urlArchivo
@@ -87,8 +89,9 @@ function createData(
   return {
     id,
     servicio,
-    periodoEjercicio,
-    fechaEntrega,
+    periodo,
+    ejercicio,
+    fechaCorte,
     archivo,
     usuarioEntrego,
     urlArchivo,
@@ -106,18 +109,25 @@ const headCells = [
     label: "Servicio",
   },
   {
-    id: "periodoEjercicio",
+    id: "periodo",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
-    label: "Periodo de ejercicio",
+    label: "Periodo",
   },
   {
-    id: "fechaEntrega",
+    id: "ejercicio",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
-    label: "Fecha de entrega",
+    label: "Ejercicio",
+  },
+  {
+    id: "fechaCorte",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Fecha de corte",
   },
   {
     id: "archivo",
@@ -213,7 +223,7 @@ export default function EstadosFinancieros(props) {
   const idEmpresa = empresaDatos.idempresa;
   const rfc = empresaDatos.RFC;
   const setLoading = props.setLoading;
-  //const [idSubmenu, setIdsubmenu] = useState(0);
+  const [idSubmenu, setIdsubmenu] = useState(0);
   const [showComponent, setShowComponent] = useState(0);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -242,6 +252,52 @@ export default function EstadosFinancieros(props) {
   );
 
   useEffect(() => {
+    if (localStorage.getItem("menuTemporal")) {
+      try {
+        const decodedToken = jwt.verify(
+          localStorage.getItem("menuTemporal"),
+          "mysecretpassword"
+        );
+        setShowComponent(decodedToken.menuTemporal.showComponent);
+        setTitulo(decodedToken.menuTemporal.titulo);
+        setIdsubmenu(decodedToken.menuTemporal.idSubmenu);
+        setBusquedaFiltro(decodedToken.menuTemporal.busquedaFiltro);
+        setPage(decodedToken.menuTemporal.page);
+      } catch (err) {
+        localStorage.removeItem("menuTemporal");
+      }
+    } else {
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            showComponent: 0,
+            titulo: "",
+            idSubmenu: 0,
+            busquedaFiltro: "",
+            page: 0,
+          },
+        },
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (idSubmenu !== 0) {
+      executeGetBitContabilidad({
+        params: {
+          usuario: correo,
+          pwd: password,
+          rfc: rfc,
+          idsubmenu: idSubmenu,
+          idempresa: idEmpresa,
+        },
+      });
+    }
+  }, [idSubmenu, executeGetBitContabilidad, correo, password, rfc, idEmpresa]);
+
+  useEffect(() => {
     if (getBitContabilidadData) {
       if (getBitContabilidadData.error !== 0) {
         swal("Error", dataBaseErrores(getBitContabilidadData.error), "warning");
@@ -252,9 +308,10 @@ export default function EstadosFinancieros(props) {
             createData(
               bit.id,
               bit.servicio,
-              bit.periodo,
-              bit.fechaentregado,
-              bit.archivo,
+              bit.periodo < 10 ? `0${bit.periodo}` : bit.periodo,
+              bit.ejercicio,
+              bit.fechacorte,
+              bit.nombrearchivoE,
               bit.usuarioEntrego,
               bit.urlarchivo
             )
@@ -274,17 +331,22 @@ export default function EstadosFinancieros(props) {
             filterRows[x].servicio
               .toLowerCase()
               .indexOf(busquedaFiltro.toLowerCase()) !== -1) ||
-          (filterRows[x].periodoEjercicio !== null &&
-            filterRows[x].periodoEjercicio
+          (filterRows[x].periodo !== null &&
+            filterRows[x].periodo
               .toString()
               .toLowerCase()
               .indexOf(busquedaFiltro.toLowerCase()) !== -1) ||
-          (filterRows[x].fechaEntrega !== null &&
-            filterRows[x].fechaEntrega
+          (filterRows[x].ejercicio !== null &&
+            filterRows[x].ejercicio
+              .toString()
               .toLowerCase()
               .indexOf(busquedaFiltro.toLowerCase()) !== -1) ||
-          (filterRows[x].fechaEntrega !== null &&
-            moment(filterRows[x].fechaEntrega)
+          (filterRows[x].fechaCorte !== null &&
+            filterRows[x].fechaCorte
+              .toLowerCase()
+              .indexOf(busquedaFiltro.toLowerCase()) !== -1) ||
+          (filterRows[x].fechaCorte !== null &&
+            moment(filterRows[x].fechaCorte)
               .format("DD/MM/YYYY h:mm:ss a")
               .indexOf(busquedaFiltro.toLowerCase()) !== -1) ||
           (filterRows[x].archivo !== null &&
@@ -302,9 +364,38 @@ export default function EstadosFinancieros(props) {
       return dataFilter;
     }
 
+    const decodedToken = jwt.verify(
+      localStorage.getItem("menuTemporal"),
+      "mysecretpassword"
+    );
+    setPage(
+      rows.length < rowsPerPage
+        ? 0
+        : decodedToken.menuTemporal.page
+        ? decodedToken.menuTemporal.page
+        : 0
+    );
     setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
-    setPage(rows.length < rowsPerPage ? 0 : page);
-  }, [busquedaFiltro, setRows, rows.length, rowsPerPage, page]);
+
+    const token = jwt.sign(
+      {
+        menuTemporal: {
+          showComponent: 1,
+          titulo: titulo,
+          idSubmenu: idSubmenu,
+          busquedaFiltro: busquedaFiltro,
+          page:
+            rows.length < rowsPerPage && rows.length !== 0
+              ? 0
+              : decodedToken.menuTemporal.page
+              ? decodedToken.menuTemporal.page
+              : 0,
+        },
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("menuTemporal", token);
+  }, [busquedaFiltro, setRows, rows.length, rowsPerPage, page, idSubmenu, titulo]);
 
   if (getBitContabilidadLoading) {
     setLoading(true);
@@ -360,7 +451,20 @@ export default function EstadosFinancieros(props) {
                     });
                     setTitulo(content.submenu.nombre_submenu);
                     setShowComponent(1);
-                    //setIdsubmenu(content.submenu.idsubmenu);3
+                    setIdsubmenu(content.submenu.idsubmenu);
+                    const token = jwt.sign(
+                      {
+                        menuTemporal: {
+                          showComponent: 1,
+                          titulo: content.submenu.nombre_submenu,
+                          idSubmenu: content.submenu.idsubmenu,
+                          busquedaFiltro: "",
+                          page: 0,
+                        },
+                      },
+                      "mysecretpassword"
+                    );
+                    localStorage.setItem("menuTemporal", token);
                   }}
                 >
                   {content.submenu.nombre_submenu}
@@ -387,6 +491,19 @@ export default function EstadosFinancieros(props) {
                         aria-label="cerrar"
                         onClick={() => {
                           setShowComponent(0);
+                          const token = jwt.sign(
+                            {
+                              menuTemporal: {
+                                showComponent: 0,
+                                titulo: "",
+                                idSubmenu: 0,
+                                busquedaFiltro: "",
+                                page: 0,
+                              },
+                            },
+                            "mysecretpassword"
+                          );
+                          localStorage.setItem("menuTemporal", token);
                         }}
                       >
                         <CloseIcon color="secondary" />
@@ -467,11 +584,10 @@ export default function EstadosFinancieros(props) {
                             <TableCell align="right" id={labelId}>
                               {row.servicio}
                             </TableCell>
+                            <TableCell align="right">{row.periodo}</TableCell>
+                            <TableCell align="right">{row.ejercicio}</TableCell>
                             <TableCell align="right">
-                              {row.periodoEjercicio}
-                            </TableCell>
-                            <TableCell align="right">
-                              {row.fechaentrega}
+                              {row.fechaCorte}
                             </TableCell>
                             <TableCell align="right">
                               <Tooltip
@@ -493,7 +609,7 @@ export default function EstadosFinancieros(props) {
                       })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6}>
+                      <TableCell colSpan={7}>
                         <Typography variant="subtitle1">
                           <ErrorIcon
                             style={{ color: "red", verticalAlign: "sub" }}
