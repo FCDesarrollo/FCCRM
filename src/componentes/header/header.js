@@ -286,6 +286,10 @@ export default function Header(props) {
   const theme = useTheme();
   const fullScreenDialog = useMediaQuery(theme.breakpoints.down("xs"));
   const currentPath = window.location.hash.substr(2);
+  const menu = props.menu;
+  const setMenu = props.setMenu;
+  const permisos = props.permisos;
+  const setPermisos = props.setPermisos;
   const submenuContent = props.submenuContent;
   const setSubmenuContent = props.setSubmenuContent;
   const usuarioDatos = props.usuarioDatos;
@@ -357,7 +361,8 @@ export default function Header(props) {
       data: getEmpresaData,
       loading: getEmpresaLoading,
       error: getEmpresaError,
-    }, executeGetEmpresaValidacion, 
+    },
+    executeGetEmpresaValidacion,
   ] = useAxios(
     {
       url: API_BASE_URL + `/getEmpresaValidacion`,
@@ -370,7 +375,7 @@ export default function Header(props) {
     },
     {
       useCache: false,
-      manual: true
+      manual: true,
     }
   );
   const [
@@ -456,6 +461,18 @@ export default function Header(props) {
   );
 
   useEffect(() => {
+    if(menuData) {
+      setMenu(menuData.modulos);
+    }
+  }, [menuData, setMenu]);
+
+  useEffect(() => {
+    if(perfilData) {
+      setPermisos(perfilData.permisomodulos);
+    }
+  }, [perfilData, setPermisos]);
+
+  useEffect(() => {
     function checkData() {
       if (getEmpresaData) {
         if (getEmpresaData.error !== 0) {
@@ -501,11 +518,11 @@ export default function Header(props) {
 
   useEffect(() => {
     if (localStorage.getItem("token")) {
-      if (localStorage.getItem("emToken")){
+      if (localStorage.getItem("emToken")) {
         executeGetEmpresaValidacion();
       }
     }
-  }, [executeGetEmpresaValidacion])
+  }, [executeGetEmpresaValidacion]);
 
   useEffect(() => {
     function putEmpresaName() {
@@ -1211,6 +1228,8 @@ export default function Header(props) {
         setUsuarioDatos={setUsuarioDatos}
         empresaDatos={empresaDatos}
         setEmpresaDatos={setEmpresaDatos}
+        menu={menu}
+        permisos={permisos}
         component={
           <Home
             submenuContent={submenuContent}
@@ -1219,6 +1238,8 @@ export default function Header(props) {
             setUsuarioDatos={setUsuarioDatos}
             empresaDatos={empresaDatos}
             setEmpresaDatos={setEmpresaDatos}
+            menu={menu}
+            permisos={permisos}
           />
         }
       />
@@ -1248,7 +1269,9 @@ export default function Header(props) {
           <Typography variant="h6" noWrap className={classes.titleTypography}>
             {nombreEmpresa}{" "}
             {statusEmpresa !== 1 ? (
-              <span style={{ color: "red" }}>(Solo lectura. Contacte a su administrador.)</span>
+              <span style={{ color: "red" }}>
+                (Solo lectura. Contacte a su administrador.)
+              </span>
             ) : null}
           </Typography>
 

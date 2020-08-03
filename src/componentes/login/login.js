@@ -8,42 +8,43 @@ import {
   CardContent,
   CardActions,
   Button,
-  Typography
+  Typography,
 } from "@material-ui/core";
 import { API_BASE_URL } from "../../config";
 import axios from "axios";
 import { dataBaseErrores } from "../../helpers/erroresDB";
 import swal from "sweetalert";
+//import LoadingComponent from "../componentsHelpers/loadingComponent";
 const jwt = require("jsonwebtoken");
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   container: {
-    padding: theme.spacing(3)
+    padding: theme.spacing(3),
   },
   root: {
-    padding: theme.spacing(3, 2)
+    padding: theme.spacing(3, 2),
   },
   loginTittle: {
-    textAlign: "center"
+    textAlign: "center",
   },
   textFields: {
-    width: "100%"
+    width: "100%",
   },
   button: {
     width: "100%",
     background: "#00AD5F",
     color: "#FFFFFF",
     "&:hover": {
-      background: "#00AD9F"
-    }
+      background: "#00AD9F",
+    },
   },
   links: {
     color: "#00ad5f",
     cursor: "pointer",
     "&:hover": {
-      color: "black"
-    }
-  }
+      color: "black",
+    },
+  },
 }));
 
 export default function Login() {
@@ -52,11 +53,13 @@ export default function Login() {
   const [passwordState, setPasswordState] = useState("");
   const [redirect, setRedirect] = useState(false);
   const [disabledButton, setDisabledButton] = useState(false);
-  const [redirectCodigoValidacion, setRedirectCodigoValidacion] = useState(false);
+  const [redirectCodigoValidacion, setRedirectCodigoValidacion] = useState(
+    false
+  );
   localStorage.removeItem("usuarioRegistrado");
 
-  if(localStorage.getItem("token")) {
-    if(!redirect) {
+  if (localStorage.getItem("token")) {
+    if (!redirect) {
       setRedirect(true);
     }
   }
@@ -71,51 +74,48 @@ export default function Login() {
       setDisabledButton(false);
     } else {
       axios({
-          url: API_BASE_URL + `/inicioUsuario`,
-          method: "POST",
-          data: {
-            usuario: emailState,
-            pwd: passwordState
-          }
-        })
-        .then(function(response) {
-          if(response.data.error !== 0) {
+        url: API_BASE_URL + `/inicioUsuario`,
+        method: "POST",
+        data: {
+          usuario: emailState,
+          pwd: passwordState,
+        },
+      })
+        .then(function (response) {
+          if (response.data.error !== 0) {
             swal("Error", dataBaseErrores(response.data.error), "error");
             setDisabledButton(false);
-          }
-          else if(response.data.usuario[0].tipo === -1) {
+          } else if (response.data.usuario[0].tipo === -1) {
             swal("Error", "Usuario y/o contraseña incorrecta", "error");
             setDisabledButton(false);
-          }
-          else if(response.data.usuario[0].tipo === 0) {
+          } else if (response.data.usuario[0].tipo === 0) {
             const usuarioToken = jwt.sign(
               { usuario: emailState.trim() },
               "mysecretpassword"
             );
             localStorage.setItem("usuarioToken", usuarioToken);
             setRedirectCodigoValidacion(true);
-          }
-          else {
+          } else {
             const token = jwt.sign(
               { userData: response.data.usuario[0] },
               "mysecretpassword",
               {
-                expiresIn: 60 * 60 * 24
+                expiresIn: 60 * 60 * 24,
               }
             );
             localStorage.setItem("token", token);
             setRedirect(true);
           }
         })
-        .catch(function(error) {
+        .catch(function (error) {
           setDisabledButton(false);
         });
     }
   };
 
-  return ( redirectCodigoValidacion ? (
+  return redirectCodigoValidacion ? (
     <Redirect to="/verificarCodigo" />
-  ) : !redirect ?
+  ) : !redirect ? (
     <Grid container justify="center" className={classes.container}>
       <Grid item md={4}>
         <Card className={classes.root}>
@@ -131,9 +131,9 @@ export default function Login() {
               value={emailState}
               margin="normal"
               inputProps={{
-                maxLength: 50
+                maxLength: 50,
               }}
-              onChange={e => {
+              onChange={(e) => {
                 setEmailState(e.target.value);
               }}
             />
@@ -145,12 +145,12 @@ export default function Login() {
               value={passwordState}
               margin="normal"
               inputProps={{
-                maxLength: 30
+                maxLength: 30,
               }}
-              onChange={e => {
+              onChange={(e) => {
                 setPasswordState(e.target.value);
               }}
-              onKeyPress={e => {
+              onKeyPress={(e) => {
                 const pressKey = e.keyCode ? e.keyCode : e.which;
                 if (pressKey === 13) {
                   logIn();
@@ -170,12 +170,18 @@ export default function Login() {
               Iniciar
             </Button>
           </CardActions>
-          <Typography style={{ textAlign: "center", marginTop: "15px" }}>
-            <Link to="/registrate" style={{textDecoration: "none"}}><strong className={classes.links}>Regístrate</strong></Link> /{" "}
-            <span className={classes.links}>¿olvidaste tu contraseña?</span>
-          </Typography>
+          {!disabledButton ? (
+            <Typography style={{ textAlign: "center", marginTop: "15px" }}>
+              <Link to="/registrate" style={{ textDecoration: "none" }}>
+                <strong className={classes.links}>Regístrate</strong>
+              </Link>{" "}
+              / <span className={classes.links}>¿olvidaste tu contraseña?</span>
+            </Typography>
+          ) : null}
         </Card>
       </Grid>
-    </Grid> : <Redirect to="/empresas" />
+    </Grid>
+  ) : (
+    <Redirect to="/empresas" />
   );
 }

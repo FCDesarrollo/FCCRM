@@ -46,6 +46,8 @@ function App() {
   const [empresaDatos, setEmpresaDatos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [executeQueriesHeader, setExecuteQueriesHeader] = useState(false);
+  const [menu, setMenu] = useState([]);
+  const [permisos, setPermisos] = useState([]);
   return (
     <HashRouter>
       <Switch>
@@ -153,6 +155,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <Home
                 submenuContent={submenuContent}
@@ -163,6 +169,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
