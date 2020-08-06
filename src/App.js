@@ -187,6 +187,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <EditarPerfil
                 submenuContent={submenuContent}
@@ -197,6 +201,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -211,6 +219,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <Empresa
                 submenuContent={submenuContent}
@@ -221,6 +233,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -262,6 +278,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <Perfiles
                 submenuContent={submenuContent}
@@ -272,6 +292,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -286,6 +310,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <AutorizacionesGastos
                 submenuContent={submenuContent}
@@ -296,6 +324,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -310,6 +342,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <ConfiguracionesPermisos
                 submenuContent={submenuContent}
@@ -320,6 +356,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -334,6 +374,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <FinanzasTesoreria
                 submenuContent={submenuContent}
@@ -344,6 +388,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -358,6 +406,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <GestionEmpresarial
                 submenuContent={submenuContent}
@@ -368,6 +420,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -382,6 +438,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <ExpedientesDigitales
                 submenuContent={submenuContent}
@@ -392,6 +452,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -406,6 +470,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <Publicaciones
                 submenuContent={submenuContent}
@@ -416,6 +484,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -430,6 +502,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <EstadosFinancieros
                 submenuContent={submenuContent}
@@ -440,6 +516,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -454,6 +534,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <CumplimientoFiscal
                 submenuContent={submenuContent}
@@ -464,6 +548,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -478,6 +566,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <ExpedientesContables
                 submenuContent={submenuContent}
@@ -488,6 +580,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -502,6 +598,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <AlmacenDigitalOperaciones
                 submenuContent={submenuContent}
@@ -512,6 +612,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -526,6 +630,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <RecepcionPorLotes
                 submenuContent={submenuContent}
@@ -536,6 +644,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -550,6 +662,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <AlmacenDigitalExpedientes
                 submenuContent={submenuContent}
@@ -560,6 +676,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -574,6 +694,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <CartasTecnicas
                 submenuContent={submenuContent}
@@ -584,6 +708,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -598,6 +726,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <Videos
                 submenuContent={submenuContent}
@@ -608,6 +740,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -622,6 +758,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={
               <NoticiasFiscales
                 setSubmenuContent={setSubmenuContent}
@@ -631,6 +771,10 @@ function App() {
                 setEmpresaDatos={setEmpresaDatos}
                 loading={loading}
                 setLoading={setLoading}
+                menu={menu}
+                setMenu={setMenu}
+                permisos={permisos}
+                setPermisos={setPermisos}
               />
             }
           />
@@ -645,6 +789,10 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            menu={menu}
+            setMenu={setMenu}
+            permisos={permisos}
+            setPermisos={setPermisos}
             component={<NotFound />}
           />
         </Route>
