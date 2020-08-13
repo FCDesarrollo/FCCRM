@@ -266,6 +266,19 @@ export default function EstadosFinancieros(props) {
       } catch (err) {
         localStorage.removeItem("menuTemporal");
       }
+    } else if (localStorage.getItem("notificacionData")) {
+      try {
+        const decodedToken = jwt.verify(
+          localStorage.getItem("notificacionData"),
+          "mysecretpassword"
+        );
+        setShowComponent(decodedToken.notificacionData.showComponent);
+        setIdsubmenu(decodedToken.notificacionData.idSubmenu);
+        setBusquedaFiltro(decodedToken.notificacionData.busquedaFiltro);
+        setPage(decodedToken.notificacionData.page);
+      } catch (err) {
+        localStorage.removeItem("notificacionData");
+      }
     } else {
       const token = jwt.sign(
         {
@@ -282,6 +295,25 @@ export default function EstadosFinancieros(props) {
       localStorage.setItem("menuTemporal", token);
     }
   }, []);
+
+  useEffect(() => {
+    if (localStorage.getItem("notificacionData")) {
+      if (submenuContent.length > 0 && titulo === "") {
+        const decodedToken = jwt.verify(
+          localStorage.getItem("notificacionData"),
+          "mysecretpassword"
+        );
+        for (let x = 0; x < submenuContent.length; x++) {
+          if (
+            submenuContent[x].submenu.idsubmenu ===
+            parseInt(decodedToken.notificacionData.idSubmenu)
+          ) {
+            setTitulo(submenuContent[x].submenu.nombre_submenu);
+          }
+        }
+      }
+    }
+  }, [submenuContent, titulo]);
 
   useEffect(() => {
     if (idSubmenu !== 0) {
@@ -364,38 +396,63 @@ export default function EstadosFinancieros(props) {
       return dataFilter;
     }
 
-    const decodedToken = jwt.verify(
-      localStorage.getItem("menuTemporal"),
-      "mysecretpassword"
-    );
-    setPage(
-      rows.length < rowsPerPage
-        ? 0
-        : decodedToken.menuTemporal.page
-        ? decodedToken.menuTemporal.page
-        : 0
-    );
-    setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
+    if (localStorage.getItem("menuTemporal")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("menuTemporal"),
+        "mysecretpassword"
+      );
+      setPage(
+        rows.length < rowsPerPage
+          ? 0
+          : decodedToken.menuTemporal.page
+          ? decodedToken.menuTemporal.page
+          : 0
+      );
+      setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
 
-    const token = jwt.sign(
-      {
-        menuTemporal: {
-          showComponent: 1,
-          titulo: titulo,
-          idSubmenu: idSubmenu,
-          busquedaFiltro: busquedaFiltro,
-          page:
-            rows.length < rowsPerPage && rows.length !== 0
-              ? 0
-              : decodedToken.menuTemporal.page
-              ? decodedToken.menuTemporal.page
-              : 0,
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            showComponent: 1,
+            titulo: titulo,
+            idSubmenu: idSubmenu,
+            busquedaFiltro: busquedaFiltro,
+            page:
+              rows.length < rowsPerPage && rows.length !== 0
+                ? 0
+                : decodedToken.menuTemporal.page
+                ? decodedToken.menuTemporal.page
+                : 0,
+          },
         },
-      },
-      "mysecretpassword"
-    );
-    localStorage.setItem("menuTemporal", token);
-  }, [busquedaFiltro, setRows, rows.length, rowsPerPage, page, idSubmenu, titulo]);
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    } else {
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            showComponent: 1,
+            titulo: titulo,
+            idSubmenu: idSubmenu,
+            busquedaFiltro: busquedaFiltro,
+            page: page,
+          },
+        },
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    }
+  }, [
+    busquedaFiltro,
+    setRows,
+    rows.length,
+    rowsPerPage,
+    page,
+    idSubmenu,
+    titulo,
+    showComponent,
+  ]);
 
   if (getBitContabilidadLoading) {
     setLoading(true);
@@ -465,6 +522,7 @@ export default function EstadosFinancieros(props) {
                       "mysecretpassword"
                     );
                     localStorage.setItem("menuTemporal", token);
+                    localStorage.removeItem("notificacionData");
                   }}
                 >
                   {content.submenu.nombre_submenu}
@@ -504,6 +562,7 @@ export default function EstadosFinancieros(props) {
                             "mysecretpassword"
                           );
                           localStorage.setItem("menuTemporal", token);
+                          localStorage.removeItem("notificacionData");
                         }}
                       >
                         <CloseIcon color="secondary" />

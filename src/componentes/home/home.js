@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Grid,
   Card,
@@ -12,21 +13,21 @@ import {
   Table,
   TableBody,
   TablePagination,
-  IconButton,
   CardActionArea,
   CardContent,
   TextField,
+  Button,
 } from "@material-ui/core";
 import {
   Settings as SettingsIcon,
   Error as ErrorIcon,
-  SettingsEthernet as SettingsEthernetIcon,
 } from "@material-ui/icons";
 import { makeStyles } from "@material-ui/core/styles";
 import Chart from "react-apexcharts";
 import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
 import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
+import jwt from "jsonwebtoken";
 /* import { dataBaseErrores } from "../../helpers/erroresDB";
 import swal from "sweetalert"; */
 
@@ -71,9 +72,30 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+function createDataPrincipal(
+  nombreModulo,
+  nombreMenu,
+  idSubmenu,
+  nombreSubmenu,
+  cantidad,
+  acciones
+) {
+  return {
+    nombreModulo,
+    nombreMenu,
+    idSubmenu,
+    nombreSubmenu,
+    cantidad,
+    acciones,
+  };
+}
+
 function createData(
   id,
-  fecha,
+  fechaRegistro,
+  fechaDocumento,
+  ejercicio,
+  periodo,
   idModulo,
   nombreModulo,
   idMenu,
@@ -82,12 +104,15 @@ function createData(
   nombreSubmenu,
   idUsuario,
   nombreUsuario,
-  tipoDocumento,
+  detalles,
   acciones
 ) {
   return {
     id,
-    fecha,
+    fechaRegistro,
+    fechaDocumento,
+    ejercicio,
+    periodo,
     idModulo,
     nombreModulo,
     idMenu,
@@ -96,12 +121,10 @@ function createData(
     nombreSubmenu,
     idUsuario,
     nombreUsuario,
-    tipoDocumento,
+    detalles,
     acciones,
   };
 }
-
-let filterRows = [];
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -129,41 +152,79 @@ function stableSort(array, comparator) {
   return stabilizedThis.map((el) => el[0]);
 }
 
-const headCells = [
+const headCellsPrincipal = [
   {
-    id: "fecha",
+    id: "nombreModulo",
     align: "left",
     sortHeadCell: true,
     disablePadding: true,
-    label: "Fecha",
+    label: "Módulo",
   },
   {
-    id: "menu",
+    id: "nombreMenu",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
     label: "Menú",
   },
   {
-    id: "submenu",
+    id: "nombreSubmenu",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
     label: "Submenú",
   },
   {
-    id: "usuario",
+    id: "cantidad",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Cantidad",
+  },
+  {
+    id: "acciones",
+    align: "right",
+    sortHeadCell: false,
+    disablePadding: false,
+    label: <SettingsIcon style={{ color: "black" }} />,
+  },
+];
+
+const headCells = [
+  {
+    id: "fechaRegistro",
+    align: "left",
+    sortHeadCell: true,
+    disablePadding: true,
+    label: "Fecha de Registro",
+  },
+  {
+    id: "fechaDocumento",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Fecha de Documento",
+  },
+  {
+    id: "nombreMenu",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Menú",
+  },
+  {
+    id: "nombreSubmenu",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Submenú",
+  },
+  {
+    id: "nombreUsuario",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
     label: "Usuario",
-  },
-  {
-    id: "tipoDocumento",
-    align: "right",
-    sortHeadCell: true,
-    disablePadding: false,
-    label: "Documento",
   },
   {
     id: "acciones",
@@ -217,19 +278,22 @@ function EnhancedTableHead(props) {
 }
 
 export default function Home(props) {
-  /* const menu = props.menu;
-  const permisos = props.permisos;
-  console.log(menu);
-  console.log(permisos); */
+  const usuarioDatos = props.usuarioDatos;
+  const idUsuario = usuarioDatos.idusuario;
   const classes = useStyles();
   const setLoading = props.setLoading;
   const empresaDatos = props.empresaDatos;
   const dbEmpresa = empresaDatos.rutaempresa;
   const [documentos, setDocumentos] = useState([]);
+  const [rowsPrincipal, setRowsPrincipal] = useState([]);
+  const [pagePrincipal, setPagePrincipal] = useState(0);
+  const [orderPrincipal, setOrderPrincipal] = useState("desc");
+  const [orderByPrincipal, setOrderByPrincipal] = useState("cantidad");
+  const [rowsPerPagePrincipal, setRowsPerPagePrincipal] = useState(10);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [order, setOrder] = useState("desc");
-  const [orderBy, setOrderBy] = useState("id");
+  const [orderBy, setOrderBy] = useState("fechaRegistro");
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [modulos, setModulos] = useState({
     ids: [],
@@ -250,6 +314,26 @@ export default function Home(props) {
   const [selectedModulo, setSelectedModulo] = useState("");
   const [selectedIdMenu, setSelectedIdMenu] = useState(0);
   const [selectedMenu, setSelectedMenu] = useState("");
+  const [selectedIdUsuario, setSelectedIdUsuario] = useState(0);
+  const [selectedNombreUsuario, setSelectedNombreUsuario] = useState("");
+  const [periodos, setPeriodos] = useState([]);
+  const [ejercicios, setEjercicios] = useState([]);
+  const [selectedPeriodo, setSelectedPeriodo] = useState("0");
+  const [selectedEjercicio, setSelectedEjercicio] = useState("0");
+  const meses = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+  ];
 
   const [
     {
@@ -263,6 +347,7 @@ export default function Home(props) {
       method: "GET",
       params: {
         db: dbEmpresa,
+        idusuario: idUsuario,
       },
     },
     {
@@ -275,12 +360,15 @@ export default function Home(props) {
       let idsModulos = [];
       let nombreModulos = [];
       let cantidadModulos = [];
-      filterRows = [];
+      let datosDocumentos = [];
       for (let x = 0; x < getDatosHomeData.documento.length; x++) {
-        filterRows.push(
+        datosDocumentos.push(
           createData(
             getDatosHomeData.documento[x].id,
-            getDatosHomeData.documento[x].fecha,
+            getDatosHomeData.documento[x].fecharegistro,
+            getDatosHomeData.documento[x].fechadocumento,
+            getDatosHomeData.documento[x].ejercicio,
+            getDatosHomeData.documento[x].periodo,
             getDatosHomeData.documento[x].idmodulo,
             getDatosHomeData.documento[x].nombre_modulo,
             getDatosHomeData.documento[x].idmenu,
@@ -289,10 +377,76 @@ export default function Home(props) {
             getDatosHomeData.documento[x].nombre_submenu,
             getDatosHomeData.documento[x].idusuario,
             getDatosHomeData.documento[x].usuario,
-            "Requerimiento",
-            <IconButton>
-              <SettingsEthernetIcon style={{ color: "black" }} />
-            </IconButton>
+            getDatosHomeData.documento[x].extra1,
+            <Link
+              to={getDatosHomeData.documento[x].refmenu}
+              style={{ textDecoration: "none" }}
+              onClick={() => {
+                const token =
+                  getDatosHomeData.documento[x].refmenu ===
+                  "autorizacionesGastos"
+                    ? jwt.sign(
+                        {
+                          notificacionData: {
+                            tableTittle:
+                              getDatosHomeData.documento[x].idsubmenu === 44
+                                ? "Gastos"
+                                : getDatosHomeData.documento[x].idsubmenu === 68
+                                ? "Compras"
+                                : getDatosHomeData.documento[x].idsubmenu === 69
+                                ? "Ventas"
+                                : "Pagos",
+                            showComponent: 2,
+                            idModulo: getDatosHomeData.documento[x].idmodulo,
+                            idMenu: getDatosHomeData.documento[x].idmenu,
+                            idSubmenu: getDatosHomeData.documento[x].idsubmenu,
+                            accionAG: 2,
+                            idRequerimiento: getDatosHomeData.documento[x].id,
+                            estatusRequerimiento:
+                              getDatosHomeData.documento[x].extra1,
+                          },
+                        },
+                        "mysecretpassword"
+                      )
+                    : getDatosHomeData.documento[x].refmenu ===
+                      "estadosFinancieros"
+                    ? jwt.sign(
+                        {
+                          notificacionData: {
+                            showComponent: 1,
+                            idSubmenu: getDatosHomeData.documento[x].idsubmenu,
+                            busquedaFiltro: "",
+                            page: 0,
+                          },
+                        },
+                        "mysecretpassword"
+                      )
+                    : getDatosHomeData.documento[x].refmenu ===
+                        "almacenDigitalExpedientes" ||
+                      getDatosHomeData.documento[x].refmenu ===
+                        "almacenDigitalOperaciones"
+                    ? jwt.sign(
+                        {
+                          notificacionData: {
+                            idAlmacenDigital: getDatosHomeData.documento[x].id,
+                            showComponent: 2,
+                            tableTittle:
+                              getDatosHomeData.documento[x].nombre_submenu,
+                            idSubmenu: getDatosHomeData.documento[x].idsubmenu,
+                            page: 0,
+                            busquedaFiltro: "",
+                          },
+                        },
+                        "mysecretpassword"
+                      )
+                    : [];
+                localStorage.setItem("notificacionData", token);
+              }}
+            >
+              <Button variant="contained" color="primary">
+                Ir
+              </Button>
+            </Link>
           )
         );
         if (
@@ -313,7 +467,23 @@ export default function Home(props) {
         }
       }
 
-      setDocumentos(filterRows);
+      setDocumentos(datosDocumentos);
+
+      for (let x = 0; x < cantidadModulos.length; x++) {
+        for (let y = 0; y < cantidadModulos.length - 1; y++) {
+          if (cantidadModulos[y] < cantidadModulos[y + 1]) {
+            let idAuxiliar = idsModulos[y];
+            idsModulos[y] = idsModulos[y + 1];
+            idsModulos[y + 1] = idAuxiliar;
+            let nombreAuxiliar = nombreModulos[y];
+            nombreModulos[y] = nombreModulos[y + 1];
+            nombreModulos[y + 1] = nombreAuxiliar;
+            let cantidadAuxiliar = cantidadModulos[y];
+            cantidadModulos[y] = cantidadModulos[y + 1];
+            cantidadModulos[y + 1] = cantidadAuxiliar;
+          }
+        }
+      }
 
       setSelectedModulo(nombreModulos[0]);
       setModulos({
@@ -334,6 +504,21 @@ export default function Home(props) {
     return <ErrorQueryDB />;
   }
 
+  const handleRequestSortPrincipal = (event, property) => {
+    const isAsc = orderByPrincipal === property && orderPrincipal === "asc";
+    setOrderPrincipal(isAsc ? "desc" : "asc");
+    setOrderByPrincipal(property);
+  };
+
+  const handleChangePagePrincipal = (event, newPage) => {
+    setPagePrincipal(newPage);
+  };
+
+  const handleChangeRowsPerPagePrincipal = (event) => {
+    setRowsPerPagePrincipal(parseInt(event.target.value, 10));
+    setPagePrincipal(0);
+  };
+
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
@@ -349,46 +534,150 @@ export default function Home(props) {
     setPage(0);
   };
 
-  const llenarTabla = (idModulo, idMenu, idUsuario) => {
-    console.log(documentos);
-    let newRows =
-      idUsuario === 0
-        ? documentos.filter(
-            (documento) =>
-              documento.idModulo === idModulo && documento.idMenu === idMenu
-          )
-        : documentos.filter(
-            (documento) =>
-              documento.idModulo === idModulo &&
-              documento.idMenu === idMenu &&
-              documento.idUsuario === idUsuario
-          );
-    let idUsuarios = [];
-    let nombreUsuarios = [];
-    let cantidadUsuarios = [];
-    //console.log(newRows);
+  const llenarTabla = (
+    idModulo,
+    idMenu,
+    idSubmenu,
+    idUsuario,
+    validacion,
+    periodo,
+    ejercicio
+  ) => {
+    let newRows = documentos.filter(
+      (documento) =>
+        documento.idModulo === idModulo && documento.idMenu === idMenu
+    );
 
-    for (let x = 0; x < newRows.length; x++) {
-      if (!nombreUsuarios.includes(newRows[x].nombreUsuario)) {
-        idUsuarios.push(newRows[x].idUsuario);
-        nombreUsuarios.push(newRows[x].nombreUsuario);
-        cantidadUsuarios.push(1);
-      } else {
-        const pos = nombreUsuarios.indexOf(newRows[x].nombreUsuario);
-        if (cantidadUsuarios[pos]) {
-          cantidadUsuarios[pos] = cantidadUsuarios[pos] + 1;
-        } else {
-          cantidadUsuarios[pos] = 1;
-        }
-      }
+    if (idSubmenu !== 0) {
+      newRows = newRows.filter(
+        (documento) => documento.idSubmenu === idSubmenu
+      );
     }
 
+    if (idUsuario !== 0) {
+      newRows = newRows.filter(
+        (documento) => documento.idUsuario === idUsuario
+      );
+    }
+
+    if (periodo !== "0") {
+      newRows = newRows.filter((documento) => documento.periodo === periodo);
+    }
+
+    if (ejercicio !== "0") {
+      newRows = newRows.filter(
+        (documento) => documento.ejercicio === ejercicio
+      );
+    }
+
+    let primerIdSubmenu = 0;
+    if (validacion !== 2) {
+      let idSubmenus = [];
+      let nombreSubmenus = [];
+      let cantidadSubmenus = [];
+
+      for (let x = 0; x < newRows.length; x++) {
+        if (!nombreSubmenus.includes(newRows[x].nombreSubmenu)) {
+          idSubmenus.push(newRows[x].idSubmenu);
+          nombreSubmenus.push(newRows[x].nombreSubmenu);
+          cantidadSubmenus.push(1);
+        } else {
+          const pos = nombreSubmenus.indexOf(newRows[x].nombreSubmenu);
+          if (cantidadSubmenus[pos]) {
+            cantidadSubmenus[pos] = cantidadSubmenus[pos] + 1;
+          } else {
+            cantidadSubmenus[pos] = 1;
+          }
+        }
+      }
+
+      let rowsPrincipalData = [];
+      for (let x = 0; x < nombreSubmenus.length; x++) {
+        rowsPrincipalData.push(
+          createDataPrincipal(
+            newRows[0].nombreModulo,
+            newRows[0].nombreMenu,
+            idSubmenus[x],
+            nombreSubmenus[x],
+            cantidadSubmenus[x],
+            <Button variant="contained" color="primary">
+              Ver Documentos
+            </Button>
+          )
+        );
+      }
+
+      primerIdSubmenu =
+        rowsPrincipalData.length > 0
+          ? stableSort(
+              rowsPrincipalData,
+              getComparator(orderPrincipal, orderByPrincipal)
+            )[0].idSubmenu
+          : 0;
+
+      setRowsPrincipal(rowsPrincipalData);
+    }
+
+    if (validacion === 1) {
+      let idUsuarios = [];
+      let nombreUsuarios = [];
+      let cantidadUsuarios = [];
+      let nuevosPeriodos = [];
+      let nuevosEjercicios = [];
+
+      for (let x = 0; x < newRows.length; x++) {
+        if (!nombreUsuarios.includes(newRows[x].nombreUsuario)) {
+          idUsuarios.push(newRows[x].idUsuario);
+          nombreUsuarios.push(newRows[x].nombreUsuario);
+          cantidadUsuarios.push(1);
+        } else {
+          const pos = nombreUsuarios.indexOf(newRows[x].nombreUsuario);
+          if (cantidadUsuarios[pos]) {
+            cantidadUsuarios[pos] = cantidadUsuarios[pos] + 1;
+          } else {
+            cantidadUsuarios[pos] = 1;
+          }
+        }
+
+        if (!nuevosPeriodos.includes(newRows[x].periodo)) {
+          nuevosPeriodos.push(newRows[x].periodo);
+        }
+
+        if (!nuevosEjercicios.includes(newRows[x].ejercicio)) {
+          nuevosEjercicios.push(newRows[x].ejercicio);
+        }
+      }
+
+      setUsuarios({
+        ids: idUsuarios,
+        nombre: nombreUsuarios,
+        cantidad: cantidadUsuarios,
+      });
+      setPeriodos(nuevosPeriodos);
+      setEjercicios(nuevosEjercicios);
+    }
+
+    if (validacion !== 2) {
+      newRows = newRows.filter(
+        (documento) => documento.idSubmenu === primerIdSubmenu
+      );
+    }
     setRows(newRows);
-    setUsuarios({
-      ids: idUsuarios,
-      nombre: nombreUsuarios,
-      cantidad: cantidadUsuarios,
-    });
+
+    const token = jwt.sign(
+      {
+        home: {
+          periodo: periodo,
+          ejercicio: ejercicio,
+          idUsuario: idUsuario,
+          idModulo: idModulo,
+          idMenu: idMenu,
+          idSubmenu: primerIdSubmenu !== 0 ? primerIdSubmenu : idSubmenu,
+        },
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("home", token);
   };
 
   const llenarGraficaMenu = (idModulo) => {
@@ -412,6 +701,22 @@ export default function Home(props) {
       }
     }
 
+    for (let x = 0; x < cantidadMenus.length; x++) {
+      for (let y = 0; y < cantidadMenus.length - 1; y++) {
+        if (cantidadMenus[y] < cantidadMenus[y + 1]) {
+          let idAuxiliar = idsMenus[y];
+          idsMenus[y] = idsMenus[y + 1];
+          idsMenus[y + 1] = idAuxiliar;
+          let nombreAuxiliar = nombreMenus[y];
+          nombreMenus[y] = nombreMenus[y + 1];
+          nombreMenus[y + 1] = nombreAuxiliar;
+          let cantidadAuxiliar = cantidadMenus[y];
+          cantidadMenus[y] = cantidadMenus[y + 1];
+          cantidadMenus[y + 1] = cantidadAuxiliar;
+        }
+      }
+    }
+
     setMenus({
       ids: idsMenus,
       nombre: nombreMenus,
@@ -419,12 +724,44 @@ export default function Home(props) {
     });
     setSelectedIdMenu(idsMenus[0]);
     setSelectedMenu(nombreMenus[0]);
-    llenarTabla(idModulo, idsMenus[0], 0);
+    setSelectedIdUsuario(0);
+    setSelectedPeriodo("0");
+    setSelectedEjercicio("0");
+    llenarTabla(idModulo, idsMenus[0], 0, 0, 1, "0", "0");
+  };
+
+  const getPeriodos = () => {
+    if (periodos.length > 0) {
+      return periodos.sort().map((periodo, index) => {
+        return (
+          <option value={periodo} key={index}>
+            {meses[parseInt(periodo) - 1]}
+          </option>
+        );
+      });
+    } else {
+      return <option value="0">No hay períodos disponibles</option>;
+    }
+  };
+
+  const getEjercicios = () => {
+    if (ejercicios.length > 0) {
+      return ejercicios.map((ejercicio, index) => {
+        return (
+          <option value={ejercicio} key={index}>
+            {ejercicio}
+          </option>
+        );
+      });
+    } else {
+      return <option value="0">No hay ejercicios disponibles</option>;
+    }
   };
 
   const seriesModulos = modulos.cantidad;
   const optionsModulos = {
     chart: {
+      id: "graficaModulos",
       width: "100%",
       type: "pie",
       events: {
@@ -433,10 +770,8 @@ export default function Home(props) {
           setSelectedIdModulo(modulos.ids[0]);
           setSelectedModulo(modulos.nombre[0]);
         },
-        dataPointSelection: function (event, chartContext, { dataPointIndex }) {
+        dataPointSelection: (event, chartContext, { dataPointIndex }) => {
           llenarGraficaMenu(modulos.ids[dataPointIndex]);
-          /* console.log(dataPointIndex);
-          console.log(modulos.nombre[dataPointIndex]); */
           setSelectedIdModulo(modulos.ids[dataPointIndex]);
           setSelectedModulo(modulos.nombre[dataPointIndex]);
         },
@@ -472,6 +807,7 @@ export default function Home(props) {
   const seriesMenus = menus.cantidad;
   const optionsMenus = {
     chart: {
+      id: "graficaMenus",
       width: "100%",
       type: "pie",
       events: {
@@ -482,7 +818,18 @@ export default function Home(props) {
         dataPointSelection: function (event, chartContext, { dataPointIndex }) {
           setSelectedIdMenu(menus.ids[dataPointIndex]);
           setSelectedMenu(menus.nombre[dataPointIndex]);
-          llenarTabla(selectedIdModulo, menus.ids[dataPointIndex], 0);
+          setSelectedIdUsuario(0);
+          setSelectedPeriodo("0");
+          setSelectedEjercicio("0");
+          llenarTabla(
+            selectedIdModulo,
+            menus.ids[dataPointIndex],
+            0,
+            0,
+            1,
+            "0",
+            "0"
+          );
         },
       },
     },
@@ -542,7 +889,17 @@ export default function Home(props) {
                   padding: 0,
                 }}
               >
-                Período de Julio
+                {selectedPeriodo === "0" && selectedEjercicio === "0"
+                  ? "Todos los períodos y todos los ejercicios"
+                  : selectedPeriodo === "0" && selectedEjercicio !== "0"
+                  ? `Cualquier período de ${selectedEjercicio}`
+                  : selectedPeriodo !== "0" && selectedEjercicio === "0"
+                  ? `Período de ${
+                      meses[parseInt(selectedPeriodo - 1)]
+                    } de cualquier ejercicio`
+                  : `Período de ${
+                      meses[parseInt(selectedPeriodo - 1)]
+                    } de ${selectedEjercicio}`}
               </Typography>
             </Grid>
             <Grid item xs={12} md={3}>
@@ -554,11 +911,24 @@ export default function Home(props) {
                 SelectProps={{
                   native: true,
                 }}
+                value={selectedPeriodo}
                 margin="normal"
+                onChange={(e) => {
+                  setSelectedPeriodo(e.target.value);
+                  setPage(0);
+                  llenarTabla(
+                    selectedIdModulo,
+                    selectedIdMenu,
+                    0,
+                    selectedIdUsuario,
+                    0,
+                    e.target.value,
+                    selectedEjercicio
+                  );
+                }}
               >
-                <option value="0">Seleccione un período</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
+                <option value="0">Selecciona un período</option>
+                {getPeriodos()}
               </TextField>
             </Grid>
             <Grid item xs={12} md={3}>
@@ -570,16 +940,33 @@ export default function Home(props) {
                 SelectProps={{
                   native: true,
                 }}
+                value={selectedEjercicio}
                 margin="normal"
+                onChange={(e) => {
+                  setSelectedEjercicio(e.target.value);
+                  setPage(0);
+                  llenarTabla(
+                    selectedIdModulo,
+                    selectedIdMenu,
+                    0,
+                    selectedIdUsuario,
+                    0,
+                    selectedPeriodo,
+                    e.target.value
+                  );
+                }}
               >
-                <option value="0">Seleccione un ejercicio</option>
-                <option value="1">2019</option>
-                <option value="2">2020</option>
+                <option value="0">Selecciona un ejercicio</option>
+                {getEjercicios()}
               </TextField>
             </Grid>
             <Grid item xs={12}>
               <Typography variant="subtitle1">
-                {`${selectedModulo} > ${selectedMenu}`}
+                {`${selectedModulo} > ${selectedMenu} > ${
+                  selectedIdUsuario !== 0
+                    ? selectedNombreUsuario
+                    : "Todos los usuarios"
+                }`}
               </Typography>
             </Grid>
           </Grid>
@@ -589,19 +976,39 @@ export default function Home(props) {
             {usuarios.nombre.map((usuario, index) => {
               return (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-                  <Card>
+                  <Card
+                    style={{
+                      border:
+                        selectedIdUsuario === usuarios.ids[index]
+                          ? "1px solid green"
+                          : "",
+                    }}
+                  >
                     <CardActionArea
                       style={{ height: "200px" }}
                       onClick={() => {
+                        setPage(0);
                         llenarTabla(
                           selectedIdModulo,
                           selectedIdMenu,
-                          usuarios.ids[index]
+                          0,
+                          selectedIdUsuario === usuarios.ids[index]
+                            ? 0
+                            : usuarios.ids[index],
+                          0,
+                          selectedPeriodo,
+                          selectedEjercicio
                         );
-                        console.log(
-                          selectedIdModulo,
-                          selectedIdMenu,
-                          usuarios.ids[index]
+
+                        setSelectedIdUsuario(
+                          selectedIdUsuario === usuarios.ids[index]
+                            ? 0
+                            : usuarios.ids[index]
+                        );
+                        setSelectedNombreUsuario(
+                          selectedNombreUsuario === usuarios.nombre[index]
+                            ? ""
+                            : usuarios.nombre[index]
                         );
                       }}
                     >
@@ -650,6 +1057,115 @@ export default function Home(props) {
                   >
                     <EnhancedTableHead
                       classes={classes}
+                      order={orderPrincipal}
+                      orderBy={orderByPrincipal}
+                      onRequestSort={handleRequestSortPrincipal}
+                      rowCount={rowsPrincipal.length}
+                      headCells={headCellsPrincipal}
+                    />
+                    <TableBody>
+                      {rowsPrincipal.length > 0 ? (
+                        stableSort(
+                          rowsPrincipal,
+                          getComparator(orderPrincipal, orderByPrincipal)
+                        )
+                          .slice(
+                            pagePrincipal * rowsPerPagePrincipal,
+                            pagePrincipal * rowsPerPagePrincipal +
+                              rowsPerPagePrincipal
+                          )
+                          .map((row, index) => {
+                            const labelId = `enhanced-table-checkbox-${index}`;
+
+                            return (
+                              <TableRow
+                                hover
+                                role="checkbox"
+                                tabIndex={-1}
+                                className={classes.rootRow}
+                                key={index}
+                              >
+                                <TableCell padding="checkbox" />
+                                <TableCell
+                                  component="th"
+                                  id={labelId}
+                                  scope="row"
+                                >
+                                  {row.nombreModulo}
+                                </TableCell>
+                                <TableCell align="right">
+                                  {row.nombreMenu}
+                                </TableCell>
+                                <TableCell align="right">
+                                  {row.nombreSubmenu}
+                                </TableCell>
+                                <TableCell align="right">
+                                  {row.cantidad}
+                                </TableCell>
+                                <TableCell
+                                  align="right"
+                                  onClick={() => {
+                                    setPage(0);
+                                    llenarTabla(
+                                      selectedIdModulo,
+                                      selectedIdMenu,
+                                      row.idSubmenu,
+                                      selectedIdUsuario,
+                                      2,
+                                      selectedPeriodo,
+                                      selectedEjercicio
+                                    );
+                                  }}
+                                >
+                                  {row.acciones}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6}>
+                            <Typography variant="subtitle1">
+                              <ErrorIcon
+                                style={{ color: "red", verticalAlign: "sub" }}
+                              />
+                              No hay documentos disponibles
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <TablePagination
+                  rowsPerPageOptions={[10, 25, 50]}
+                  component="div"
+                  labelRowsPerPage="Filas por página"
+                  labelDisplayedRows={(e) => {
+                    return `${e.from}-${e.to} de ${e.count}`;
+                  }}
+                  count={rowsPrincipal.length}
+                  rowsPerPage={rowsPerPagePrincipal}
+                  page={
+                    rowsPrincipal.length > 0 &&
+                    rowsPrincipal.length >= rowsPerPagePrincipal
+                      ? pagePrincipal
+                      : 0
+                  }
+                  onChangePage={handleChangePagePrincipal}
+                  onChangeRowsPerPage={handleChangeRowsPerPagePrincipal}
+                />
+              </Paper>
+              <Paper style={{ marginTop: "15px" }}>
+                <TableContainer>
+                  <Table
+                    className={classes.table}
+                    aria-labelledby="tableTitle"
+                    size={"medium"}
+                    aria-label="enhanced table"
+                  >
+                    <EnhancedTableHead
+                      classes={classes}
                       order={order}
                       orderBy={orderBy}
                       onRequestSort={handleRequestSort}
@@ -671,6 +1187,7 @@ export default function Home(props) {
                                 hover
                                 role="checkbox"
                                 tabIndex={-1}
+                                className={classes.rootRow}
                                 key={index}
                               >
                                 <TableCell padding="checkbox" />
@@ -679,7 +1196,10 @@ export default function Home(props) {
                                   id={labelId}
                                   scope="row"
                                 >
-                                  {row.fecha}
+                                  {row.fechaRegistro}
+                                </TableCell>
+                                <TableCell align="right">
+                                  {row.fechaDocumento}
                                 </TableCell>
                                 <TableCell align="right">
                                   {row.nombreMenu}
@@ -689,9 +1209,6 @@ export default function Home(props) {
                                 </TableCell>
                                 <TableCell align="right">
                                   {row.nombreUsuario}
-                                </TableCell>
-                                <TableCell align="right">
-                                  {row.tipoDocumento}
                                 </TableCell>
                                 <TableCell align="right">
                                   {row.acciones}

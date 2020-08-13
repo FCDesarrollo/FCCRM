@@ -286,10 +286,6 @@ export default function Header(props) {
   const theme = useTheme();
   const fullScreenDialog = useMediaQuery(theme.breakpoints.down("xs"));
   const currentPath = window.location.hash.substr(2);
-  const menu = props.menu;
-  const setMenu = props.setMenu;
-  const permisos = props.permisos;
-  const setPermisos = props.setPermisos;
   const submenuContent = props.submenuContent;
   const setSubmenuContent = props.setSubmenuContent;
   const usuarioDatos = props.usuarioDatos;
@@ -459,18 +455,6 @@ export default function Header(props) {
       manual: true,
     }
   );
-
-  useEffect(() => {
-    if(menuData) {
-      setMenu(menuData.modulos);
-    }
-  }, [menuData, setMenu]);
-
-  useEffect(() => {
-    if(perfilData) {
-      setPermisos(perfilData.permisomodulos);
-    }
-  }, [perfilData, setPermisos]);
 
   useEffect(() => {
     function checkData() {
@@ -733,20 +717,29 @@ export default function Header(props) {
     localStorage.setItem("usuarioRegistrado", token);
     return <Redirect to={`/${urlRuta}`} />;
   }
-
+  
   if (
-    urlRuta !== false &&
+    (urlRuta !== false &&
     urlIdEmpresa !== false &&
     urlIdModulo !== false &&
     urlIdMenu !== false &&
     urlIdSubmenu !== false &&
     urlIdDocumento !== false &&
-    urlTipoDocumento !== false
+    urlTipoDocumento !== false &&
+    urlRuta === "autorizacionesGastos") ||
+    (urlRuta !== false &&
+      urlIdEmpresa !== false &&
+      urlIdModulo !== false &&
+      urlIdMenu !== false &&
+      urlIdSubmenu !== false &&
+      urlRuta === "estadosFinancieros")
   ) {
     if (!userAuth) {
-      const token = jwt.sign(
+      const token = urlRuta === "autorizacionesGastos" ? jwt.sign(
         {
           notificacionData: {
+            url: urlRuta,
+            idEmpresa: urlIdEmpresa,
             tableTittle:
               urlIdModulo === 4 && urlIdSubmenu === 44
                 ? "Gastos"
@@ -761,8 +754,19 @@ export default function Header(props) {
             idSubmenu: urlIdSubmenu,
             accionAG: 2,
             idRequerimiento: urlIdDocumento,
-            idEmpresa: urlIdEmpresa,
             estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2,
+          },
+        },
+        "mysecretpassword"
+      ) : jwt.sign(
+        {
+          notificacionData: {
+            url: urlRuta,
+            idEmpresa: urlIdEmpresa,
+            showComponent: 1,
+            idSubmenu: urlIdSubmenu,
+            busquedaFiltro: "",
+            page: 0,
           },
         },
         "mysecretpassword"
@@ -780,9 +784,11 @@ export default function Header(props) {
           break;
         }
       }
-      const token = jwt.sign(
+      const token = urlRuta === "autorizacionesGastos" ? jwt.sign(
         {
           notificacionData: {
+            url: urlRuta,
+            idEmpresa: urlIdEmpresa,
             tableTittle:
               urlIdModulo === 4 && urlIdSubmenu === 44
                 ? "Gastos"
@@ -798,6 +804,18 @@ export default function Header(props) {
             accionAG: 2,
             idRequerimiento: urlIdDocumento,
             estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2,
+          },
+        },
+        "mysecretpassword"
+      ) : jwt.sign(
+        {
+          notificacionData: {
+            url: urlRuta,
+            idEmpresa: urlIdEmpresa,
+            showComponent: 1,
+            idSubmenu: urlIdSubmenu,
+            busquedaFiltro: "",
+            page: 0,
           },
         },
         "mysecretpassword"
@@ -1103,6 +1121,8 @@ export default function Header(props) {
                   const token = jwt.sign(
                     {
                       notificacionData: {
+                        url: urlRuta,
+                        idEmpresa: urlIdEmpresa,
                         tableTittle:
                           notificacion.idsubmenu === 44
                             ? "Gastos"
@@ -1228,8 +1248,6 @@ export default function Header(props) {
         setUsuarioDatos={setUsuarioDatos}
         empresaDatos={empresaDatos}
         setEmpresaDatos={setEmpresaDatos}
-        menu={menu}
-        permisos={permisos}
         component={
           <Home
             submenuContent={submenuContent}
@@ -1238,8 +1256,6 @@ export default function Header(props) {
             setUsuarioDatos={setUsuarioDatos}
             empresaDatos={empresaDatos}
             setEmpresaDatos={setEmpresaDatos}
-            menu={menu}
-            permisos={permisos}
           />
         }
       />

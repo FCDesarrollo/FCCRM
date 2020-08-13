@@ -371,6 +371,29 @@ export default function AlmacenDigitalExpedientes(props) {
         } catch (err) {
           localStorage.removeItem("menuTemporal");
         }
+      } else if (localStorage.getItem("notificacionData")) {
+        try {
+          const decodedToken = jwt.verify(
+            localStorage.getItem("notificacionData"),
+            "mysecretpassword"
+          );
+          setIdAlmacenDigital(decodedToken.notificacionData.idAlmacenDigital);
+          setShowComponent(decodedToken.notificacionData.showComponent);
+          setTittleTableComponent(decodedToken.notificacionData.tableTittle);
+          setIdSubmenu(decodedToken.notificacionData.idSubmenu);
+          setPage(
+            decodedToken.notificacionData.page
+              ? decodedToken.notificacionData.page
+              : 0
+          );
+          setBusquedaFiltro(
+            decodedToken.notificacionData.busquedaFiltro
+              ? decodedToken.notificacionData.busquedaFiltro
+              : ""
+          );
+        } catch (err) {
+          localStorage.removeItem("notificacionData");
+        }
       }
     }
   }, [idAlmacenDigital, showComponent, tittleTableComponent, idSubmenu]);
@@ -431,6 +454,7 @@ export default function AlmacenDigitalExpedientes(props) {
                       "mysecretpassword"
                     );
                     localStorage.setItem("menuTemporal", token);
+                    localStorage.removeItem("notificacionData");
                   }}
                 >
                   {content.submenu.nombre_submenu}
@@ -571,37 +595,70 @@ function TablaADE(props) {
       return dataFilter;
     }
 
-    const decodedToken = jwt.verify(
-      localStorage.getItem("menuTemporal"),
-      "mysecretpassword"
-    );
     setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
-    setPage(
-      rows.length < rowsPerPage
-        ? 0
-        : decodedToken.menuTemporal.page
-        ? decodedToken.menuTemporal.page
-        : 0
-    );
-    const token = jwt.sign(
-      {
-        menuTemporal: {
-          tableTittle: tableTittle,
-          showComponent: 1,
-          idAlmacenDigital: idAlmacenDigital,
-          idSubmenu: idSubmenu,
-          page:
-            rows.length < rowsPerPage && rows.length !== 0
-              ? 0
-              : decodedToken.menuTemporal.page
-              ? decodedToken.menuTemporal.page
-              : 0,
-          busquedaFiltro: busquedaFiltro,
+    if (localStorage.getItem("menuTemporal")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("menuTemporal"),
+        "mysecretpassword"
+      );
+      setPage(
+        rows.length < rowsPerPage
+          ? 0
+          : decodedToken.menuTemporal.page
+          ? decodedToken.menuTemporal.page
+          : 0
+      );
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            tableTittle: tableTittle,
+            showComponent: 1,
+            idAlmacenDigital: idAlmacenDigital,
+            idSubmenu: idSubmenu,
+            page:
+              rows.length < rowsPerPage && rows.length !== 0
+                ? 0
+                : decodedToken.menuTemporal.page
+                ? decodedToken.menuTemporal.page
+                : 0,
+            busquedaFiltro: busquedaFiltro,
+          },
         },
-      },
-      "mysecretpassword"
-    );
-    localStorage.setItem("menuTemporal", token);
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    } else if (localStorage.getItem("notificacionData")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("notificacionData"),
+        "mysecretpassword"
+      );
+      setPage(
+        rows.length < rowsPerPage
+          ? 0
+          : decodedToken.notificacionData.page
+          ? decodedToken.notificacionData.page
+          : 0
+      );
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            tableTittle: tableTittle,
+            showComponent: 1,
+            idAlmacenDigital: idAlmacenDigital,
+            idSubmenu: idSubmenu,
+            page:
+              rows.length < rowsPerPage && rows.length !== 0
+                ? 0
+                : decodedToken.notificacionData.page
+                ? decodedToken.notificacionData.page
+                : 0,
+            busquedaFiltro: busquedaFiltro,
+          },
+        },
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    }
   }, [
     busquedaFiltro,
     setRows,
@@ -716,6 +773,7 @@ function TablaADE(props) {
       "mysecretpassword"
     );
     localStorage.setItem("menuTemporal", token);
+    localStorage.removeItem("notificacionData");
   };
 
   const handleChangeRowsPerPage = (event) => {
@@ -802,6 +860,7 @@ function TablaADE(props) {
                     onClick={() => {
                       setShowComponent(0);
                       localStorage.removeItem("menuTemporal");
+                      localStorage.removeItem("notificacionData");
                     }}
                   >
                     <CloseIcon color="secondary" />
@@ -836,9 +895,17 @@ function TablaADE(props) {
                     style={{ float: "right" }}
                     onClick={() => {
                       handleClickOpenDialogNuevoADO();
+                      localStorage.removeItem("notificacionData");
                     }}
                   >
-                    <AddCircleIcon style={{ color: permisosSubmenu < 1 || statusEmpresa !== 1 ? "disabled" : "#4caf50" }} />
+                    <AddCircleIcon
+                      style={{
+                        color:
+                          permisosSubmenu < 1 || statusEmpresa !== 1
+                            ? "disabled"
+                            : "#4caf50",
+                      }}
+                    />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -855,6 +922,7 @@ function TablaADE(props) {
                 }}
                 onChange={(e) => {
                   setBusquedaFiltro(e.target.value);
+                  localStorage.removeItem("notificacionData");
                 }}
               />
             </Grid>
@@ -942,6 +1010,7 @@ function TablaADE(props) {
           onClick={() => {
             handleCloseMenu();
             setShowComponent(2);
+            localStorage.removeItem("notificacionData");
             /* const token = jwt.sign(
               {
                 menuTemporal: {

@@ -376,6 +376,29 @@ export default function AlmacenDigitalOperaciones(props) {
         } catch (err) {
           localStorage.removeItem("menuTemporal");
         }
+      } else if (localStorage.getItem("notificacionData")) {
+        try {
+          const decodedToken = jwt.verify(
+            localStorage.getItem("notificacionData"),
+            "mysecretpassword"
+          );
+          setIdAlmacenDigital(decodedToken.notificacionData.idAlmacenDigital);
+          setShowComponent(decodedToken.notificacionData.showComponent);
+          setTittleTableComponent(decodedToken.notificacionData.tableTittle);
+          setIdSubmenu(decodedToken.notificacionData.idSubmenu);
+          setPage(
+            decodedToken.notificacionData.page
+              ? decodedToken.notificacionData.page
+              : 0
+          );
+          setBusquedaFiltro(
+            decodedToken.notificacionData.busquedaFiltro
+              ? decodedToken.notificacionData.busquedaFiltro
+              : ""
+          );
+        } catch (err) {
+          localStorage.removeItem("notificacionData");
+        }
       }
     }
   }, [idAlmacenDigital, showComponent, tittleTableComponent, idSubmenu]);
@@ -444,6 +467,7 @@ export default function AlmacenDigitalOperaciones(props) {
                       "mysecretpassword"
                     );
                     localStorage.setItem("menuTemporal", token);
+                    localStorage.removeItem("notificacionData");
                   }}
                 >
                   {content.submenu.nombre_submenu}
@@ -587,37 +611,71 @@ function TablaADO(props) {
       return dataFilter;
     }
 
-    const decodedToken = jwt.verify(
-      localStorage.getItem("menuTemporal"),
-      "mysecretpassword"
-    );
     setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
-    setPage(
-      rows.length < rowsPerPage
-        ? 0
-        : decodedToken.menuTemporal.page
-        ? decodedToken.menuTemporal.page
-        : 0
-    );
-    const token = jwt.sign(
-      {
-        menuTemporal: {
-          tableTittle: tableTittle,
-          showComponent: 1,
-          idAlmacenDigital: idAlmacenDigital,
-          idSubmenu: idSubmenu,
-          page:
-            rows.length < rowsPerPage && rows.length !== 0
-              ? 0
-              : decodedToken.menuTemporal.page
-              ? decodedToken.menuTemporal.page
-              : 0,
-          busquedaFiltro: busquedaFiltro,
+    if (localStorage.getItem("menuTemporal")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("menuTemporal"),
+        "mysecretpassword"
+      );
+
+      setPage(
+        rows.length < rowsPerPage
+          ? 0
+          : decodedToken.menuTemporal.page
+          ? decodedToken.menuTemporal.page
+          : 0
+      );
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            tableTittle: tableTittle,
+            showComponent: 1,
+            idAlmacenDigital: idAlmacenDigital,
+            idSubmenu: idSubmenu,
+            page:
+              rows.length < rowsPerPage && rows.length !== 0
+                ? 0
+                : decodedToken.menuTemporal.page
+                ? decodedToken.menuTemporal.page
+                : 0,
+            busquedaFiltro: busquedaFiltro,
+          },
         },
-      },
-      "mysecretpassword"
-    );
-    localStorage.setItem("menuTemporal", token);
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    } else if (localStorage.getItem("notificacionData")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("notificacionData"),
+        "mysecretpassword"
+      );
+      setPage(
+        rows.length < rowsPerPage
+          ? 0
+          : decodedToken.notificacionData.page
+          ? decodedToken.notificacionData.page
+          : 0
+      );
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            tableTittle: tableTittle,
+            showComponent: 1,
+            idAlmacenDigital: idAlmacenDigital,
+            idSubmenu: idSubmenu,
+            page:
+              rows.length < rowsPerPage && rows.length !== 0
+                ? 0
+                : decodedToken.notificacionData.page
+                ? decodedToken.notificacionData.page
+                : 0,
+            busquedaFiltro: busquedaFiltro,
+          },
+        },
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    }
   }, [
     busquedaFiltro,
     setRows,
@@ -732,6 +790,7 @@ function TablaADO(props) {
       "mysecretpassword"
     );
     localStorage.setItem("menuTemporal", token);
+    localStorage.removeItem("notificacionData");
   };
 
   const handleChangeRowsPerPage = (event) => {
@@ -818,6 +877,7 @@ function TablaADO(props) {
                     onClick={() => {
                       setShowComponent(0);
                       localStorage.removeItem("menuTemporal");
+                      localStorage.removeItem("notificacionData");
                     }}
                   >
                     <CloseIcon color="secondary" />
@@ -853,6 +913,7 @@ function TablaADO(props) {
                       style={{ float: "right" }}
                       onClick={() => {
                         handleClickOpenDialogNuevoADO();
+                        localStorage.removeItem("notificacionData");
                       }}
                     >
                       <AddCircleIcon
@@ -886,6 +947,7 @@ function TablaADO(props) {
                 }}
                 onChange={(e) => {
                   setBusquedaFiltro(e.target.value);
+                  localStorage.removeItem("notificacionData");
                 }}
               />
             </Grid>
@@ -973,6 +1035,7 @@ function TablaADO(props) {
           onClick={() => {
             handleCloseMenu();
             setShowComponent(2);
+            localStorage.removeItem("notificacionData");
             /* const token = jwt.sign(
               {
                 menuTemporal: {

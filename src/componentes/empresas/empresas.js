@@ -176,6 +176,7 @@ export default function Empresas() {
       localStorage.getItem("notificacionData"),
       "mysecretpassword"
     );
+    //console.log(decodedToken.notificacionData.url);
     for (let x = 0; x < empresasData.empresas.length; x++) {
       if (
         parseInt(decodedToken.notificacionData.idEmpresa) ===
@@ -189,7 +190,8 @@ export default function Empresas() {
         break;
       }
     }
-    return <Redirect to="autorizacionesGastos" />;
+    //return <Redirect to="autorizacionesGastos" />;
+    return <Redirect to={decodedToken.notificacionData.url} />;
   }
 
   const closeSesion = () => {
