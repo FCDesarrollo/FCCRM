@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Fragment } from "react";
+import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import {
   Card,
@@ -38,6 +39,7 @@ import {
   Delete as DeleteIcon,
   PlayArrow as PlayArrowIcon,
   Error as ErrorIcon,
+  KeyboardReturn as KeyboardReturnIcon,
 } from "@material-ui/icons";
 import { makeStyles, withStyles, useTheme } from "@material-ui/core/styles";
 import { API_BASE_URL } from "../../config";
@@ -97,8 +99,10 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 function createData(
+  id,
   fecha,
   usuario,
+  tipo,
   tipoDocumento,
   sucursal,
   detalles,
@@ -106,8 +110,10 @@ function createData(
   acciones
 ) {
   return {
+    id,
     fecha,
     usuario,
+    tipo,
     tipoDocumento,
     sucursal,
     detalles,
@@ -256,6 +262,7 @@ export default function RecepcionPorLotes(props) {
   const [tittleTableComponent, setTittleTableComponent] = useState("");
   const [page, setPage] = useState(0);
   const [rows, setRows] = useState([]);
+  const [selectedLote, setSelectedLote] = useState(0);
   const usuarioDatos = props.usuarioDatos;
   const idUsuario = usuarioDatos.idusuario;
   const empresaDatos = props.empresaDatos;
@@ -322,7 +329,31 @@ export default function RecepcionPorLotes(props) {
       tittleTableComponent === "" &&
       idSubmenu === 0
     ) {
-      if (localStorage.getItem("menuTemporal")) {
+      if (localStorage.getItem("notificacionData")) {
+        try {
+          const decodedToken = jwt.verify(
+            localStorage.getItem("notificacionData"),
+            "mysecretpassword"
+          );
+          setSelectedLote(decodedToken.notificacionData.idLote);
+          setShowComponent(decodedToken.notificacionData.showComponent);
+          setTittleTableComponent(decodedToken.notificacionData.tableTittle);
+          setIdSubmenu(decodedToken.notificacionData.idSubmenu);
+          const token = jwt.sign(
+            {
+              menuTemporal: {
+                tableTittle: decodedToken.notificacionData.tableTittle,
+                showComponent: decodedToken.notificacionData.showComponent,
+                idSubmenu: decodedToken.notificacionData.idSubmenu,
+              },
+            },
+            "mysecretpassword"
+          );
+          localStorage.setItem("menuTemporal", token);
+        } catch (err) {
+          localStorage.removeItem("notificacionData");
+        }
+      } else if (localStorage.getItem("menuTemporal")) {
         try {
           const decodedToken = jwt.verify(
             localStorage.getItem("menuTemporal"),
@@ -356,19 +387,21 @@ export default function RecepcionPorLotes(props) {
           traerLotesData.lotes.map((lote) => {
             return filterRows.push(
               createData(
+                lote.id,
                 lote.fechadecarga,
                 lote.usuario,
+                lote.tipo,
                 lote.tipodet,
                 lote.sucursal,
                 `Registros: ${lote.totalregistros} Cargados: ${lote.totalcargados} Error: ${lote.cError}`,
                 `Procesados ${lote.procesados} de ${lote.totalregistros}`,
                 <IconButton
-                  onClick={(e) => {
+                /* onClick={(e) => {
                     handleOpenMenu(e);
                     setSubtitulo(lote.tipodet);
                     setIdLote(lote.id);
                     setTipoLote(lote.tipo);
-                  }}
+                  }} */
                 >
                   <SettingsEthernetIcon style={{ color: "black" }} />
                 </IconButton>
@@ -458,17 +491,19 @@ export default function RecepcionPorLotes(props) {
                     setShowComponent(1);
                     setTittleTableComponent(content.submenu.nombre_submenu);
                     setIdSubmenu(content.submenu.idsubmenu);
+                    setSelectedLote(0);
                     const token = jwt.sign(
                       {
                         menuTemporal: {
                           tableTittle: content.submenu.nombre_submenu,
                           showComponent: 1,
-                          idSubmenu: content.submenu.idsubmenu
+                          idSubmenu: content.submenu.idsubmenu,
                         },
                       },
                       "mysecretpassword"
                     );
                     localStorage.setItem("menuTemporal", token);
+                    localStorage.removeItem("notificacionData");
                   }}
                 >
                   {content.submenu.nombre_submenu}
@@ -503,6 +538,11 @@ export default function RecepcionPorLotes(props) {
             tipoLote={tipoLote}
             statusEmpresa={statusEmpresa}
             permisosSubmenu={permisosSubmenu}
+            selectedLote={selectedLote}
+            handleOpenMenu={handleOpenMenu}
+            setSubtitulo={setSubtitulo}
+            setIdLote={setIdLote}
+            setTipoLote={setTipoLote}
           />
         ) : null}
       </Card>
@@ -582,6 +622,11 @@ function TablaRPL(props) {
   const tipoLote = props.tipoLote;
   const statusEmpresa = props.statusEmpresa;
   const permisosSubmenu = props.permisosSubmenu;
+  const selectedLote = props.selectedLote;
+  const handleOpenMenu = props.handleOpenMenu;
+  const setSubtitulo = props.setSubtitulo;
+  const setIdLote = props.setIdLote;
+  const setTipoLote = props.setTipoLote;
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("fecha");
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -678,6 +723,34 @@ function TablaRPL(props) {
       useCache: false,
     }
   );
+
+  useEffect(() => {
+    if (localStorage.getItem("notificacionData")) {
+      stableSort(rows, getComparator(order, orderBy)).map((row, index) => {
+        if (row.id === selectedLote) {
+          const decodedToken = jwt.verify(
+            localStorage.getItem("notificacionData"),
+            "mysecretpassword"
+          );
+          setPage(
+            decodedToken.notificacionData.page === -1
+              ? Math.ceil((index + 1) / 10) - 1
+              : page
+          );
+          decodedToken.notificacionData.page = decodedToken.notificacionData.page === -1 ? Math.ceil((index + 1) / 10) - 1 : page;
+          const notificacionData = decodedToken.notificacionData;
+          const token = jwt.sign(
+            {
+              notificacionData
+            },
+            "mysecretpassword"
+          );
+          localStorage.setItem("notificacionData", token);
+        }
+        return null;
+      });
+    }
+  }, [rows, selectedLote, setPage, order, orderBy, page]);
 
   useEffect(() => {
     function checkData() {
@@ -935,12 +1008,13 @@ function TablaRPL(props) {
                       menuTemporal: {
                         tableTittle: "",
                         showComponent: 0,
-                        idSubmenu: 0
+                        idSubmenu: 0,
                       },
                     },
                     "mysecretpassword"
                   );
                   localStorage.setItem("menuTemporal", token);
+                  localStorage.removeItem("notificacionData");
                 }}
               >
                 <CloseIcon color="secondary" />
@@ -1053,7 +1127,6 @@ function TablaRPL(props) {
                       )
                       .map((row, index) => {
                         const labelId = `enhanced-table-checkbox-${index}`;
-
                         return (
                           <TableRow
                             hover
@@ -1061,7 +1134,29 @@ function TablaRPL(props) {
                             tabIndex={-1}
                             key={row.fecha}
                           >
-                            <TableCell padding="checkbox" />
+                            <TableCell
+                              padding="checkbox"
+                              style={{
+                                background:
+                                  selectedLote === row.id ? "green" : "",
+                              }}
+                            >
+                              {selectedLote === row.id ? (
+                                <Link to="/">
+                                  <Tooltip title="Regresar a Home">
+                                    <IconButton
+                                      onClick={() => {
+                                        localStorage.removeItem(
+                                          "notificacionData"
+                                        );
+                                      }}
+                                    >
+                                      <KeyboardReturnIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Link>
+                              ) : null}
+                            </TableCell>
                             <TableCell component="th" id={labelId} scope="row">
                               {row.fecha}
                             </TableCell>
@@ -1072,7 +1167,17 @@ function TablaRPL(props) {
                             <TableCell align="right">{row.sucursal}</TableCell>
                             <TableCell align="right">{row.detalles}</TableCell>
                             <TableCell align="right">{row.registros}</TableCell>
-                            <TableCell align="right">{row.acciones}</TableCell>
+                            <TableCell
+                              align="right"
+                              onClick={(e) => {
+                                handleOpenMenu(e);
+                                setSubtitulo(row.tipoDocumento);
+                                setIdLote(row.id);
+                                setTipoLote(row.tipo);
+                              }}
+                            >
+                              {row.acciones}
+                            </TableCell>
                           </TableRow>
                         );
                       })
@@ -1625,6 +1730,7 @@ function PreviewsDocumentos(props) {
             <IconButton
               onClick={() => {
                 setShowComponent(1);
+                localStorage.removeItem("notificacionData");
               }}
             >
               <ArrowBackIcon color="primary" />
@@ -1857,7 +1963,13 @@ function NivelDocumentos(props) {
                     });
                   }}
                 >
-                  <DeleteIcon color={permisosSubmenu < 3 || statusEmpresa !== 1 ? "disabled" : "secondary"} />
+                  <DeleteIcon
+                    color={
+                      permisosSubmenu < 3 || statusEmpresa !== 1
+                        ? "disabled"
+                        : "secondary"
+                    }
+                  />
                 </IconButton>
               </span>
             </Tooltip>
@@ -1875,6 +1987,7 @@ function NivelDocumentos(props) {
             <IconButton
               onClick={() => {
                 setShowComponent(1);
+                localStorage.removeItem("notificacionData");
               }}
             >
               <ArrowBackIcon color="primary" />
@@ -2254,6 +2367,7 @@ function VerNivelMovimientos(props) {
             <IconButton
               onClick={() => {
                 setShowComponent(1);
+                localStorage.removeItem("notificacionData");
               }}
             >
               <ArrowBackIcon color="primary" />

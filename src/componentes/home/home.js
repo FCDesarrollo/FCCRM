@@ -28,6 +28,7 @@ import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
 import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
 import jwt from "jsonwebtoken";
+import moment from "moment";
 /* import { dataBaseErrores } from "../../helpers/erroresDB";
 import swal from "sweetalert"; */
 
@@ -320,6 +321,7 @@ export default function Home(props) {
   const [ejercicios, setEjercicios] = useState([]);
   const [selectedPeriodo, setSelectedPeriodo] = useState("0");
   const [selectedEjercicio, setSelectedEjercicio] = useState("0");
+  const [selectedIdDocumento, setSelectedIdDocumento] = useState(0);
   const meses = [
     "enero",
     "febrero",
@@ -404,19 +406,23 @@ export default function Home(props) {
                             idRequerimiento: getDatosHomeData.documento[x].id,
                             estatusRequerimiento:
                               getDatosHomeData.documento[x].extra1,
+                            page: -1,
                           },
                         },
                         "mysecretpassword"
                       )
                     : getDatosHomeData.documento[x].refmenu ===
-                      "estadosFinancieros"
+                        "estadosFinancieros" ||
+                      getDatosHomeData.documento[x].refmenu ===
+                        "expedientesContables"
                     ? jwt.sign(
                         {
                           notificacionData: {
+                            idEstado: getDatosHomeData.documento[x].id,
                             showComponent: 1,
                             idSubmenu: getDatosHomeData.documento[x].idsubmenu,
                             busquedaFiltro: "",
-                            page: 0,
+                            page: -1,
                           },
                         },
                         "mysecretpassword"
@@ -429,18 +435,48 @@ export default function Home(props) {
                         {
                           notificacionData: {
                             idAlmacenDigital: getDatosHomeData.documento[x].id,
-                            showComponent: 2,
+                            showComponent: 1,
                             tableTittle:
                               getDatosHomeData.documento[x].nombre_submenu,
                             idSubmenu: getDatosHomeData.documento[x].idsubmenu,
-                            page: 0,
+                            page: -1,
                             busquedaFiltro: "",
+                          },
+                        },
+                        "mysecretpassword"
+                      )
+                    : getDatosHomeData.documento[x].refmenu ===
+                      "recepcionPorLotes"
+                    ? jwt.sign(
+                        {
+                          notificacionData: {
+                            idLote: getDatosHomeData.documento[x].id,
+                            showComponent: 1,
+                            tableTittle:
+                              getDatosHomeData.documento[x].nombre_submenu,
+                            idSubmenu: getDatosHomeData.documento[x].idsubmenu,
+                            page: -1,
                           },
                         },
                         "mysecretpassword"
                       )
                     : [];
                 localStorage.setItem("notificacionData", token);
+
+                const decodedToken = jwt.verify(
+                  localStorage.getItem("home"),
+                  "mysecretpassword"
+                );
+                decodedToken.home.idDocumento =
+                  getDatosHomeData.documento[x].id;
+                const home = decodedToken.home;
+                const tokenHome = jwt.sign(
+                  {
+                    home,
+                  },
+                  "mysecretpassword"
+                );
+                localStorage.setItem("home", tokenHome);
               }}
             >
               <Button variant="contained" color="primary">
@@ -485,7 +521,16 @@ export default function Home(props) {
         }
       }
 
-      setSelectedModulo(nombreModulos[0]);
+      if (localStorage.getItem("home")) {
+        const decodedToken = jwt.verify(
+          localStorage.getItem("home"),
+          "mysecretpassword"
+        );
+        const pos = idsModulos.indexOf(decodedToken.home.idModulo);
+        setSelectedModulo(nombreModulos[pos]);
+      } else {
+        setSelectedModulo(nombreModulos[0]);
+      }
       setModulos({
         ids: idsModulos,
         nombre: nombreModulos,
@@ -527,11 +572,37 @@ export default function Home(props) {
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
+    const decodedToken = jwt.verify(
+      localStorage.getItem("home"),
+      "mysecretpassword"
+    );
+    decodedToken.home.page = newPage;
+    const home = decodedToken.home;
+    const token = jwt.sign(
+      {
+        home,
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("home", token);
   };
 
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+    const decodedToken = jwt.verify(
+      localStorage.getItem("home"),
+      "mysecretpassword"
+    );
+    decodedToken.home.page = 0;
+    const home = decodedToken.home;
+    const token = jwt.sign(
+      {
+        home,
+      },
+      "mysecretpassword"
+    );
+    localStorage.setItem("home", token);
   };
 
   const llenarTabla = (
@@ -560,14 +631,16 @@ export default function Home(props) {
       );
     }
 
-    if (periodo !== "0") {
-      newRows = newRows.filter((documento) => documento.periodo === periodo);
-    }
+    if (validacion !== 3) {
+      if (periodo !== "0") {
+        newRows = newRows.filter((documento) => documento.periodo === periodo);
+      }
 
-    if (ejercicio !== "0") {
-      newRows = newRows.filter(
-        (documento) => documento.ejercicio === ejercicio
-      );
+      if (ejercicio !== "0") {
+        newRows = newRows.filter(
+          (documento) => documento.ejercicio === ejercicio
+        );
+      }
     }
 
     let primerIdSubmenu = 0;
@@ -575,14 +648,27 @@ export default function Home(props) {
       let idSubmenus = [];
       let nombreSubmenus = [];
       let cantidadSubmenus = [];
+      let datos = newRows;
 
-      for (let x = 0; x < newRows.length; x++) {
-        if (!nombreSubmenus.includes(newRows[x].nombreSubmenu)) {
-          idSubmenus.push(newRows[x].idSubmenu);
-          nombreSubmenus.push(newRows[x].nombreSubmenu);
+      if (validacion === 3) {
+        if (periodo !== "0") {
+          datos = datos.filter((documento) => documento.periodo === periodo);
+        }
+
+        if (ejercicio !== "0") {
+          datos = datos.filter(
+            (documento) => documento.ejercicio === ejercicio
+          );
+        }
+      }
+
+      for (let x = 0; x < datos.length; x++) {
+        if (!nombreSubmenus.includes(datos[x].nombreSubmenu)) {
+          idSubmenus.push(datos[x].idSubmenu);
+          nombreSubmenus.push(datos[x].nombreSubmenu);
           cantidadSubmenus.push(1);
         } else {
-          const pos = nombreSubmenus.indexOf(newRows[x].nombreSubmenu);
+          const pos = nombreSubmenus.indexOf(datos[x].nombreSubmenu);
           if (cantidadSubmenus[pos]) {
             cantidadSubmenus[pos] = cantidadSubmenus[pos] + 1;
           } else {
@@ -595,8 +681,8 @@ export default function Home(props) {
       for (let x = 0; x < nombreSubmenus.length; x++) {
         rowsPrincipalData.push(
           createDataPrincipal(
-            newRows[0].nombreModulo,
-            newRows[0].nombreMenu,
+            datos[0].nombreModulo,
+            datos[0].nombreMenu,
             idSubmenus[x],
             nombreSubmenus[x],
             cantidadSubmenus[x],
@@ -618,7 +704,7 @@ export default function Home(props) {
       setRowsPrincipal(rowsPrincipalData);
     }
 
-    if (validacion === 1) {
+    if (validacion === 1 || validacion === 3) {
       let idUsuarios = [];
       let nombreUsuarios = [];
       let cantidadUsuarios = [];
@@ -648,6 +734,20 @@ export default function Home(props) {
         }
       }
 
+      if (validacion === 3) {
+        if (periodo !== "0") {
+          newRows = newRows.filter(
+            (documento) => documento.periodo === periodo
+          );
+        }
+
+        if (ejercicio !== "0") {
+          newRows = newRows.filter(
+            (documento) => documento.ejercicio === ejercicio
+          );
+        }
+      }
+
       setUsuarios({
         ids: idUsuarios,
         nombre: nombreUsuarios,
@@ -664,6 +764,15 @@ export default function Home(props) {
     }
     setRows(newRows);
 
+    let idDocumento = 0;
+    if(localStorage.getItem("home")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("home"),
+        "mysecretpassword"
+      );
+      idDocumento = decodedToken.home.idDocumento;
+    }
+    
     const token = jwt.sign(
       {
         home: {
@@ -673,6 +782,7 @@ export default function Home(props) {
           idModulo: idModulo,
           idMenu: idMenu,
           idSubmenu: primerIdSubmenu !== 0 ? primerIdSubmenu : idSubmenu,
+          idDocumento: idDocumento,
         },
       },
       "mysecretpassword"
@@ -680,7 +790,124 @@ export default function Home(props) {
     localStorage.setItem("home", token);
   };
 
-  const llenarGraficaMenu = (idModulo) => {
+  const llenarTablaGuardada = (
+    idModulo,
+    idMenu,
+    idSubmenu,
+    idUsuario,
+    periodo,
+    ejercicio
+  ) => {
+    let newRows = documentos.filter(
+      (documento) =>
+        documento.idModulo === idModulo && documento.idMenu === idMenu
+    );
+
+    let idUsuarios = [];
+    let nombreUsuarios = [];
+    let cantidadUsuarios = [];
+    let nuevosPeriodos = [];
+    let nuevosEjercicios = [];
+
+    for (let x = 0; x < newRows.length; x++) {
+      if (!nombreUsuarios.includes(newRows[x].nombreUsuario)) {
+        idUsuarios.push(newRows[x].idUsuario);
+        nombreUsuarios.push(newRows[x].nombreUsuario);
+        cantidadUsuarios.push(1);
+      } else {
+        const pos = nombreUsuarios.indexOf(newRows[x].nombreUsuario);
+        if (cantidadUsuarios[pos]) {
+          cantidadUsuarios[pos] = cantidadUsuarios[pos] + 1;
+        } else {
+          cantidadUsuarios[pos] = 1;
+        }
+      }
+
+      if (!nuevosPeriodos.includes(newRows[x].periodo)) {
+        nuevosPeriodos.push(newRows[x].periodo);
+      }
+
+      if (!nuevosEjercicios.includes(newRows[x].ejercicio)) {
+        nuevosEjercicios.push(newRows[x].ejercicio);
+      }
+    }
+
+    const pos = idUsuarios.indexOf(idUsuario);
+    setSelectedNombreUsuario(nombreUsuarios[pos]);
+    setUsuarios({
+      ids: idUsuarios,
+      nombre: nombreUsuarios,
+      cantidad: cantidadUsuarios,
+    });
+    setPeriodos(nuevosPeriodos);
+    setEjercicios(nuevosEjercicios);
+
+    if (idUsuario !== 0) {
+      newRows = newRows.filter(
+        (documento) => documento.idUsuario === idUsuario
+      );
+    }
+
+    if (periodo !== "0") {
+      newRows = newRows.filter((documento) => documento.periodo === periodo);
+    }
+
+    if (ejercicio !== "0") {
+      newRows = newRows.filter(
+        (documento) => documento.ejercicio === ejercicio
+      );
+    }
+
+    let noSubmenuFiltroRows = newRows;
+    if (idSubmenu !== 0) {
+      newRows = newRows.filter(
+        (documento) => documento.idSubmenu === idSubmenu
+      );
+    }
+
+    setRows(newRows);
+
+    let idSubmenus = [];
+    let nombreSubmenus = [];
+    let cantidadSubmenus = [];
+
+    for (let x = 0; x < noSubmenuFiltroRows.length; x++) {
+      if (!nombreSubmenus.includes(noSubmenuFiltroRows[x].nombreSubmenu)) {
+        idSubmenus.push(noSubmenuFiltroRows[x].idSubmenu);
+        nombreSubmenus.push(noSubmenuFiltroRows[x].nombreSubmenu);
+        cantidadSubmenus.push(1);
+      } else {
+        const pos = nombreSubmenus.indexOf(
+          noSubmenuFiltroRows[x].nombreSubmenu
+        );
+        if (cantidadSubmenus[pos]) {
+          cantidadSubmenus[pos] = cantidadSubmenus[pos] + 1;
+        } else {
+          cantidadSubmenus[pos] = 1;
+        }
+      }
+    }
+
+    let rowsPrincipalData = [];
+    for (let x = 0; x < nombreSubmenus.length; x++) {
+      rowsPrincipalData.push(
+        createDataPrincipal(
+          noSubmenuFiltroRows[0].nombreModulo,
+          noSubmenuFiltroRows[0].nombreMenu,
+          idSubmenus[x],
+          nombreSubmenus[x],
+          cantidadSubmenus[x],
+          <Button variant="contained" color="primary">
+            Ver Documentos
+          </Button>
+        )
+      );
+    }
+
+    setRowsPrincipal(rowsPrincipalData);
+  };
+
+  const llenarGraficaMenu = (idModulo, validacion) => {
     let idsMenus = [];
     let nombreMenus = [];
     let cantidadMenus = [];
@@ -725,9 +952,39 @@ export default function Home(props) {
     setSelectedIdMenu(idsMenus[0]);
     setSelectedMenu(nombreMenus[0]);
     setSelectedIdUsuario(0);
-    setSelectedPeriodo("0");
-    setSelectedEjercicio("0");
-    llenarTabla(idModulo, idsMenus[0], 0, 0, 1, "0", "0");
+    if (validacion === 0) {
+      setSelectedPeriodo(moment().format("MM"));
+      setSelectedEjercicio(moment().format("YYYY"));
+      llenarTabla(
+        idModulo,
+        idsMenus[0],
+        0,
+        0,
+        3,
+        moment().format("MM"),
+        moment().format("YYYY")
+      );
+    } else if (validacion === 1) {
+      setSelectedPeriodo("0");
+      setSelectedEjercicio("0");
+      const decodedToken = jwt.verify(
+        localStorage.getItem("home"),
+        "mysecretpassword"
+      );
+      llenarTabla(
+        idModulo,
+        decodedToken.home.idMenu,
+        decodedToken.home.idSubmenu,
+        0,
+        1,
+        "0",
+        "0"
+      );
+    } else {
+      setSelectedPeriodo("0");
+      setSelectedEjercicio("0");
+      llenarTabla(idModulo, idsMenus[0], 0, 0, 1, "0", "0");
+    }
   };
 
   const getPeriodos = () => {
@@ -746,7 +1003,7 @@ export default function Home(props) {
 
   const getEjercicios = () => {
     if (ejercicios.length > 0) {
-      return ejercicios.map((ejercicio, index) => {
+      return ejercicios.sort().map((ejercicio, index) => {
         return (
           <option value={ejercicio} key={index}>
             {ejercicio}
@@ -766,14 +1023,55 @@ export default function Home(props) {
       type: "pie",
       events: {
         mounted: function (chartContext, config) {
-          llenarGraficaMenu(modulos.ids[0]);
-          setSelectedIdModulo(modulos.ids[0]);
-          setSelectedModulo(modulos.nombre[0]);
+          if (localStorage.getItem("home")) {
+            const decodedToken = jwt.verify(
+              localStorage.getItem("home"),
+              "mysecretpassword"
+            );
+            llenarGraficaMenu(decodedToken.home.idModulo, 1);
+            setSelectedIdModulo(decodedToken.home.idModulo);
+            setSelectedIdMenu(decodedToken.home.idMenu);
+            //setSelectedMenu(nombreMenus[0]);
+            setSelectedIdUsuario(decodedToken.home.idUsuario);
+            setSelectedPeriodo(decodedToken.home.periodo);
+            setSelectedEjercicio(decodedToken.home.ejercicio);
+            llenarTablaGuardada(
+              decodedToken.home.idModulo,
+              decodedToken.home.idMenu,
+              decodedToken.home.idSubmenu,
+              decodedToken.home.idUsuario,
+              decodedToken.home.periodo,
+              decodedToken.home.ejercicio
+            );
+            setPage(decodedToken.home.page ? decodedToken.home.page : 0);
+            setSelectedIdDocumento(
+              decodedToken.home.idDocumento ? decodedToken.home.idDocumento : 0
+            );
+          } else {
+            llenarGraficaMenu(modulos.ids[0], 0);
+            setSelectedIdModulo(modulos.ids[0]);
+            setSelectedModulo(modulos.nombre[0]);
+          }
         },
         dataPointSelection: (event, chartContext, { dataPointIndex }) => {
-          llenarGraficaMenu(modulos.ids[dataPointIndex]);
+          llenarGraficaMenu(modulos.ids[dataPointIndex], 2);
           setSelectedIdModulo(modulos.ids[dataPointIndex]);
           setSelectedModulo(modulos.nombre[dataPointIndex]);
+          setPage(0);
+          setSelectedIdDocumento(0);
+          const decodedToken = jwt.verify(
+            localStorage.getItem("home"),
+            "mysecretpassword"
+          );
+          decodedToken.home.idDocumento = 0;
+          const home = decodedToken.home;
+          const token = jwt.sign(
+            {
+              home,
+            },
+            "mysecretpassword"
+          );
+          localStorage.setItem("home", token);
         },
       },
     },
@@ -812,8 +1110,18 @@ export default function Home(props) {
       type: "pie",
       events: {
         mounted: function (chartContext, config) {
-          setSelectedIdMenu(menus.ids[0]);
-          setSelectedMenu(menus.nombre[0]);
+          if (localStorage.getItem("home")) {
+            const decodedToken = jwt.verify(
+              localStorage.getItem("home"),
+              "mysecretpassword"
+            );
+            const pos = menus.ids.indexOf(decodedToken.home.idMenu);
+            setSelectedIdMenu(decodedToken.home.idMenu);
+            setSelectedMenu(menus.nombre[pos]);
+          } else {
+            setSelectedIdMenu(menus.ids[0]);
+            setSelectedMenu(menus.nombre[0]);
+          }
         },
         dataPointSelection: function (event, chartContext, { dataPointIndex }) {
           setSelectedIdMenu(menus.ids[dataPointIndex]);
@@ -821,6 +1129,21 @@ export default function Home(props) {
           setSelectedIdUsuario(0);
           setSelectedPeriodo("0");
           setSelectedEjercicio("0");
+          setPage(0);
+          setSelectedIdDocumento(0);
+          const decodedToken = jwt.verify(
+            localStorage.getItem("home"),
+            "mysecretpassword"
+          );
+          decodedToken.home.idDocumento = 0;
+          const home = decodedToken.home;
+          const token = jwt.sign(
+            {
+              home,
+            },
+            "mysecretpassword"
+          );
+          localStorage.setItem("home", token);
           llenarTabla(
             selectedIdModulo,
             menus.ids[dataPointIndex],
@@ -1190,7 +1513,15 @@ export default function Home(props) {
                                 className={classes.rootRow}
                                 key={index}
                               >
-                                <TableCell padding="checkbox" />
+                                <TableCell
+                                  padding="checkbox"
+                                  style={{
+                                    backgroundColor:
+                                      selectedIdDocumento === row.id
+                                        ? "green"
+                                        : "",
+                                  }}
+                                />
                                 <TableCell
                                   component="th"
                                   id={labelId}

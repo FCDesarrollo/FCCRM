@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Card,
   Grid,
@@ -22,6 +23,7 @@ import {
   Close as CloseIcon,
   ClearAll as ClearAllIcon,
   Error as ErrorIcon,
+  KeyboardReturn as KeyboardReturnIcon,
 } from "@material-ui/icons";
 import { makeStyles } from "@material-ui/core/styles";
 import { API_BASE_URL } from "../../config";
@@ -232,6 +234,7 @@ export default function EstadosFinancieros(props) {
   const [orderBy, setOrderBy] = useState("id");
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [titulo, setTitulo] = useState("");
+  const [selectedEstado, setSelectedEstado] = useState(0);
 
   const [
     {
@@ -275,7 +278,7 @@ export default function EstadosFinancieros(props) {
         setShowComponent(decodedToken.notificacionData.showComponent);
         setIdsubmenu(decodedToken.notificacionData.idSubmenu);
         setBusquedaFiltro(decodedToken.notificacionData.busquedaFiltro);
-        setPage(decodedToken.notificacionData.page);
+        //setPage(decodedToken.notificacionData.page);
       } catch (err) {
         localStorage.removeItem("notificacionData");
       }
@@ -396,7 +399,32 @@ export default function EstadosFinancieros(props) {
       return dataFilter;
     }
 
-    if (localStorage.getItem("menuTemporal")) {
+    setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
+    if (localStorage.getItem("notificacionData")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("notificacionData"),
+        "mysecretpassword"
+      );
+      setSelectedEstado(decodedToken.notificacionData.idEstado);
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            showComponent: 1,
+            titulo: titulo,
+            idSubmenu: decodedToken.notificacionData.idSubmenu,
+            page:
+              rows.length < rowsPerPage && rows.length !== 0
+                ? 0
+                : decodedToken.notificacionData.page
+                ? decodedToken.notificacionData.page
+                : 0,
+            busquedaFiltro: busquedaFiltro,
+          },
+        },
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    } else if (localStorage.getItem("menuTemporal")) {
       const decodedToken = jwt.verify(
         localStorage.getItem("menuTemporal"),
         "mysecretpassword"
@@ -408,12 +436,11 @@ export default function EstadosFinancieros(props) {
           ? decodedToken.menuTemporal.page
           : 0
       );
-      setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
 
       const token = jwt.sign(
         {
           menuTemporal: {
-            showComponent: 1,
+            showComponent: showComponent,
             titulo: titulo,
             idSubmenu: idSubmenu,
             busquedaFiltro: busquedaFiltro,
@@ -432,7 +459,7 @@ export default function EstadosFinancieros(props) {
       const token = jwt.sign(
         {
           menuTemporal: {
-            showComponent: 1,
+            showComponent: showComponent,
             titulo: titulo,
             idSubmenu: idSubmenu,
             busquedaFiltro: busquedaFiltro,
@@ -509,6 +536,7 @@ export default function EstadosFinancieros(props) {
                     setTitulo(content.submenu.nombre_submenu);
                     setShowComponent(1);
                     setIdsubmenu(content.submenu.idsubmenu);
+                    setSelectedEstado(0);
                     const token = jwt.sign(
                       {
                         menuTemporal: {
@@ -549,6 +577,7 @@ export default function EstadosFinancieros(props) {
                         aria-label="cerrar"
                         onClick={() => {
                           setShowComponent(0);
+                          setSelectedEstado(0);
                           const token = jwt.sign(
                             {
                               menuTemporal: {
@@ -639,7 +668,29 @@ export default function EstadosFinancieros(props) {
                             tabIndex={-1}
                             key={index}
                           >
-                            <TableCell padding="checkbox" />
+                            <TableCell
+                              padding="checkbox"
+                              style={{
+                                background:
+                                  selectedEstado === row.id ? "green" : "",
+                              }}
+                            >
+                              {selectedEstado === row.id ? (
+                                <Link to="/">
+                                  <Tooltip title="Regresar a Home">
+                                    <IconButton
+                                      onClick={() => {
+                                        localStorage.removeItem(
+                                          "notificacionData"
+                                        );
+                                      }}
+                                    >
+                                      <KeyboardReturnIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Link>
+                              ) : null}
+                            </TableCell>
                             <TableCell align="right" id={labelId}>
                               {row.servicio}
                             </TableCell>

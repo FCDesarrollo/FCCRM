@@ -997,6 +997,7 @@ export default function Header(props) {
                 "mysecretpassword"
               );
               localStorage.setItem("emToken", token);
+              localStorage.removeItem("home");
               handleCloseDialogEmpresas();
             }}
           >
@@ -1058,6 +1059,7 @@ export default function Header(props) {
         localStorage.removeItem("token");
         localStorage.removeItem("emToken");
         localStorage.removeItem("notificacionData");
+        localStorage.removeItem("home");
         setUserAuth(false);
       }
     });

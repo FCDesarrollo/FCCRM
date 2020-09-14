@@ -114,6 +114,7 @@ export default function Empresas() {
     }
   }
   localStorage.removeItem("menuTemporal");//nuevo
+  localStorage.removeItem("home");
   const [
     { data: empresasData, loading: empresasLoading, error: empresasError },
   ] = useAxios(
@@ -204,6 +205,7 @@ export default function Empresas() {
         localStorage.removeItem("token");
         localStorage.removeItem("emToken");
         localStorage.removeItem("notificacionData");
+        localStorage.removeItem("home");
         setUserAuth(false);
       }
     });

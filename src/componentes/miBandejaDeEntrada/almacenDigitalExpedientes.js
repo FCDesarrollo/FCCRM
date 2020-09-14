@@ -25,8 +25,8 @@ import {
   ListItemText,
   Checkbox,
   useMediaQuery,
-  List,
-  ListItem,
+  /* List,
+  ListItem, */
   Dialog,
   DialogContent,
   DialogActions,
@@ -41,9 +41,10 @@ import {
   FindInPage as FindInPageIcon,
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
-  SentimentVerySatisfied as SentimentVerySatisfiedIcon,
-  SentimentVeryDissatisfied as SentimentVeryDissatisfiedIcon,
+  /* SentimentVerySatisfied as SentimentVerySatisfiedIcon,
+  SentimentVeryDissatisfied as SentimentVeryDissatisfiedIcon, */
   Error as ErrorIcon,
+  KeyboardReturn as KeyboardReturnIcon,
 } from "@material-ui/icons";
 import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
@@ -55,7 +56,7 @@ import {
 } from "@material-ui/core/styles";
 import clsx from "clsx";
 import swal from "sweetalert";
-import swalReact from "@sweetalert/with-react";
+/* import swalReact from "@sweetalert/with-react"; */
 import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
 import { dataBaseErrores } from "../../helpers/erroresDB";
 import { verificarExtensionArchivo } from "../../helpers/extensionesArchivos";
@@ -282,6 +283,8 @@ export default function AlmacenDigitalExpedientes(props) {
   const [permisosSubmenu, setPermisosSubmenu] = useState(-1);
   const [tittleTableComponent, setTittleTableComponent] = useState("");
   const [busquedaFiltro, setBusquedaFiltro] = useState("");
+  const [selectedAlmacen, setSelectedAlmacen] = useState(0);
+  const [archivosAlmacen, setArchivosAlmacen] = useState([]);
   const [
     { data: ADEData, loading: ADELoading, error: ADEError },
     executeADE,
@@ -381,11 +384,11 @@ export default function AlmacenDigitalExpedientes(props) {
           setShowComponent(decodedToken.notificacionData.showComponent);
           setTittleTableComponent(decodedToken.notificacionData.tableTittle);
           setIdSubmenu(decodedToken.notificacionData.idSubmenu);
-          setPage(
+          /* setPage(
             decodedToken.notificacionData.page
               ? decodedToken.notificacionData.page
               : 0
-          );
+          ); */
           setBusquedaFiltro(
             decodedToken.notificacionData.busquedaFiltro
               ? decodedToken.notificacionData.busquedaFiltro
@@ -440,6 +443,7 @@ export default function AlmacenDigitalExpedientes(props) {
                     setShowComponent(1);
                     setTittleTableComponent(content.submenu.nombre_submenu);
                     setIdSubmenu(content.submenu.idsubmenu);
+                    setSelectedAlmacen(0);
                     const token = jwt.sign(
                       {
                         menuTemporal: {
@@ -488,6 +492,9 @@ export default function AlmacenDigitalExpedientes(props) {
             setLoading={setLoading}
             statusEmpresa={statusEmpresa}
             permisosSubmenu={permisosSubmenu}
+            selectedAlmacen={selectedAlmacen}
+            setSelectedAlmacen={setSelectedAlmacen}
+            setArchivosAlmacen={setArchivosAlmacen}
           />
         ) : showComponent === 2 ? (
           <VerDocumentos
@@ -503,6 +510,11 @@ export default function AlmacenDigitalExpedientes(props) {
             idModulo={idModulo}
             executeADE={executeADE}
             setLoading={setLoading}
+          />
+        ) : showComponent === 3 ? (
+          <ResumenDetalladoDeCarga
+            setShowComponent={setShowComponent}
+            archivosAlmacen={archivosAlmacen}
           />
         ) : null}
       </Card>
@@ -536,6 +548,9 @@ function TablaADE(props) {
   const executeADE = props.executeADE;
   const setLoading = props.setLoading;
   const permisosSubmenu = props.permisosSubmenu;
+  const selectedAlmacen = props.selectedAlmacen;
+  const setSelectedAlmacen = props.setSelectedAlmacen;
+  const setArchivosAlmacen = props.setArchivosAlmacen;
   const sucursalesEmpresa = empresaDatos.sucursales;
   const [order, setOrder] = React.useState("desc");
   const [orderBy, setOrderBy] = React.useState("fecha");
@@ -569,6 +584,34 @@ function TablaADE(props) {
   );
 
   useEffect(() => {
+    if (localStorage.getItem("notificacionData")) {
+      stableSort(rows, getComparator(order, orderBy)).map((row, index) => {
+        if (row.id === selectedAlmacen) {
+          const decodedToken = jwt.verify(
+            localStorage.getItem("notificacionData"),
+            "mysecretpassword"
+          );
+          setPage(
+            decodedToken.notificacionData.page === -1
+              ? Math.ceil((index + 1) / 10) - 1
+              : page
+          );
+          decodedToken.notificacionData.page = decodedToken.notificacionData.page === -1 ? Math.ceil((index + 1) / 10) - 1 : page;
+          const notificacionData = decodedToken.notificacionData;
+          const token = jwt.sign(
+            {
+              notificacionData
+            },
+            "mysecretpassword"
+          );
+          localStorage.setItem("notificacionData", token);
+        }
+        return null;
+      });
+    }
+  }, [rows, selectedAlmacen, setPage, order, orderBy, page]);
+
+  useEffect(() => {
     function getFilterRows() {
       let dataFilter = [];
       for (let x = 0; x < filterRows.length; x++) {
@@ -596,7 +639,39 @@ function TablaADE(props) {
     }
 
     setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
-    if (localStorage.getItem("menuTemporal")) {
+    if (localStorage.getItem("notificacionData")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("notificacionData"),
+        "mysecretpassword"
+      );
+      setSelectedAlmacen(decodedToken.notificacionData.idAlmacenDigital);
+      /* setPage(
+        rows.length < rowsPerPage
+          ? 0
+          : decodedToken.notificacionData.page
+          ? decodedToken.notificacionData.page
+          : 0
+      ); */
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            tableTittle: tableTittle,
+            showComponent: 1,
+            idAlmacenDigital: idAlmacenDigital,
+            idSubmenu: idSubmenu,
+            page:
+              rows.length < rowsPerPage && rows.length !== 0
+                ? 0
+                : decodedToken.notificacionData.page
+                ? decodedToken.notificacionData.page
+                : 0,
+            busquedaFiltro: busquedaFiltro,
+          },
+        },
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    } else if (localStorage.getItem("menuTemporal")) {
       const decodedToken = jwt.verify(
         localStorage.getItem("menuTemporal"),
         "mysecretpassword"
@@ -627,37 +702,6 @@ function TablaADE(props) {
         "mysecretpassword"
       );
       localStorage.setItem("menuTemporal", token);
-    } else if (localStorage.getItem("notificacionData")) {
-      const decodedToken = jwt.verify(
-        localStorage.getItem("notificacionData"),
-        "mysecretpassword"
-      );
-      setPage(
-        rows.length < rowsPerPage
-          ? 0
-          : decodedToken.notificacionData.page
-          ? decodedToken.notificacionData.page
-          : 0
-      );
-      const token = jwt.sign(
-        {
-          menuTemporal: {
-            tableTittle: tableTittle,
-            showComponent: 1,
-            idAlmacenDigital: idAlmacenDigital,
-            idSubmenu: idSubmenu,
-            page:
-              rows.length < rowsPerPage && rows.length !== 0
-                ? 0
-                : decodedToken.notificacionData.page
-                ? decodedToken.notificacionData.page
-                : 0,
-            busquedaFiltro: busquedaFiltro,
-          },
-        },
-        "mysecretpassword"
-      );
-      localStorage.setItem("menuTemporal", token);
     }
   }, [
     busquedaFiltro,
@@ -668,6 +712,7 @@ function TablaADE(props) {
     rows.length,
     rowsPerPage,
     tableTittle,
+    setSelectedAlmacen,
   ]);
 
   useEffect(() => {
@@ -680,7 +725,7 @@ function TablaADE(props) {
             </Typography>
           );
         } else {
-          swalReact({
+          /* swalReact({
             title: "Status de archivos",
             buttons: {
               cancel: "Cerrar",
@@ -721,15 +766,18 @@ function TablaADE(props) {
                 })}
               </List>
             ),
-          });
+          }); */
 
+          setArchivosAlmacen(cargaArchivosADOData.archivos);
+          swal("Almacen Agregado", "Almacen agregado con éxito", "success");
           executeADE();
+          setShowComponent(3);
         }
       }
     }
 
     checkData();
-  }, [cargaArchivosADOData, executeADE]);
+  }, [cargaArchivosADOData, executeADE, setArchivosAlmacen, setShowComponent]);
 
   if (cargaArchivosADOLoading) {
     setLoading(true);
@@ -773,7 +821,7 @@ function TablaADE(props) {
       "mysecretpassword"
     );
     localStorage.setItem("menuTemporal", token);
-    localStorage.removeItem("notificacionData");
+    //localStorage.removeItem("notificacionData");
   };
 
   const handleChangeRowsPerPage = (event) => {
@@ -895,7 +943,7 @@ function TablaADE(props) {
                     style={{ float: "right" }}
                     onClick={() => {
                       handleClickOpenDialogNuevoADO();
-                      localStorage.removeItem("notificacionData");
+                      //localStorage.removeItem("notificacionData");
                     }}
                   >
                     <AddCircleIcon
@@ -922,7 +970,7 @@ function TablaADE(props) {
                 }}
                 onChange={(e) => {
                   setBusquedaFiltro(e.target.value);
-                  localStorage.removeItem("notificacionData");
+                  //localStorage.removeItem("notificacionData");
                 }}
               />
             </Grid>
@@ -951,7 +999,27 @@ function TablaADE(props) {
 
                     return (
                       <TableRow hover role="checkbox" tabIndex={-1} key={index}>
-                        <TableCell padding="checkbox" />
+                        <TableCell
+                          padding="checkbox"
+                          style={{
+                            background:
+                              selectedAlmacen === row.id ? "green" : "",
+                          }}
+                        >
+                          {selectedAlmacen === row.id ? (
+                            <Link to="/">
+                              <Tooltip title="Regresar a Home">
+                                <IconButton
+                                  onClick={() => {
+                                    localStorage.removeItem("notificacionData");
+                                  }}
+                                >
+                                  <KeyboardReturnIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Link>
+                          ) : null}
+                        </TableCell>
                         <TableCell component="th" id={labelId} scope="row">
                           {row.fecha}
                         </TableCell>
@@ -1010,7 +1078,7 @@ function TablaADE(props) {
           onClick={() => {
             handleCloseMenu();
             setShowComponent(2);
-            localStorage.removeItem("notificacionData");
+            //localStorage.removeItem("notificacionData");
             /* const token = jwt.sign(
               {
                 menuTemporal: {
@@ -1544,5 +1612,73 @@ function VerDocumentos(props) {
         </MenuItem>
       </StyledMenu>
     </div>
+  );
+}
+
+function ResumenDetalladoDeCarga(props) {
+  const classes = useStyles();
+  const archivosAlmacen = props.archivosAlmacen;
+  const setShowComponent = props.setShowComponent;
+  return (
+    <Grid container>
+      <Grid item xs={12} style={{ alignSelf: "flex-end", marginBottom: "15px", padding: "15px" }}>
+        <Typography className={classes.titleTable} variant="h6" id="tableTitle">
+          <Tooltip title="Regresar">
+            <IconButton
+              aria-label="regresar"
+              onClick={() => {
+                setShowComponent(1);
+              }}
+            >
+              <ArrowBackIcon color="primary" />
+            </IconButton>
+          </Tooltip>
+          RESUMEN DETALLADO DE LA CARGA DE EXPEDIENTES DIGITALES.
+        </Typography>
+      </Grid>
+      <Grid item xs={12}>
+        <TableContainer component={Paper} style={{padding: "15px"}}>
+          <Table className={classes.table} aria-label="simple table">
+            <TableHead>
+              <TableRow
+                style={{
+                  background: "#FAFAFA",
+                  maxHeight: "40vh",
+                  overflowY: "auto",
+                }}
+              >
+                <TableCell>
+                  <strong>ARCHIVO</strong>
+                </TableCell>
+                <TableCell align="right">
+                  <strong>CARGADO</strong>
+                </TableCell>
+                <TableCell align="right">
+                  <strong>DETALLE</strong>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {archivosAlmacen.map((archivo, index) => (
+                <TableRow
+                  key={index}
+                  style={{
+                    background: archivo.status === 0 ? "#4caf50" : "#f44336",
+                  }}
+                >
+                  <TableCell component="th" scope="row">
+                    {archivo.archivo}
+                  </TableCell>
+                  <TableCell align="right">
+                    {archivo.status === 0 ? "Sí" : "No"}
+                  </TableCell>
+                  <TableCell align="right">{archivo.detalle}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Grid>
+    </Grid>
   );
 }

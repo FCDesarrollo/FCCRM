@@ -28,8 +28,8 @@ import {
   DialogContent,
   DialogActions,
   useMediaQuery,
-  List,
-  ListItem,
+  /* List,
+  ListItem, */
 } from "@material-ui/core";
 import {
   AddCircle as AddCircleIcon,
@@ -41,8 +41,9 @@ import {
   FindInPage as FindInPageIcon,
   ArrowBack as ArrowBackIcon,
   Delete as DeleteIcon,
-  SentimentVerySatisfied as SentimentVerySatisfiedIcon,
-  SentimentVeryDissatisfied as SentimentVeryDissatisfiedIcon,
+  /* SentimentVerySatisfied as SentimentVerySatisfiedIcon,
+  SentimentVeryDissatisfied as SentimentVeryDissatisfiedIcon, */
+  KeyboardReturn as KeyboardReturnIcon,
 } from "@material-ui/icons";
 import {
   makeStyles,
@@ -58,7 +59,7 @@ import { verificarExtensionArchivo } from "../../helpers/extensionesArchivos";
 import { Link } from "react-router-dom";
 import moment from "moment";
 import swal from "sweetalert";
-import swalReact from "@sweetalert/with-react";
+/* import swalReact from "@sweetalert/with-react"; */
 import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
 
 const jwt = require("jsonwebtoken");
@@ -285,6 +286,8 @@ export default function AlmacenDigitalOperaciones(props) {
   const [tittleTableComponent, setTittleTableComponent] = useState("");
   const [idSubmenu, setIdSubmenu] = useState(0);
   const [busquedaFiltro, setBusquedaFiltro] = useState("");
+  const [selectedAlmacen, setSelectedAlmacen] = useState(0);
+  const [archivosAlmacen, setArchivosAlmacen] = useState([]);
   //const [dataTable, setDataTable] = useState([]);
   const [
     { data: ADOData, loading: ADOLoading, error: ADOError },
@@ -386,11 +389,11 @@ export default function AlmacenDigitalOperaciones(props) {
           setShowComponent(decodedToken.notificacionData.showComponent);
           setTittleTableComponent(decodedToken.notificacionData.tableTittle);
           setIdSubmenu(decodedToken.notificacionData.idSubmenu);
-          setPage(
+          /* setPage(
             decodedToken.notificacionData.page
               ? decodedToken.notificacionData.page
               : 0
-          );
+          ); */
           setBusquedaFiltro(
             decodedToken.notificacionData.busquedaFiltro
               ? decodedToken.notificacionData.busquedaFiltro
@@ -453,6 +456,7 @@ export default function AlmacenDigitalOperaciones(props) {
                     setShowComponent(1);
                     setIdSubmenu(content.submenu.idsubmenu);
                     setTittleTableComponent(content.submenu.nombre_submenu);
+                    setSelectedAlmacen(0);
                     const token = jwt.sign(
                       {
                         menuTemporal: {
@@ -502,12 +506,14 @@ export default function AlmacenDigitalOperaciones(props) {
             setLoading={setLoading}
             statusEmpresa={statusEmpresa}
             permisosSubmenu={permisosSubmenu}
+            selectedAlmacen={selectedAlmacen}
+            setSelectedAlmacen={setSelectedAlmacen}
+            setArchivosAlmacen={setArchivosAlmacen}
           />
         ) : showComponent === 2 ? (
           <VerDocumentos
             setShowComponent={setShowComponent}
             tittle={tittleTableComponent}
-            /* page={page} */
             userEmail={userEmail}
             userPassword={userPassword}
             empresaRFC={empresaRFC}
@@ -518,6 +524,11 @@ export default function AlmacenDigitalOperaciones(props) {
             idModulo={idModulo}
             executeADO={executeADO}
             setLoading={setLoading}
+          />
+        ) : showComponent === 3 ? (
+          <ResumenDetalladoDeCarga
+            setShowComponent={setShowComponent}
+            archivosAlmacen={archivosAlmacen}
           />
         ) : null}
       </Card>
@@ -552,6 +563,9 @@ function TablaADO(props) {
   const setLoading = props.setLoading;
   const statusEmpresa = props.statusEmpresa;
   const permisosSubmenu = props.permisosSubmenu;
+  const selectedAlmacen = props.selectedAlmacen;
+  const setSelectedAlmacen = props.setSelectedAlmacen;
+  const setArchivosAlmacen = props.setArchivosAlmacen;
   const sucursalesEmpresa = empresaDatos.sucursales;
   const [order, setOrder] = useState("desc");
   const [orderBy, setOrderBy] = useState("fecha");
@@ -585,6 +599,37 @@ function TablaADO(props) {
   );
 
   useEffect(() => {
+    if (localStorage.getItem("notificacionData")) {
+      stableSort(rows, getComparator(order, orderBy)).map((row, index) => {
+        if (row.id === selectedAlmacen) {
+          const decodedToken = jwt.verify(
+            localStorage.getItem("notificacionData"),
+            "mysecretpassword"
+          );
+          setPage(
+            decodedToken.notificacionData.page === -1
+              ? Math.ceil((index + 1) / 10) - 1
+              : page
+          );
+          decodedToken.notificacionData.page =
+            decodedToken.notificacionData.page === -1
+              ? Math.ceil((index + 1) / 10) - 1
+              : page;
+          const notificacionData = decodedToken.notificacionData;
+          const token = jwt.sign(
+            {
+              notificacionData,
+            },
+            "mysecretpassword"
+          );
+          localStorage.setItem("notificacionData", token);
+        }
+        return null;
+      });
+    }
+  }, [rows, selectedAlmacen, setPage, order, orderBy, page]);
+
+  useEffect(() => {
     function getFilterRows() {
       let dataFilter = [];
       for (let x = 0; x < filterRows.length; x++) {
@@ -612,7 +657,40 @@ function TablaADO(props) {
     }
 
     setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
-    if (localStorage.getItem("menuTemporal")) {
+    if (localStorage.getItem("notificacionData")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("notificacionData"),
+        "mysecretpassword"
+      );
+      setSelectedAlmacen(decodedToken.notificacionData.idAlmacenDigital);
+      //setSelectedAlmacen(decodedToken.notificacionData.idAlmacenDigital);
+      /* setPage(
+        rows.length < rowsPerPage
+          ? 0
+          : decodedToken.notificacionData.page
+          ? decodedToken.notificacionData.page
+          : 0
+      ); */
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            tableTittle: tableTittle,
+            showComponent: 1,
+            idAlmacenDigital: idAlmacenDigital,
+            idSubmenu: idSubmenu,
+            page:
+              rows.length < rowsPerPage && rows.length !== 0
+                ? 0
+                : decodedToken.notificacionData.page
+                ? decodedToken.notificacionData.page
+                : 0,
+            busquedaFiltro: busquedaFiltro,
+          },
+        },
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    } else if (localStorage.getItem("menuTemporal")) {
       const decodedToken = jwt.verify(
         localStorage.getItem("menuTemporal"),
         "mysecretpassword"
@@ -644,37 +722,6 @@ function TablaADO(props) {
         "mysecretpassword"
       );
       localStorage.setItem("menuTemporal", token);
-    } else if (localStorage.getItem("notificacionData")) {
-      const decodedToken = jwt.verify(
-        localStorage.getItem("notificacionData"),
-        "mysecretpassword"
-      );
-      setPage(
-        rows.length < rowsPerPage
-          ? 0
-          : decodedToken.notificacionData.page
-          ? decodedToken.notificacionData.page
-          : 0
-      );
-      const token = jwt.sign(
-        {
-          menuTemporal: {
-            tableTittle: tableTittle,
-            showComponent: 1,
-            idAlmacenDigital: idAlmacenDigital,
-            idSubmenu: idSubmenu,
-            page:
-              rows.length < rowsPerPage && rows.length !== 0
-                ? 0
-                : decodedToken.notificacionData.page
-                ? decodedToken.notificacionData.page
-                : 0,
-            busquedaFiltro: busquedaFiltro,
-          },
-        },
-        "mysecretpassword"
-      );
-      localStorage.setItem("menuTemporal", token);
     }
   }, [
     busquedaFiltro,
@@ -685,6 +732,7 @@ function TablaADO(props) {
     rows.length,
     rowsPerPage,
     tableTittle,
+    setSelectedAlmacen,
   ]);
 
   useEffect(() => {
@@ -697,56 +745,16 @@ function TablaADO(props) {
             </Typography>
           );
         } else {
-          swalReact({
-            title: "Status de archivos",
-            buttons: {
-              cancel: "Cerrar",
-            },
-            icon: "info",
-            content: (
-              <List style={{ maxHeight: "40vh", overflowY: "auto" }}>
-                {cargaArchivosADOData.archivos.map((archivo, index) => {
-                  return (
-                    <ListItem key={index}>
-                      <ListItemIcon>
-                        {archivo.status === 0 ? (
-                          <SentimentVerySatisfiedIcon
-                            style={{ color: "green" }}
-                          />
-                        ) : (
-                          <SentimentVeryDissatisfiedIcon
-                            style={{ color: "red" }}
-                          />
-                        )}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={archivo.archivo}
-                        secondary={
-                          archivo.status === 0
-                            ? "Archivo subido con éxito"
-                            : archivo.status === 1
-                            ? "Error al subir el archivo"
-                            : archivo.status === 2
-                            ? "No se pudo generar el link del archivo"
-                            : archivo.status === 3
-                            ? "El archivo está en blanco"
-                            : "Ya existe el archivo"
-                        }
-                      />
-                    </ListItem>
-                  );
-                })}
-              </List>
-            ),
-          });
-
+          setArchivosAlmacen(cargaArchivosADOData.archivos);
+          swal("Almacen Agregado", "Almacen agregado con éxito", "success");
           executeADO();
+          setShowComponent(3);
         }
       }
     }
 
     checkData();
-  }, [cargaArchivosADOData, executeADO]);
+  }, [cargaArchivosADOData, executeADO, setArchivosAlmacen, setShowComponent]);
 
   if (cargaArchivosADOLoading) {
     setLoading(true);
@@ -790,7 +798,7 @@ function TablaADO(props) {
       "mysecretpassword"
     );
     localStorage.setItem("menuTemporal", token);
-    localStorage.removeItem("notificacionData");
+    //localStorage.removeItem("notificacionData");
   };
 
   const handleChangeRowsPerPage = (event) => {
@@ -913,7 +921,7 @@ function TablaADO(props) {
                       style={{ float: "right" }}
                       onClick={() => {
                         handleClickOpenDialogNuevoADO();
-                        localStorage.removeItem("notificacionData");
+                        //localStorage.removeItem("notificacionData");
                       }}
                     >
                       <AddCircleIcon
@@ -947,7 +955,7 @@ function TablaADO(props) {
                 }}
                 onChange={(e) => {
                   setBusquedaFiltro(e.target.value);
-                  localStorage.removeItem("notificacionData");
+                  //localStorage.removeItem("notificacionData");
                 }}
               />
             </Grid>
@@ -976,7 +984,27 @@ function TablaADO(props) {
 
                     return (
                       <TableRow hover role="checkbox" tabIndex={-1} key={index}>
-                        <TableCell padding="checkbox" />
+                        <TableCell
+                          padding="checkbox"
+                          style={{
+                            background:
+                              selectedAlmacen === row.id ? "green" : "",
+                          }}
+                        >
+                          {selectedAlmacen === row.id ? (
+                            <Link to="/">
+                              <Tooltip title="Regresar a Home">
+                                <IconButton
+                                  onClick={() => {
+                                    localStorage.removeItem("notificacionData");
+                                  }}
+                                >
+                                  <KeyboardReturnIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Link>
+                          ) : null}
+                        </TableCell>
                         <TableCell component="th" id={labelId} scope="row">
                           {row.fecha}
                         </TableCell>
@@ -1035,7 +1063,7 @@ function TablaADO(props) {
           onClick={() => {
             handleCloseMenu();
             setShowComponent(2);
-            localStorage.removeItem("notificacionData");
+            //localStorage.removeItem("notificacionData");
             /* const token = jwt.sign(
               {
                 menuTemporal: {
@@ -1550,5 +1578,73 @@ function VerDocumentos(props) {
         </MenuItem>
       </StyledMenu>
     </div>
+  );
+}
+
+function ResumenDetalladoDeCarga(props) {
+  const classes = useStyles();
+  const archivosAlmacen = props.archivosAlmacen;
+  const setShowComponent = props.setShowComponent;
+  return (
+    <Grid container>
+      <Grid item xs={12} style={{ alignSelf: "flex-end", marginBottom: "15px", padding: "15px" }}>
+        <Typography className={classes.titleTable} variant="h6" id="tableTitle">
+          <Tooltip title="Regresar">
+            <IconButton
+              aria-label="regresar"
+              onClick={() => {
+                setShowComponent(1);
+              }}
+            >
+              <ArrowBackIcon color="primary" />
+            </IconButton>
+          </Tooltip>
+          RESUMEN DETALLADO DE LA CARGA DE OPERACIONES DIGITALES.
+        </Typography>
+      </Grid>
+      <Grid item xs={12}>
+        <TableContainer component={Paper} style={{padding: "15px"}}>
+          <Table className={classes.table} aria-label="simple table">
+            <TableHead>
+              <TableRow
+                style={{
+                  background: "#FAFAFA",
+                  maxHeight: "40vh",
+                  overflowY: "auto",
+                }}
+              >
+                <TableCell>
+                  <strong>ARCHIVO</strong>
+                </TableCell>
+                <TableCell align="right">
+                  <strong>CARGADO</strong>
+                </TableCell>
+                <TableCell align="right">
+                  <strong>DETALLE</strong>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {archivosAlmacen.map((archivo, index) => (
+                <TableRow
+                  key={index}
+                  style={{
+                    background: archivo.status === 0 ? "#4caf50" : "#f44336",
+                  }}
+                >
+                  <TableCell component="th" scope="row">
+                    {archivo.archivo}
+                  </TableCell>
+                  <TableCell align="right">
+                    {archivo.status === 0 ? "Sí" : "No"}
+                  </TableCell>
+                  <TableCell align="right">{archivo.detalle}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Grid>
+    </Grid>
   );
 }

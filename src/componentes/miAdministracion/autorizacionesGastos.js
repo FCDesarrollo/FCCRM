@@ -52,6 +52,7 @@ import {
   Delete as DeleteIcon,
   Error as ErrorIcon,
   SettingsEthernet as SettingsEthernetIcon,
+  KeyboardReturn as KeyboardReturnIcon,
 } from "@material-ui/icons";
 import swal from "sweetalert";
 import swalReact from "@sweetalert/with-react";
@@ -324,6 +325,7 @@ export default function AutorizacionesGastos(props) {
   const [idRequerimiento, setIdRequerimiento] = useState(0);
   const [radioTipo, setRadioTipo] = useState("requerimientos");
   const [estatusRequerimiento, setEstatusRequerimiento] = useState(1);
+  const [selectedRequerimiento, setSelectedRequerimiento] = useState(0);
   const [
     {
       data: listaRequerimientosData,
@@ -378,7 +380,8 @@ export default function AutorizacionesGastos(props) {
           );
           setRadioTipo(
             decodedToken.menuTemporal.estatusRequerimiento
-              ? decodedToken.menuTemporal.estatusRequerimiento === 1
+              ? decodedToken.menuTemporal.estatusRequerimiento === 1 ||
+                decodedToken.menuTemporal.estatusRequerimiento === "1"
                 ? "requerimientos"
                 : "gastos"
               : "requerimientos"
@@ -391,6 +394,15 @@ export default function AutorizacionesGastos(props) {
               ? decodedToken.menuTemporal.busquedaFiltro
               : ""
           );
+          if (localStorage.getItem("notificacionData")) {
+            const decodedToken = jwt.verify(
+              localStorage.getItem("notificacionData"),
+              "mysecretpassword"
+            );
+            setSelectedRequerimiento(
+              decodedToken.notificacionData.idRequerimiento
+            );
+          }
         } catch (err) {
           localStorage.removeItem("menuTemporal");
         }
@@ -399,6 +411,9 @@ export default function AutorizacionesGastos(props) {
           const decodedToken = jwt.verify(
             localStorage.getItem("notificacionData"),
             "mysecretpassword"
+          );
+          setSelectedRequerimiento(
+            decodedToken.notificacionData.idRequerimiento
           );
           setShowComponent(decodedToken.notificacionData.showComponent);
           setTittleTableComponent(decodedToken.notificacionData.tableTittle);
@@ -409,12 +424,13 @@ export default function AutorizacionesGastos(props) {
           setIdRequerimiento(decodedToken.notificacionData.idRequerimiento);
           setEstatusRequerimiento(
             decodedToken.notificacionData.estatusRequerimiento
-              ? decodedToken.notificacionData.estatusRequerimiento
+              ? parseInt(decodedToken.notificacionData.estatusRequerimiento)
               : 1
           );
           setRadioTipo(
             decodedToken.notificacionData.estatusRequerimiento
-              ? decodedToken.notificacionData.estatusRequerimiento === 1
+              ? decodedToken.notificacionData.estatusRequerimiento === 1 ||
+                decodedToken.notificacionData.estatusRequerimiento === "1"
                 ? "requerimientos"
                 : "gastos"
               : "requerimientos"
@@ -600,6 +616,7 @@ export default function AutorizacionesGastos(props) {
                         ? "requerimientos"
                         : "gastos"
                     );
+                    setSelectedRequerimiento(0);
                     const token = jwt.sign(
                       {
                         menuTemporal: {
@@ -652,6 +669,8 @@ export default function AutorizacionesGastos(props) {
             setRadioTipo={setRadioTipo}
             estatusRequerimiento={estatusRequerimiento}
             statusEmpresa={statusEmpresa}
+            selectedRequerimiento={selectedRequerimiento}
+            setSelectedRequerimiento={setSelectedRequerimiento}
           />
         ) : showComponent === 2 ? (
           <FormularioAYG
@@ -714,6 +733,8 @@ function TablaAYG(props) {
   const permisosSubmenu = props.permisosSubmenu;
   const radioTipo = props.radioTipo;
   const setRadioTipo = props.setRadioTipo;
+  const selectedRequerimiento = props.selectedRequerimiento;
+  const setSelectedRequerimiento = props.setSelectedRequerimiento;
   //const estatusRequerimiento = props.estatusRequerimiento;
   const [order, setOrder] = useState("desc");
   const [orderBy, setOrderBy] = useState("fecha");
@@ -740,7 +761,36 @@ function TablaAYG(props) {
     }
   );
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    if (localStorage.getItem("notificacionData")) {
+      stableSort(rows, getComparator(order, orderBy)).map((row, index) => {
+        if (row.id === selectedRequerimiento) {
+          const decodedToken = jwt.verify(
+            localStorage.getItem("notificacionData"),
+            "mysecretpassword"
+          );
+          setPage(
+            decodedToken.notificacionData.page === -1
+              ? Math.ceil((index + 1) / 10) - 1
+              : page
+          );
+          decodedToken.notificacionData.page =
+            decodedToken.notificacionData.page === -1
+              ? Math.ceil((index + 1) / 10) - 1
+              : page;
+          const notificacionData = decodedToken.notificacionData;
+          const token = jwt.sign(
+            {
+              notificacionData,
+            },
+            "mysecretpassword"
+          );
+          localStorage.setItem("notificacionData", token);
+        }
+        return null;
+      });
+    }
+  }, [rows, selectedRequerimiento, setPage, order, orderBy, page]);
 
   useEffect(() => {
     function getFilterRows() {
@@ -776,41 +826,44 @@ function TablaAYG(props) {
       return dataFilter;
     }
     //aqui
-    const decodedToken = jwt.verify(
-      localStorage.getItem("menuTemporal"),
-      "mysecretpassword"
-    );
+
     setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
-    setPage(
-      rows.length < rowsPerPage
-        ? 0
-        : decodedToken.menuTemporal.page
-        ? decodedToken.menuTemporal.page
-        : 0
-    );
-    const token = jwt.sign(
-      {
-        menuTemporal: {
-          tableTittle: tableTittle,
-          showComponent: 1,
-          idModulo: idModulo,
-          idMenu: idMenu,
-          idSubmenu: idSubmenu,
-          accionAG: 0,
-          idRequerimiento: 0,
-          estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
-          page:
-            rows.length < rowsPerPage && rows.length !== 0
-              ? 0
-              : decodedToken.menuTemporal.page
-              ? decodedToken.menuTemporal.page
-              : 0,
-          busquedaFiltro: busquedaFiltro,
+    if (!localStorage.getItem("notificacionData")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("menuTemporal"),
+        "mysecretpassword"
+      );
+      setPage(
+        rows.length < rowsPerPage
+          ? 0
+          : decodedToken.menuTemporal.page
+          ? decodedToken.menuTemporal.page
+          : 0
+      );
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            tableTittle: tableTittle,
+            showComponent: 1,
+            idModulo: idModulo,
+            idMenu: idMenu,
+            idSubmenu: idSubmenu,
+            accionAG: 0,
+            idRequerimiento: 0,
+            estatusRequerimiento: radioTipo !== "gastos" ? 1 : 2,
+            page:
+              rows.length < rowsPerPage && rows.length !== 0
+                ? 0
+                : decodedToken.menuTemporal.page
+                ? decodedToken.menuTemporal.page
+                : 0,
+            busquedaFiltro: busquedaFiltro,
+          },
         },
-      },
-      "mysecretpassword"
-    );
-    localStorage.setItem("menuTemporal", token);
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    }
   }, [
     busquedaFiltro,
     setRows,
@@ -845,6 +898,7 @@ function TablaAYG(props) {
             "success"
           );
           executeListaRequerimientos();
+          localStorage.removeItem("notificacionData");
         }
       }
     }
@@ -902,6 +956,7 @@ function TablaAYG(props) {
     }
     console.log(event.target.value); */
     setPage(0);
+    //setSelectedRequerimiento(0);
     const token = jwt.sign(
       {
         menuTemporal: {
@@ -1029,6 +1084,7 @@ function TablaAYG(props) {
                           setShowComponent(2);
                           setAccionAG(1);
                           setIdRequerimiento(0);
+                          setSelectedRequerimiento(0);
                           const token = jwt.sign(
                             {
                               menuTemporal: {
@@ -1048,6 +1104,7 @@ function TablaAYG(props) {
                             "mysecretpassword"
                           );
                           localStorage.setItem("menuTemporal", token);
+                          localStorage.removeItem("notificacionData");
                         }}
                       >
                         <AddCircleIcon
@@ -1137,7 +1194,27 @@ function TablaAYG(props) {
                     const labelId = `enhanced-table-checkbox-${index}`;
                     return (
                       <TableRow hover role="checkbox" tabIndex={-1} key={index}>
-                        <TableCell padding="checkbox" />
+                        <TableCell
+                          padding="checkbox"
+                          style={{
+                            background:
+                              selectedRequerimiento === row.id ? "green" : "",
+                          }}
+                        >
+                          {selectedRequerimiento === row.id ? (
+                            <Link to="/">
+                              <Tooltip title="Regresar a Home">
+                                <IconButton
+                                  onClick={() => {
+                                    localStorage.removeItem("notificacionData");
+                                  }}
+                                >
+                                  <KeyboardReturnIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Link>
+                          ) : null}
+                        </TableCell>
                         <TableCell component="th" id={labelId} scope="row">
                           {row.fecha}
                         </TableCell>
@@ -1888,7 +1965,7 @@ function FormularioAYG(props) {
               "mysecretpassword"
             );
             localStorage.setItem("menuTemporal", token);
-            localStorage.removeItem("notificacionData");
+            //localStorage.removeItem("notificacionData");
           }
         }
       }
@@ -3712,7 +3789,7 @@ function FormularioAYG(props) {
                   "mysecretpassword"
                 );
                 localStorage.setItem("menuTemporal", token);
-                localStorage.removeItem("notificacionData");
+                //localStorage.removeItem("notificacionData");
               }}
             >
               <ArrowBackIcon color="primary" />
@@ -3777,6 +3854,7 @@ function FormularioAYG(props) {
                   "mysecretpassword"
                 );
                 localStorage.setItem("menuTemporal", token);
+                localStorage.removeItem("notificacionData");
                 window.location.reload();
               }}
             >
