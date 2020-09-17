@@ -103,9 +103,9 @@ export default function FinanzasTesoreria(props) {
   const [showComponent, setShowComponent] = useState(0);
   const [nombreSubmenu, setNombreSubmenu] = useState("");
   const [documentosSeleccionados, setDocumentosSeleccionados] = useState([]);
-  const [coordenada1, setCoordenada1] = useState(0);
-  const [coordenada2, setCoordenada2] = useState(0);
-  const [coordenadasSeleccionadas, setCoordenadasSeleccionadas] = useState([]);
+  /* const [coordenada1, setCoordenada1] = useState(0);
+  const [coordenada2, setCoordenada2] = useState(0); */
+  /* const [coordenadasSeleccionadas, setCoordenadasSeleccionadas] = useState([]); */
   const [disponible, setDisponible] = useState(10000);
   const [aplicado, setAplicado] = useState(0.0);
   const [restante, setRestante] = useState(disponible - aplicado);
@@ -285,18 +285,20 @@ export default function FinanzasTesoreria(props) {
             rfc={rfcEmpresa}
             documentosSeleccionados={documentosSeleccionados}
             setDocumentosSeleccionados={setDocumentosSeleccionados}
-            coordenada1={coordenada1}
+            /* coordenada1={coordenada1}
             setCoordenada1={setCoordenada1}
             coordenada2={coordenada2}
-            setCoordenada2={setCoordenada2}
-            coordenadasSeleccionadas={coordenadasSeleccionadas}
-            setCoordenadasSeleccionadas={setCoordenadasSeleccionadas}
+            setCoordenada2={setCoordenada2} */
+            /* coordenadasSeleccionadas={coordenadasSeleccionadas}
+            setCoordenadasSeleccionadas={setCoordenadasSeleccionadas} */
             disponible={disponible}
             setDisponible={setDisponible}
             aplicado={aplicado}
             setAplicado={setAplicado}
             restante={restante}
             setRestante={setRestante}
+            instrucciones={instrucciones}
+            setInstrucciones={setInstrucciones}
             instruccionesPagoProveedores={instruccionesPagoProveedores}
             setInstruccionesPagoProveedores={setInstruccionesPagoProveedores}
           />
@@ -570,18 +572,21 @@ function Paso1(props) {
   const rfcEmpresa = props.rfc;
   const documentosSeleccionados = props.documentosSeleccionados;
   const setDocumentosSeleccionados = props.setDocumentosSeleccionados;
-  const coordenada1 = props.coordenada1;
+  /* const coordenada1 = props.coordenada1;
   const setCoordenada1 = props.setCoordenada1;
   const coordenada2 = props.coordenada2;
-  const setCoordenada2 = props.setCoordenada2;
-  const coordenadasSeleccionadas = props.coordenadasSeleccionadas;
-  const setCoordenadasSeleccionadas = props.setCoordenadasSeleccionadas;
+  const setCoordenada2 = props.setCoordenada2; */
+  /* const coordenadasSeleccionadas = props.coordenadasSeleccionadas;
+  const setCoordenadasSeleccionadas = props.setCoordenadasSeleccionadas; */
   const disponible = props.disponible;
   //const setDisponible = props.setDisponible;
   const aplicado = props.aplicado;
   const setAplicado = props.setAplicado;
   const restante = props.restante;
   const setRestante = props.setRestante;
+  //descomentar estas dos variables
+  /* const instrucciones = props.instrucciones;
+  const setInstrucciones = props.setInstrucciones; */
   const instruccionesPagoProveedores = props.instruccionesPagoProveedores;
   const setInstruccionesPagoProveedores = props.setInstruccionesPagoProveedores;
   const [flujosEfectivo, setFlujosEfectivo] = useState([]);
@@ -757,6 +762,9 @@ function Paso1(props) {
         }
       }
 
+      let ids = new Array(filas.length)
+        .fill(null)
+        .map((item) => new Array(columnas.length).fill(0));
       let pendientes = new Array(filas.length)
         .fill(null)
         .map((item) => new Array(columnas.length).fill(0));
@@ -770,7 +778,12 @@ function Paso1(props) {
               flujosEfectivo[z].Tipo === columnas[y] &&
               flujosEfectivo[z].Razon === filas[x]
             ) {
-              pendientes[x][y] = flujosEfectivo[z].Pendiente;
+              pendientes[x][y] =
+                pendientes[x][y] + parseFloat(flujosEfectivo[z].Pendiente);
+              ids[x][y] =
+                ids[x][y] !== 0
+                  ? ids[x][y] + "," + flujosEfectivo[z].id
+                  : flujosEfectivo[z].id;
             }
           }
         }
@@ -813,22 +826,36 @@ function Paso1(props) {
                     {fila}
                   </TableCell>
                   {pendientes[index].map((pendiente, index2) => {
+                    let validacion = 0;
+                    let idsEstraidos = ids[index][index2].toString().split(",");
+                    ciclo1: for (let x = 0; x < idsEstraidos.length; x++) {
+                      for (let y = 0; y < documentosSeleccionados.length; y++) {
+                        if (
+                          documentosSeleccionados[y] ===
+                          parseInt(idsEstraidos[x])
+                        ) {
+                          validacion = 1;
+                          break ciclo1;
+                        }
+                      }
+                    }
                     return (
                       <TableCell
                         align="right"
                         key={index2}
                         style={{
                           cursor: "pointer",
-                          background:
+                          background: validacion === 1 ? "#388e3c" : "",
+                          /* background:
                             coordenadasSeleccionadas.indexOf(
                               `${index},${index2}`
                             ) !== -1
                               ? "#388e3c"
-                              : "",
+                              : "", */
                         }}
                         onClick={() => {
-                          setCoordenada1(index);
-                          setCoordenada2(index2);
+                          /* setCoordenada1(index);
+                          setCoordenada2(index2); */
                           executeTraerFlujosEfectivoFiltrados({
                             data: {
                               usuario: correoUsuario,
@@ -935,22 +962,22 @@ function Paso1(props) {
 
   const handleToggleDocumentosEspecificos = (value) => () => {
     const currentIndex = documentosSeleccionados.indexOf(value);
-    const currentIndexCoordenadas = coordenadasSeleccionadas.indexOf(
+    /* const currentIndexCoordenadas = coordenadasSeleccionadas.indexOf(
       `${coordenada1},${coordenada2}`
-    );
+    ); */
     const newChecked = [...documentosSeleccionados];
-    const newCoordenadas = [...coordenadasSeleccionadas];
+    /* const newCoordenadas = [...coordenadasSeleccionadas]; */
 
     if (currentIndex === -1) {
       newChecked.push(value);
-      newCoordenadas.push(`${coordenada1},${coordenada2}`);
+      /* newCoordenadas.push(`${coordenada1},${coordenada2}`); */
     } else {
       newChecked.splice(currentIndex, 1);
-      newCoordenadas.splice(currentIndexCoordenadas, 1);
+      /* newCoordenadas.splice(currentIndexCoordenadas, 1); */
     }
 
     setDocumentosSeleccionados(newChecked);
-    setCoordenadasSeleccionadas(newCoordenadas);
+    /* setCoordenadasSeleccionadas(newCoordenadas); */
   };
 
   const getDocumentosEspecificos = () => {
@@ -969,28 +996,55 @@ function Paso1(props) {
                 disableRipple
                 inputProps={{ "aria-labelledby": labelId }}
                 onChange={(e) => {
+                  /* let nuevosIds = instrucciones.ids;
+                  let nuevosTipos = instrucciones.tipos;
+                  let nuevosProveedores = instrucciones.proveedores;
+                  let nuevosImportes = instrucciones.importes;
+                  let nuevasCuentasOrigen = instrucciones.cuentasOrigen;
+                  let nuevasCuentasDestino = instrucciones.cuentasDestino;
+                  let nuevasFechas = instrucciones.fechas;
+                  let nuevasLlavesMatch = instrucciones.llavesMatch; */
                   if (e.target.checked) {
                     setAplicado(aplicado + parseFloat(flujoEfectivo.Pendiente));
                     setRestante(
                       disponible -
                         (aplicado + parseFloat(flujoEfectivo.Pendiente))
                     );
+                    /* let posicion = nuevosProveedores.indexOf(flujoEfectivo.Razon);
+                    if (posicion === -1) {
+                      nuevosIds.push(flujoEfectivo.id);
+                      nuevosTipos.push("Pago a proveedor");
+                      nuevosProveedores.push(flujoEfectivo.Razon);
+                      nuevosImportes.push(flujoEfectivo.Pendiente);
+                      nuevasCuentasOrigen.push("0");
+                      nuevasCuentasDestino.push("0");
+                      nuevasFechas.push(moment().format("YYYY-MM-DD"));
+                      nuevasLlavesMatch.push("");
+                    } else {
+                      nuevosIds[posicion] = nuevosIds[posicion] + "," + flujoEfectivo.id;
+                      nuevosImportes[posicion] =
+                        parseFloat(nuevosImportes[posicion]) +
+                        parseFloat(flujoEfectivo.Pendiente);
+                    }
+
+                    setInstrucciones({
+                      ids: nuevosIds,
+                      tipos: nuevosTipos,
+                      proveedores: nuevosProveedores,
+                      importes: nuevosImportes,
+                      cuentasOrigen: nuevasCuentasOrigen,
+                      cuentasDestino: nuevasCuentasDestino,
+                      fechas: nuevasFechas,
+                      llavesMatch: nuevasLlavesMatch,
+                    }); */
 
                     let ids = instruccionesPagoProveedores.ids;
                     let proveedores = instruccionesPagoProveedores.proveedores;
                     let importes = instruccionesPagoProveedores.importes;
-                    //let pos = proveedores.indexOf(flujoEfectivo.Razon);
                     ids.push(flujoEfectivo.id);
                     proveedores.push(flujoEfectivo.Razon);
                     importes.push(parseFloat(flujoEfectivo.Pendiente));
-                    /* ids.push(flujoEfectivo.id);
-                    if(pos === -1) {
-                      proveedores.push(flujoEfectivo.Razon);
-                      importes.push(parseFloat(flujoEfectivo.Pendiente));
-                    }
-                    else {
-                      importes[pos] = parseFloat(importes[pos]) + parseFloat(flujoEfectivo.Pendiente);
-                    } */
+
                     setInstruccionesPagoProveedores({
                       ids: ids,
                       proveedores: proveedores,
@@ -999,6 +1053,23 @@ function Paso1(props) {
                   } else {
                     setAplicado(aplicado - parseFloat(flujoEfectivo.Pendiente));
                     setRestante(restante + parseFloat(flujoEfectivo.Pendiente));
+
+                    //va bien esto
+                    /* let posiciones = [];
+                    let contador = 0;
+                    for(let x=0 ; x<instruccionesPagoProveedores.proveedores.length ; x++) {
+                      if(instruccionesPagoProveedores.proveedores[x] === flujoEfectivo.Razon) {
+                        contador++;
+                        posiciones.push(x);
+                      }
+                    }
+
+                    console.log(contador);
+                    console.log(posiciones);
+
+                    if(contador === 1) {
+
+                    } */
 
                     let ids = instruccionesPagoProveedores.ids;
                     let proveedores = instruccionesPagoProveedores.proveedores;
@@ -1406,12 +1477,14 @@ function Paso1(props) {
 
 function Paso2(props) {
   const classes = useStyles();
+  //comentar la variable instruccionesPagoProveedores
   const instruccionesPagoProveedores = props.instruccionesPagoProveedores;
   const instrucciones = props.instrucciones;
   const setInstrucciones = props.setInstrucciones;
   const cuentasOrigen = props.cuentasOrigen;
   const cuentasDestino = props.cuentasDestino;
 
+  //comentar este useEffect
   useEffect(() => {
     let nuevosIds = [];
     let nuevosTipos = [];
@@ -1730,7 +1803,7 @@ function Paso3(props) {
             <TableCell align="right">{instrucciones.tipos[index]}</TableCell>
             <TableCell align="right">{proveedor}</TableCell>
             <TableCell align="right">
-              <TextField
+              {/* <TextField
                 className={classes.textFields}
                 id={"cuentaOrigen" + index}
                 variant="outlined"
@@ -1740,22 +1813,11 @@ function Paso3(props) {
                   maxLength: 20,
                 }}
                 value={instrucciones.cuentasOrigen[index]}
-                /* onKeyPress={(e) => {
-                  keyValidation(e, 5);
-                }}
-                onChange={(e) => {
-                  pasteValidation(e, 5);
-                  let nuevasCuentasOrigen = instrucciones.cuentasOrigen;
-                  nuevasCuentasOrigen[index] = e.target.value;
-                  setInstrucciones({
-                    ...instrucciones,
-                    cuentasOrigen: nuevasCuentasOrigen,
-                  });
-                }} */
-              />
+              /> */}
+              {instrucciones.cuentasOrigen[index]}
             </TableCell>
             <TableCell align="right">
-              <TextField
+              {/* <TextField
                 className={classes.textFields}
                 id={"cuentaDestino" + index}
                 variant="outlined"
@@ -1765,22 +1827,11 @@ function Paso3(props) {
                   maxLength: 20,
                 }}
                 value={instrucciones.cuentasDestino[index]}
-                /* onKeyPress={(e) => {
-                  keyValidation(e, 5);
-                }}
-                onChange={(e) => {
-                  pasteValidation(e, 5);
-                  let nuevasCuentasDestino = instrucciones.cuentasDestino;
-                  nuevasCuentasDestino[index] = e.target.value;
-                  setInstrucciones({
-                    ...instrucciones,
-                    cuentasDestino: nuevasCuentasDestino,
-                  });
-                }} */
-              />
+              /> */}
+              {instrucciones.cuentasDestino[index]}
             </TableCell>
             <TableCell align="right">
-              <TextField
+              {/* <TextField
                 className={classes.textFields}
                 id={"fecha" + index}
                 variant="outlined"
@@ -1790,30 +1841,21 @@ function Paso3(props) {
                   maxLength: 20,
                 }}
                 value={instrucciones.fechas[index]}
-                /* onKeyPress={(e) => {
-                  keyValidation(e, 2);
-                }}
-                onChange={(e) => {
-                  let nuevasFechas = instrucciones.fechas;
-                  nuevasFechas[index] = e.target.value;
-                  setInstrucciones({
-                    ...instrucciones,
-                    fechas: nuevasFechas,
-                  });
-                }} */
-              />
+              /> */}
+              {instrucciones.fechas[index]}
             </TableCell>
             <TableCell align="right">
               ${number_format(instrucciones.importes[index], 2, ".", ",")}
             </TableCell>
             <TableCell align="right">
-              <TextField
+              {/* <TextField
                 className={classes.textFields}
                 id={"llavesMatch" + index}
                 disabled
                 variant="outlined"
                 type="text"
-              />
+              /> */}
+              ---
             </TableCell>
             <TableCell align="right">
               <Tooltip title="Ver Documentos">
@@ -2432,15 +2474,23 @@ function Paso4(props) {
       return informacionBancos.cuentasOrigen.map((cuentaOrigen, index) => {
         return (
           <TableRow key={index}>
-            <TableCell padding="checkbox" />
+            <TableCell padding="checkbox">
+              <Checkbox color="primary" />
+            </TableCell>
             <TableCell align="left">{informacionBancos.tipos[index]}</TableCell>
-            <TableCell align="right">{informacionBancos.proveedores[index]}</TableCell>
+            <TableCell align="right">
+              {informacionBancos.proveedores[index]}
+            </TableCell>
             <TableCell align="right">{cuentaOrigen}</TableCell>
-            <TableCell align="right">{informacionBancos.cuentasDestino[index]}</TableCell>
+            <TableCell align="right">
+              {informacionBancos.cuentasDestino[index]}
+            </TableCell>
             <TableCell align="right">
               ${number_format(informacionBancos.importes[index], 2, ".", ",")}
             </TableCell>
-            <TableCell align="right">{informacionBancos.fechas[index]}</TableCell>
+            <TableCell align="right">
+              {informacionBancos.fechas[index]}
+            </TableCell>
             <TableCell align="right">
               <Tooltip title="Descargar">
                 <IconButton>
@@ -2456,103 +2506,6 @@ function Paso4(props) {
           </TableRow>
         );
       });
-
-      /* let mismos = [];
-      let diferentes = [];
-      let mensajes = new Array(informacionBancos.cuentasOrigen.length); //esta variable se tiene que dividir entre mensajes a mismos o diferentes
-      for (let x = 0; x < informacionBancos.cuentasOrigen.length; x++) {
-        if (
-          informacionBancos.cuentasOrigen[x] ===
-          informacionBancos.cuentasDestino[x]
-        ) {
-          let pos = mismos.indexOf(informacionBancos.cuentasOrigen[x]);
-          if (pos === -1) {
-            mismos.push(informacionBancos.cuentasOrigen[x]);
-            mensajes[x] = `Mi cuenta ${
-              informacionBancos.cuentasOrigen[x]
-            }:* A ${informacionBancos.proveedores[x]} en ${
-              informacionBancos.cuentasDestino[x]
-            } (${informacionBancos.fechas[x]}): $${number_format(
-              informacionBancos.importes[x],
-              2,
-              ".",
-              ","
-            )} *`;
-          } else {
-            mensajes[pos] =
-              mensajes[pos] +
-              `A ${informacionBancos.proveedores[x]} en ${
-                informacionBancos.cuentasDestino[x]
-              } (${informacionBancos.fechas[x]}): $${number_format(
-                informacionBancos.importes[x],
-                2,
-                ".",
-                ","
-              )} *`;
-          }
-        } else {
-          let pos = diferentes.indexOf(informacionBancos.cuentasOrigen[x]);
-          if (pos === -1) {
-            diferentes.push(informacionBancos.cuentasOrigen[x]);
-            mensajes[x] = `Mi cuenta ${
-              informacionBancos.cuentasOrigen[x]
-            }:* A ${informacionBancos.proveedores[x]} en ${
-              informacionBancos.cuentasDestino[x]
-            } (${informacionBancos.fechas[x]}): $${number_format(
-              informacionBancos.importes[x],
-              2,
-              ".",
-              ","
-            )} *`;
-          } else {
-            mensajes[pos] =
-              mensajes[pos] +
-              `A ${informacionBancos.proveedores[x]} en ${
-                informacionBancos.cuentasDestino[x]
-              } (${informacionBancos.fechas[x]}): $${number_format(
-                informacionBancos.importes[x],
-                2,
-                ".",
-                ","
-              )} *`;
-          }
-        }
-      }
-
-      mensajes = mensajes.filter(Boolean);
-
-      return (
-        <List>
-          {mensajes.map((mensaje, index) => {
-            let mensajesDividido = mensaje.split("*");
-            mensajesDividido.splice(mensajesDividido.length - 1);
-            return (
-              <ListItem key={index} button>
-                <ListItemIcon>
-                  <Checkbox edge="start" tabIndex={-1} disableRipple />
-                </ListItemIcon>
-                <ListItemText
-                  primary={mensajesDividido[0]}
-                  secondary={mensajesDividido.map((mensajeDividido, index) => {
-                    return index !== 0 ? (
-                      <span key={index} style={{ display: "flex" }}>
-                        {mensajeDividido}
-                      </span>
-                    ) : null;
-                  })}
-                />
-                <ListItemSecondaryAction>
-                  <Tooltip title="Descargar">
-                    <IconButton edge="end" aria-label={`descargar${index}`}>
-                      <GetAppIcon color="primary" />
-                    </IconButton>
-                  </Tooltip>
-                </ListItemSecondaryAction>
-              </ListItem>
-            );
-          })}
-        </List>
-      ); */
     }
   };
 

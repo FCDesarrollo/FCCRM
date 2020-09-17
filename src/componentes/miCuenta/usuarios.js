@@ -890,11 +890,11 @@ function EditarPermisosUsuario(props) {
             "warning"
           );
         } else {
-          swal(
+          /* swal(
             "Cambio de permisos exitoso",
             "Se han cambiado los permisos con éxito",
             "success"
-          );
+          ); */
           //executePermisos();
           setExecuteQueriesHeader(true);
         }
@@ -940,11 +940,11 @@ function EditarPermisosUsuario(props) {
             "warning"
           );
         } else {
-          swal(
+          /* swal(
             "Cambio de permisos exitoso",
             "Se han cambiado los permisos con éxito",
             "success"
-          );
+          ); */
           setExecuteQueriesHeader(true);
         }
       }
@@ -988,11 +988,11 @@ function EditarPermisosUsuario(props) {
             "warning"
           );
         } else {
-          swal(
+          /* swal(
             "Cambio de permisos exitoso",
             "Se han cambiado los permisos con éxito",
             "success"
-          );
+          ); */
           const token = jwt.sign(
             {
               menuTemporal: {

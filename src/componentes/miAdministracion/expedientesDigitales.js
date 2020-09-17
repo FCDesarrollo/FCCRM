@@ -512,7 +512,7 @@ export default function ExpedientesDigitales(props) {
         <Grid container justify="center" spacing={3}>
           <Grid item xs={12} md={11}>
             <Typography variant="h6" className={classes.title}>
-              Expedientes Contables
+              Expedientes Digitales
             </Typography>
           </Grid>
           {submenuContent.map((content, index) => {
