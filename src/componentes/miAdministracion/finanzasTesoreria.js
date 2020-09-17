@@ -30,7 +30,6 @@ import {
   Step,
   StepLabel,
   useMediaQuery,
-  ListItemIcon,
 } from "@material-ui/core";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import {
@@ -179,8 +178,8 @@ export default function FinanzasTesoreria(props) {
         }
       }
     } else if (activeStep === 2) {
-      console.log(instrucciones);
-      console.log(instruccionesAdicionales);
+      /* console.log(instrucciones);
+      console.log(instruccionesAdicionales); */
       let ids = instrucciones.ids.concat(instruccionesAdicionales.ids);
       let tipos = instrucciones.tipos.concat(instruccionesAdicionales.tipos);
       let proveedores = instrucciones.proveedores.concat(
@@ -1608,7 +1607,7 @@ function Paso2(props) {
                     <strong>Cuenta Origen</strong>
                   </TableCell>
                   <TableCell align="center">
-                    <strong>Cuenta Destino</strong>
+                    <strong>Banco Destino</strong>
                   </TableCell>
                   <TableCell align="center">
                     <strong>Fecha</strong>
@@ -2264,7 +2263,7 @@ function Paso3(props) {
                     <strong>Cuenta Origen</strong>
                   </TableCell>
                   <TableCell align="center">
-                    <strong>Cuenta Destino</strong>
+                    <strong>Banco Destino</strong>
                   </TableCell>
                   <TableCell align="center">
                     <strong>Fecha</strong>
@@ -2351,6 +2350,7 @@ function Paso3(props) {
 }
 
 function Paso4(props) {
+  const classes = useStyles();
   const instruccionesCombinadas = props.instruccionesCombinadas;
   const [informacionBancos, setInformacionBancos] = useState({
     ids: [],
@@ -2428,9 +2428,38 @@ function Paso4(props) {
   const getInformacionBancos = () => {
     if (informacionBancos.cuentasOrigen.length > 0) {
       console.log(informacionBancos);
-      let mismos = [];
+
+      return informacionBancos.cuentasOrigen.map((cuentaOrigen, index) => {
+        return (
+          <TableRow key={index}>
+            <TableCell padding="checkbox" />
+            <TableCell align="left">{informacionBancos.tipos[index]}</TableCell>
+            <TableCell align="right">{informacionBancos.proveedores[index]}</TableCell>
+            <TableCell align="right">{cuentaOrigen}</TableCell>
+            <TableCell align="right">{informacionBancos.cuentasDestino[index]}</TableCell>
+            <TableCell align="right">
+              ${number_format(informacionBancos.importes[index], 2, ".", ",")}
+            </TableCell>
+            <TableCell align="right">{informacionBancos.fechas[index]}</TableCell>
+            <TableCell align="right">
+              <Tooltip title="Descargar">
+                <IconButton>
+                  <GetAppIcon color="primary" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Ver Documentos">
+                <IconButton>
+                  <FindInPageIcon color="primary" />
+                </IconButton>
+              </Tooltip>
+            </TableCell>
+          </TableRow>
+        );
+      });
+
+      /* let mismos = [];
       let diferentes = [];
-      let mensajes = new Array(informacionBancos.cuentasOrigen.length);
+      let mensajes = new Array(informacionBancos.cuentasOrigen.length); //esta variable se tiene que dividir entre mensajes a mismos o diferentes
       for (let x = 0; x < informacionBancos.cuentasOrigen.length; x++) {
         if (
           informacionBancos.cuentasOrigen[x] ===
@@ -2495,10 +2524,8 @@ function Paso4(props) {
       return (
         <List>
           {mensajes.map((mensaje, index) => {
-            console.log(mensaje.split("*"));
             let mensajesDividido = mensaje.split("*");
             mensajesDividido.splice(mensajesDividido.length - 1);
-            console.log(mensajesDividido);
             return (
               <ListItem key={index} button>
                 <ListItemIcon>
@@ -2525,7 +2552,7 @@ function Paso4(props) {
             );
           })}
         </List>
-      );
+      ); */
     }
   };
 
@@ -2538,7 +2565,37 @@ function Paso4(props) {
           </Button>
         </Grid>
         <Grid item xs={12}>
-          {getInformacionBancos()}
+          <TableContainer component={Paper}>
+            <Table className={classes.table} aria-label="simple table">
+              <TableHead style={{ background: "#FAFAFA" }}>
+                <TableRow>
+                  <TableCell padding="checkbox" />
+                  <TableCell>
+                    <strong>Tipo</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Proveedor</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Cuenta Origen</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Banco Destino</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Importe</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Fecha</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <SettingsIcon />
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>{getInformacionBancos()}</TableBody>
+            </Table>
+          </TableContainer>
         </Grid>
       </Grid>
     </Grid>

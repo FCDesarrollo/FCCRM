@@ -295,6 +295,7 @@ export default function Header(props) {
   const statusEmpresa = empresaDatos.statusempresa;
   const setEmpresaDatos = props.setEmpresaDatos;
   const loading = props.loading;
+  const setLoading = props.setLoading;
   const executeQueriesHeader = props.executeQueriesHeader;
   const setExecuteQueriesHeader = props.setExecuteQueriesHeader;
   let userId = 0;
@@ -1250,6 +1251,7 @@ export default function Header(props) {
         setUsuarioDatos={setUsuarioDatos}
         empresaDatos={empresaDatos}
         setEmpresaDatos={setEmpresaDatos}
+        setLoading={setLoading}
         component={
           <Home
             submenuContent={submenuContent}
@@ -1258,6 +1260,7 @@ export default function Header(props) {
             setUsuarioDatos={setUsuarioDatos}
             empresaDatos={empresaDatos}
             setEmpresaDatos={setEmpresaDatos}
+            setLoading={setLoading}
           />
         }
       />
