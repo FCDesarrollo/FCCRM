@@ -1368,7 +1368,7 @@ function GuardarServicio(props) {
             margin="normal"
             value={descripcionServicio}
             inputProps={{
-              maxLength: 50,
+              maxLength: 250,
             }}
             onKeyPress={(e) => {
               keyValidation(e, 3);

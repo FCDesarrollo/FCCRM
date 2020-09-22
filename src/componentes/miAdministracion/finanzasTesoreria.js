@@ -95,6 +95,7 @@ export default function FinanzasTesoreria(props) {
   const classes = useStyles();
   const submenuContent = props.submenuContent;
   const usuarioDatos = props.usuarioDatos;
+  const idUsuario = usuarioDatos.idusuario;
   const correoUsuario = usuarioDatos.correo;
   const passwordUsuario = usuarioDatos.password;
   const setLoading = props.setLoading;
@@ -106,7 +107,7 @@ export default function FinanzasTesoreria(props) {
   /* const [coordenada1, setCoordenada1] = useState(0);
   const [coordenada2, setCoordenada2] = useState(0); */
   /* const [coordenadasSeleccionadas, setCoordenadasSeleccionadas] = useState([]); */
-  const [disponible, setDisponible] = useState(10000);
+  const [disponible, setDisponible] = useState(100000);
   const [aplicado, setAplicado] = useState(0.0);
   const [restante, setRestante] = useState(disponible - aplicado);
   const [activeStep, setActiveStep] = React.useState(0);
@@ -279,6 +280,7 @@ export default function FinanzasTesoreria(props) {
       case 0:
         return (
           <Paso1
+            idUsuario={idUsuario}
             correo={correoUsuario}
             password={passwordUsuario}
             setLoading={setLoading}
@@ -365,7 +367,7 @@ export default function FinanzasTesoreria(props) {
                   className={classes.buttons}
                   onClick={() => {
                     setNombreSubmenu(content.submenu.nombre_submenu);
-                    setShowComponent(1);
+                    setShowComponent(content.submenu.idsubmenu === 46 ? 1 : 2);
                   }}
                 >
                   {content.submenu.nombre_submenu}
@@ -566,6 +568,7 @@ function Paso1(props) {
   const classes = useStyles();
   const theme = useTheme();
   const fullScreenDialog = useMediaQuery(theme.breakpoints.down("xs"));
+  const idUsuario = props.idUsuario;
   const correoUsuario = props.correo;
   const passwordUsuario = props.password;
   const setLoading = props.setLoading;
@@ -585,8 +588,8 @@ function Paso1(props) {
   const restante = props.restante;
   const setRestante = props.setRestante;
   //descomentar estas dos variables
-  /* const instrucciones = props.instrucciones;
-  const setInstrucciones = props.setInstrucciones; */
+  const instrucciones = props.instrucciones;
+  const setInstrucciones = props.setInstrucciones;
   const instruccionesPagoProveedores = props.instruccionesPagoProveedores;
   const setInstruccionesPagoProveedores = props.setInstruccionesPagoProveedores;
   const [flujosEfectivo, setFlujosEfectivo] = useState([]);
@@ -607,6 +610,71 @@ function Paso1(props) {
   ] = useAxios(
     {
       url: API_BASE_URL + `/traerFlujosEfectivo`,
+      method: "GET",
+      params: {
+        usuario: correoUsuario,
+        pwd: passwordUsuario,
+        rfc: rfcEmpresa,
+        idsubmenu: 46,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+  const [
+    {
+      data: getFlwPagosData,
+      loading: getFlwPagosLoading,
+      error: getFlwPagosError,
+    },
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getFlwPagos`,
+      method: "GET",
+      params: {
+        usuario: correoUsuario,
+        pwd: passwordUsuario,
+        rfc: rfcEmpresa,
+        idsubmenu: 46,
+        Layout: 0,
+        IdUsuario: idUsuario,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+  const [
+    {
+      data: getCuentasPropiasData,
+      loading: getCuentasPropiasLoading,
+      error: getCuentasPropiasError,
+    },
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getCuentasPropias`,
+      method: "GET",
+      params: {
+        usuario: correoUsuario,
+        pwd: passwordUsuario,
+        rfc: rfcEmpresa,
+        idsubmenu: 46,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+  const [
+    {
+      data: getCuentasClientesProveedoresData,
+      loading: getCuentasClientesProveedoresLoading,
+      error: getCuentasClientesProveedoresError,
+    },
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getCuentasClientesProveedores`,
       method: "GET",
       params: {
         usuario: correoUsuario,
@@ -653,6 +721,23 @@ function Paso1(props) {
       manual: true,
     }
   );
+  const [
+    {
+      data: guardarFlwPagosData,
+      loading: guardarFlwPagosLoading,
+      error: guardarFlwPagosError,
+    },
+    executeGuardarFlwPagos,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/guardarFlwPagos`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
 
   useEffect(() => {
     function checkData() {
@@ -671,6 +756,60 @@ function Paso1(props) {
 
     checkData();
   }, [traerFlujosEfectivoData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (getFlwPagosData) {
+        if (getFlwPagosData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(getFlwPagosData.error)}
+            </Typography>
+          );
+        } else {
+          console.log(getFlwPagosData.pagospendientes);
+        }
+      }
+    }
+
+    checkData();
+  }, [getFlwPagosData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (getCuentasPropiasData) {
+        if (getCuentasPropiasData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(getCuentasPropiasData.error)}
+            </Typography>
+          );
+        } else {
+          console.log(getCuentasPropiasData.cuentas);
+        }
+      }
+    }
+
+    checkData();
+  }, [getCuentasPropiasData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (getCuentasClientesProveedoresData) {
+        if (getCuentasClientesProveedoresData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(getCuentasClientesProveedoresData.error)}
+            </Typography>
+          );
+        } else {
+          console.log(getCuentasClientesProveedoresData.cuentas);
+        }
+      }
+    }
+
+    checkData();
+  }, [getCuentasClientesProveedoresData]);
 
   useEffect(() => {
     function checkData() {
@@ -723,10 +862,30 @@ function Paso1(props) {
     checkData();
   }, [traerProveedoresData]);
 
+  useEffect(() => {
+    function checkData() {
+      if (guardarFlwPagosData) {
+        if (guardarFlwPagosData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(guardarFlwPagosData.error)}
+            </Typography>
+          );
+        }
+      }
+    }
+
+    checkData();
+  }, [guardarFlwPagosData]);
+
   if (
     traerFlujosEfectivoLoading ||
+    getFlwPagosLoading ||
+    getCuentasPropiasLoading ||
+    getCuentasClientesProveedoresLoading ||
     traerFlujosEfectivoFiltradosLoading ||
-    traerProveedoresLoading
+    traerProveedoresLoading ||
+    guardarFlwPagosLoading
   ) {
     setLoading(true);
     return <div></div>;
@@ -735,8 +894,12 @@ function Paso1(props) {
   }
   if (
     traerFlujosEfectivoError ||
+    getFlwPagosError ||
+    getCuentasPropiasError ||
+    getCuentasClientesProveedoresError ||
     traerFlujosEfectivoFiltradosError ||
-    traerProveedoresError
+    traerProveedoresError ||
+    guardarFlwPagosError
   ) {
     return <ErrorQueryDB />;
   }
@@ -846,16 +1009,8 @@ function Paso1(props) {
                         style={{
                           cursor: "pointer",
                           background: validacion === 1 ? "#388e3c" : "",
-                          /* background:
-                            coordenadasSeleccionadas.indexOf(
-                              `${index},${index2}`
-                            ) !== -1
-                              ? "#388e3c"
-                              : "", */
                         }}
                         onClick={() => {
-                          /* setCoordenada1(index);
-                          setCoordenada2(index2); */
                           executeTraerFlujosEfectivoFiltrados({
                             data: {
                               usuario: correoUsuario,
@@ -956,28 +1111,25 @@ function Paso1(props) {
         </Table>
       );
     } else {
-      return <Typography variant="h6">Sin Datos</Typography>;
+      return (
+        <Typography variant="h6" style={{ textAlign: "center" }}>
+          Sin Datos
+        </Typography>
+      );
     }
   };
 
   const handleToggleDocumentosEspecificos = (value) => () => {
     const currentIndex = documentosSeleccionados.indexOf(value);
-    /* const currentIndexCoordenadas = coordenadasSeleccionadas.indexOf(
-      `${coordenada1},${coordenada2}`
-    ); */
     const newChecked = [...documentosSeleccionados];
-    /* const newCoordenadas = [...coordenadasSeleccionadas]; */
 
     if (currentIndex === -1) {
       newChecked.push(value);
-      /* newCoordenadas.push(`${coordenada1},${coordenada2}`); */
     } else {
       newChecked.splice(currentIndex, 1);
-      /* newCoordenadas.splice(currentIndexCoordenadas, 1); */
     }
 
     setDocumentosSeleccionados(newChecked);
-    /* setCoordenadasSeleccionadas(newCoordenadas); */
   };
 
   const getDocumentosEspecificos = () => {
@@ -996,21 +1148,29 @@ function Paso1(props) {
                 disableRipple
                 inputProps={{ "aria-labelledby": labelId }}
                 onChange={(e) => {
-                  /* let nuevosIds = instrucciones.ids;
+                  let nuevosIds = instrucciones.ids;
                   let nuevosTipos = instrucciones.tipos;
                   let nuevosProveedores = instrucciones.proveedores;
                   let nuevosImportes = instrucciones.importes;
                   let nuevasCuentasOrigen = instrucciones.cuentasOrigen;
                   let nuevasCuentasDestino = instrucciones.cuentasDestino;
                   let nuevasFechas = instrucciones.fechas;
-                  let nuevasLlavesMatch = instrucciones.llavesMatch; */
+                  let nuevasLlavesMatch = instrucciones.llavesMatch;
+
+                  let ids = instruccionesPagoProveedores.ids;
+                  let proveedores = instruccionesPagoProveedores.proveedores;
+                  let importes = instruccionesPagoProveedores.importes;
+
                   if (e.target.checked) {
                     setAplicado(aplicado + parseFloat(flujoEfectivo.Pendiente));
                     setRestante(
                       disponible -
                         (aplicado + parseFloat(flujoEfectivo.Pendiente))
                     );
-                    /* let posicion = nuevosProveedores.indexOf(flujoEfectivo.Razon);
+                    //
+                    let posicion = nuevosProveedores.indexOf(
+                      flujoEfectivo.Razon
+                    );
                     if (posicion === -1) {
                       nuevosIds.push(flujoEfectivo.id);
                       nuevosTipos.push("Pago a proveedor");
@@ -1021,69 +1181,142 @@ function Paso1(props) {
                       nuevasFechas.push(moment().format("YYYY-MM-DD"));
                       nuevasLlavesMatch.push("");
                     } else {
-                      nuevosIds[posicion] = nuevosIds[posicion] + "," + flujoEfectivo.id;
+                      nuevosIds[posicion] =
+                        nuevosIds[posicion] + "," + flujoEfectivo.id;
                       nuevosImportes[posicion] =
                         parseFloat(nuevosImportes[posicion]) +
                         parseFloat(flujoEfectivo.Pendiente);
                     }
 
-                    setInstrucciones({
-                      ids: nuevosIds,
-                      tipos: nuevosTipos,
-                      proveedores: nuevosProveedores,
-                      importes: nuevosImportes,
-                      cuentasOrigen: nuevasCuentasOrigen,
-                      cuentasDestino: nuevasCuentasDestino,
-                      fechas: nuevasFechas,
-                      llavesMatch: nuevasLlavesMatch,
-                    }); */
-
-                    let ids = instruccionesPagoProveedores.ids;
-                    let proveedores = instruccionesPagoProveedores.proveedores;
-                    let importes = instruccionesPagoProveedores.importes;
                     ids.push(flujoEfectivo.id);
                     proveedores.push(flujoEfectivo.Razon);
                     importes.push(parseFloat(flujoEfectivo.Pendiente));
 
-                    setInstruccionesPagoProveedores({
-                      ids: ids,
-                      proveedores: proveedores,
-                      importes: importes,
+                    /* console.log(flujoEfectivo); */
+
+                    executeGuardarFlwPagos({
+                      data: {
+                        usuario: correoUsuario,
+                        pwd: passwordUsuario,
+                        rfc: rfcEmpresa,
+                        idsubmenu: 46,
+                        forma: 1,
+                        IdFlw: flujoEfectivo.id,
+                        IdDoc: flujoEfectivo.IdDoc,
+                        Idcon: flujoEfectivo.Idcon,
+                        Fecha: flujoEfectivo.Fecha,
+                        Vence: flujoEfectivo.Vence,
+                        Idclien: flujoEfectivo.Idclien,
+                        Razon: flujoEfectivo.Razon,
+                        Concepto: flujoEfectivo.Concepto,
+                        Serie: flujoEfectivo.Serie,
+                        Folio: flujoEfectivo.Folio,
+                        Total: flujoEfectivo.Total,
+                        Pendiente: flujoEfectivo.Pendiente,
+                        Tipo: flujoEfectivo.Tipo,
+                        Suc: flujoEfectivo.Suc,
+                        cRFC: flujoEfectivo.cRFC,
+                        SaldoInt: flujoEfectivo.SaldoInt,
+                        FechaPago: moment().format("YYYY-MM-DD"),
+                        Importe: parseFloat(flujoEfectivo.Pendiente),
+                        LlaveMatch: "",
+                        IdUsuario: idUsuario,
+                      },
                     });
                   } else {
                     setAplicado(aplicado - parseFloat(flujoEfectivo.Pendiente));
                     setRestante(restante + parseFloat(flujoEfectivo.Pendiente));
 
-                    //va bien esto
-                    /* let posiciones = [];
                     let contador = 0;
-                    for(let x=0 ; x<instruccionesPagoProveedores.proveedores.length ; x++) {
-                      if(instruccionesPagoProveedores.proveedores[x] === flujoEfectivo.Razon) {
+                    for (
+                      let x = 0;
+                      x < instruccionesPagoProveedores.proveedores.length;
+                      x++
+                    ) {
+                      if (
+                        instruccionesPagoProveedores.proveedores[x] ===
+                        flujoEfectivo.Razon
+                      ) {
                         contador++;
-                        posiciones.push(x);
                       }
                     }
 
-                    console.log(contador);
-                    console.log(posiciones);
+                    let posicionEliminar = 0;
+                    cicloInstrucciones1: for (
+                      let x = 0;
+                      x < instrucciones.proveedores.length;
+                      x++
+                    ) {
+                      let ids = instrucciones.ids[x].toString().split(",");
+                      for (let y = 0; y < ids.length; y++) {
+                        if (parseInt(ids[y]) === flujoEfectivo.id) {
+                          posicionEliminar = x;
+                          break cicloInstrucciones1;
+                        }
+                      }
+                    }
 
-                    if(contador === 1) {
+                    if (contador === 1) {
+                      nuevosIds.splice(posicionEliminar, 1);
+                      nuevosTipos.splice(posicionEliminar, 1);
+                      nuevosProveedores.splice(posicionEliminar, 1);
+                      nuevosImportes.splice(posicionEliminar, 1);
+                      nuevasCuentasOrigen.splice(posicionEliminar, 1);
+                      nuevasCuentasDestino.splice(posicionEliminar, 1);
+                      nuevasFechas.splice(posicionEliminar, 1);
+                      nuevasLlavesMatch.splice(posicionEliminar, 1);
+                    } else {
+                      nuevosImportes[posicionEliminar] =
+                        nuevosImportes[posicionEliminar] -
+                        parseFloat(flujoEfectivo.Pendiente);
+                      let ids = instrucciones.ids[posicionEliminar]
+                        .toString()
+                        .split(",")
+                        .map((id) => parseFloat(id));
+                      let pos = ids.indexOf(flujoEfectivo.id);
+                      ids.splice(pos, 1);
 
-                    } */
+                      nuevosIds[posicionEliminar] = ids[0];
+                      if (ids.length > 1) {
+                        for (let x = 1; x < ids.length; x++) {
+                          nuevosIds[posicionEliminar] =
+                            nuevosIds[posicionEliminar] + "," + ids[x];
+                        }
+                      }
+                    }
 
-                    let ids = instruccionesPagoProveedores.ids;
-                    let proveedores = instruccionesPagoProveedores.proveedores;
-                    let importes = instruccionesPagoProveedores.importes;
                     let pos = ids.indexOf(flujoEfectivo.id);
                     ids.splice(pos, 1);
                     proveedores.splice(pos, 1);
                     importes.splice(pos, 1);
-                    setInstruccionesPagoProveedores({
-                      ids: ids,
-                      proveedores: proveedores,
-                      importes: importes,
+
+                    executeGuardarFlwPagos({
+                      data: {
+                        usuario: correoUsuario,
+                        pwd: passwordUsuario,
+                        rfc: rfcEmpresa,
+                        idsubmenu: 46,
+                        forma: 2,
+                        IdFlw: flujoEfectivo.id,
+                      },
                     });
                   }
+                  setInstrucciones({
+                    ids: nuevosIds,
+                    tipos: nuevosTipos,
+                    proveedores: nuevosProveedores,
+                    importes: nuevosImportes,
+                    cuentasOrigen: nuevasCuentasOrigen,
+                    cuentasDestino: nuevasCuentasDestino,
+                    fechas: nuevasFechas,
+                    llavesMatch: nuevasLlavesMatch,
+                  });
+
+                  setInstruccionesPagoProveedores({
+                    ids: ids,
+                    proveedores: proveedores,
+                    importes: importes,
+                  });
                 }}
               />
             </TableCell>
@@ -1176,59 +1409,67 @@ function Paso1(props) {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={2} style={{ alignSelf: "flex-end" }}>
-              <FormControlLabel
-                control={<Checkbox name="soloPrioritarios" color="primary" />}
-                label="Solo Prioritarios"
-              />
-            </Grid>
-            <Grid item xs={8} md={2} style={{ alignSelf: "center" }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => {
-                  executeTraerProveedores({
-                    params: {
-                      usuario: correoUsuario,
-                      pwd: passwordUsuario,
-                      rfc: rfcEmpresa,
-                      idsubmenu: 46,
-                    },
-                  });
-                  handleClickOpenPrioritariosDialog();
-                }}
-              >
-                ...
-              </Button>
-            </Grid>
-            <Grid item xs={4} md={2}>
-              <TextField
-                className={classes.textFields}
-                id="pendienteMayorIgual"
-                label="Pendiente >="
-                type="text"
-                margin="normal"
-                value={pendiente}
-                inputProps={{
-                  maxLength: 20,
-                }}
-                InputProps={{
-                  inputComponent: NumberFormatCustom,
-                }}
-                onChange={(e) => {
-                  setPendiente(e.target.value);
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} md={2} style={{ alignSelf: "center" }}>
-              <Button
-                variant="contained"
-                color="primary"
-                style={{ width: "100%" }}
-              >
-                Consultar
-              </Button>
-            </Grid>
+            {flujosEfectivo.length > 0 ? (
+              <Grid item xs={12}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={2} style={{ alignSelf: "flex-end" }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox name="soloPrioritarios" color="primary" />
+                      }
+                      label="Solo Prioritarios"
+                    />
+                  </Grid>
+                  <Grid item xs={8} md={2} style={{ alignSelf: "center" }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => {
+                        executeTraerProveedores({
+                          params: {
+                            usuario: correoUsuario,
+                            pwd: passwordUsuario,
+                            rfc: rfcEmpresa,
+                            idsubmenu: 46,
+                          },
+                        });
+                        handleClickOpenPrioritariosDialog();
+                      }}
+                    >
+                      ...
+                    </Button>
+                  </Grid>
+                  <Grid item xs={4} md={2}>
+                    <TextField
+                      className={classes.textFields}
+                      id="pendienteMayorIgual"
+                      label="Pendiente >="
+                      type="text"
+                      margin="normal"
+                      value={pendiente}
+                      inputProps={{
+                        maxLength: 20,
+                      }}
+                      InputProps={{
+                        inputComponent: NumberFormatCustom,
+                      }}
+                      onChange={(e) => {
+                        setPendiente(e.target.value);
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={2} style={{ alignSelf: "center" }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      style={{ width: "100%" }}
+                    >
+                      Consultar
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Grid>
+            ) : null}
             <Grid item xs={12} /* md={8} */>
               <TableContainer>{getFlujosEfectivo()}</TableContainer>
             </Grid>
@@ -1478,14 +1719,14 @@ function Paso1(props) {
 function Paso2(props) {
   const classes = useStyles();
   //comentar la variable instruccionesPagoProveedores
-  const instruccionesPagoProveedores = props.instruccionesPagoProveedores;
+  /* const instruccionesPagoProveedores = props.instruccionesPagoProveedores; */
   const instrucciones = props.instrucciones;
   const setInstrucciones = props.setInstrucciones;
   const cuentasOrigen = props.cuentasOrigen;
   const cuentasDestino = props.cuentasDestino;
 
   //comentar este useEffect
-  useEffect(() => {
+  /* useEffect(() => {
     let nuevosIds = [];
     let nuevosTipos = [];
     let nuevosProveedores = [];
@@ -1524,7 +1765,7 @@ function Paso2(props) {
       fechas: nuevasFechas,
       llavesMatch: nuevasLlavesMatch,
     });
-  }, [instruccionesPagoProveedores, setInstrucciones]);
+  }, [instruccionesPagoProveedores, setInstrucciones]); */
 
   const getInstrucciones = () => {
     if (instrucciones.proveedores.length > 0) {
