@@ -102,7 +102,67 @@ export default function FinanzasTesoreria(props) {
   const empresaDatos = props.empresaDatos;
   const rfcEmpresa = empresaDatos.RFC;
   const [showComponent, setShowComponent] = useState(0);
-  const [nombreSubmenu, setNombreSubmenu] = useState("");
+  //const [nombreSubmenu, setNombreSubmenu] = useState("");
+
+  return (
+    <div>
+      <Card className={classes.card} style={{ marginBottom: "15px" }}>
+        <Grid container justify="center" spacing={3}>
+          <Grid item xs={12} md={11}>
+            <Typography variant="h6" className={classes.title}>
+              Finanzas y tesorería
+            </Typography>
+          </Grid>
+          {submenuContent.map((content, index) => {
+            return content.submenu.orden !== 0 ? (
+              <Grid
+                item
+                xs={12}
+                md={5}
+                key={index}
+                style={{ marginBottom: "15px" }}
+              >
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  disabled={content.permisos === 0}
+                  className={classes.buttons}
+                  onClick={() => {
+                    //setNombreSubmenu(content.submenu.nombre_submenu);
+                    setShowComponent(content.submenu.idsubmenu === 46 ? 1 : 2);
+                  }}
+                >
+                  {content.submenu.nombre_submenu}
+                </Button>
+              </Grid>
+            ) : null;
+          })}
+        </Grid>
+      </Card>
+      <Card style={{ marginTop: "15px" }}>
+        {showComponent === 1 ? (
+          <FlujosEfectivo
+            idUsuario={idUsuario}
+            correoUsuario={correoUsuario}
+            passwordUsuario={passwordUsuario}
+            rfcEmpresa={rfcEmpresa}
+            setLoading={setLoading}
+            setShowComponent={setShowComponent}
+          />
+        ) : null}
+      </Card>
+    </div>
+  );
+}
+
+function FlujosEfectivo(props) {
+  const classes = useStyles();
+  const idUsuario = props.idUsuario;
+  const correoUsuario = props.correoUsuario;
+  const passwordUsuario = props.passwordUsuario;
+  const rfcEmpresa = props.rfcEmpresa;
+  const setLoading = props.setLoading;
+  const setShowComponent = props.setShowComponent;
   const [documentosSeleccionados, setDocumentosSeleccionados] = useState([]);
   /* const [coordenada1, setCoordenada1] = useState(0);
   const [coordenada2, setCoordenada2] = useState(0); */
@@ -149,20 +209,173 @@ export default function FinanzasTesoreria(props) {
     fechas: [],
     llavesMatch: [],
   });
+  const [cuentasOrigen, setCuentasOrigen] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
+  const [cuentasDestino, setCuentasDestino] = useState([]);
+  const [proveedorAutocomplete, setProveedorAutocomplete] = useState("");
   const steps = [
     "1. Indicar el Efectivo Disponible y Aplicación  de Pagos",
     "2. Completar instrucciones de Pago",
     "3. Adicionar instrucciones de Pago sin CxP previa",
     "4. Generacion de Layout para Portales Bancarios",
   ];
-  const cuentasOrigen = ["Bancomer", "Banamex", "Banorte", "HSBC", "Santander"];
+  /* const cuentasOrigen = ["Bancomer", "Banamex", "Banorte", "HSBC", "Santander"];
   const cuentasDestino = [
     "Bancomer",
     "Banamex",
     "Banorte",
     "HSBC",
     "Santander",
-  ];
+  ]; */
+  const [
+    {
+      data: getCuentasPropiasData,
+      loading: getCuentasPropiasLoading,
+      error: getCuentasPropiasError,
+    },
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getCuentasPropias`,
+      method: "GET",
+      params: {
+        usuario: correoUsuario,
+        pwd: passwordUsuario,
+        rfc: rfcEmpresa,
+        idsubmenu: 46,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+  const [
+    {
+      data: getCuentasClientesProveedoresData,
+      loading: getCuentasClientesProveedoresLoading,
+      error: getCuentasClientesProveedoresError,
+    },
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getCuentasClientesProveedores`,
+      method: "GET",
+      params: {
+        usuario: correoUsuario,
+        pwd: passwordUsuario,
+        rfc: rfcEmpresa,
+        idsubmenu: 46,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+  const [
+    {
+      data: traerProveedoresData,
+      loading: traerProveedoresLoading,
+      error: traerProveedoresError,
+    },
+    /* executeTraerProveedores, */
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/traerProveedores`,
+      method: "GET",
+      params: {
+        usuario: correoUsuario,
+        pwd: passwordUsuario,
+        rfc: rfcEmpresa,
+        idsubmenu: 46,
+      },
+    },
+    {
+      useCache: false,
+      /* manual: true, */
+    }
+  );
+
+  useEffect(() => {
+    function checkData() {
+      if (getCuentasPropiasData) {
+        if (getCuentasPropiasData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(getCuentasPropiasData.error)}
+            </Typography>
+          );
+        } else {
+          console.log(getCuentasPropiasData.cuentas);
+          let cuentas = [];
+          for (let x = 0; x < getCuentasPropiasData.cuentas.length; x++) {
+            cuentas.push(getCuentasPropiasData.cuentas[x].Nombre);
+          }
+          setCuentasOrigen(cuentas);
+        }
+      }
+    }
+
+    checkData();
+  }, [getCuentasPropiasData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (getCuentasClientesProveedoresData) {
+        if (getCuentasClientesProveedoresData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(getCuentasClientesProveedoresData.error)}
+            </Typography>
+          );
+        } else {
+          console.log(getCuentasClientesProveedoresData.cuentas);
+          let cuentas = [];
+          for(let x=0 ; x<getCuentasClientesProveedoresData.cuentas.length ; x++) {
+            let nombre = getCuentasClientesProveedoresData.cuentas[x].Banco.replace(", S.A.","");
+            let numero = getCuentasClientesProveedoresData.cuentas[x].Num.substr(-4);
+            cuentas.push(nombre + " " + numero);
+          }
+          setCuentasDestino(cuentas);
+        }
+      }
+    }
+
+    checkData();
+  }, [getCuentasClientesProveedoresData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (traerProveedoresData) {
+        if (traerProveedoresData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(traerProveedoresData.error)}
+            </Typography>
+          );
+        } else {
+          setProveedores(traerProveedoresData.proveedores);
+        }
+      }
+    }
+
+    checkData();
+  }, [traerProveedoresData]);
+
+  if (
+    getCuentasPropiasLoading ||
+    getCuentasClientesProveedoresLoading ||
+    traerProveedoresLoading
+  ) {
+    setLoading(true);
+    return <div></div>;
+  } else {
+    setLoading(false);
+  }
+  if (
+    getCuentasPropiasError ||
+    getCuentasClientesProveedoresError ||
+    traerProveedoresError
+  ) {
+    return <ErrorQueryDB />;
+  }
 
   const handleNext = () => {
     let validacionPaso2 = 0;
@@ -229,18 +442,24 @@ export default function FinanzasTesoreria(props) {
       } */
       /* console.log(cuentasOrigen);
       console.log(cuentasDestino); */
-      for (let x = 0; x < instruccionesAdicionales.proveedores.length; x++) {
-        if (
-          instruccionesAdicionales.proveedores[x] === "0" ||
-          instruccionesAdicionales.cuentasOrigen[x] === "0" ||
-          instruccionesAdicionales.cuentasDestino[x] === "0" ||
-          instruccionesAdicionales.fechas[x] === "" ||
-          instruccionesAdicionales.importes[x] === "" ||
-          parseFloat(instruccionesAdicionales.importes[x]) === "0"
-        ) {
-          validacionPaso3++;
-          break;
+      /* console.log(instrucciones.ids.length, instruccionesAdicionales.ids.length); */
+      if(instruccionesAdicionales.ids.length !== 0) {
+        for (let x = 0; x < instruccionesAdicionales.proveedores.length; x++) {
+          if (
+            instruccionesAdicionales.proveedores[x] === "0" ||
+            instruccionesAdicionales.cuentasOrigen[x] === "0" ||
+            instruccionesAdicionales.cuentasDestino[x] === "0" ||
+            instruccionesAdicionales.fechas[x] === "" ||
+            instruccionesAdicionales.importes[x] === "" ||
+            parseFloat(instruccionesAdicionales.importes[x]) === "0"
+          ) {
+            validacionPaso3++;
+            break;
+          }
         }
+      }
+      else {
+        validacionPaso3++;
       }
     }
 
@@ -285,6 +504,7 @@ export default function FinanzasTesoreria(props) {
             password={passwordUsuario}
             setLoading={setLoading}
             rfc={rfcEmpresa}
+            proveedores={proveedores}
             documentosSeleccionados={documentosSeleccionados}
             setDocumentosSeleccionados={setDocumentosSeleccionados}
             /* coordenada1={coordenada1}
@@ -327,12 +547,15 @@ export default function FinanzasTesoreria(props) {
             password={passwordUsuario}
             setLoading={setLoading}
             rfc={rfcEmpresa}
+            proveedores={proveedores}
             cuentasOrigen={cuentasOrigen}
             cuentasDestino={cuentasDestino}
             disponible={disponible}
             aplicado={aplicado}
             setAplicado={setAplicado}
             setRestante={setRestante}
+            proveedorAutocomplete={proveedorAutocomplete}
+            setProveedorAutocomplete={setProveedorAutocomplete}
           />
         );
       case 3:
@@ -343,197 +566,141 @@ export default function FinanzasTesoreria(props) {
   };
 
   return (
-    <div>
-      <Card className={classes.card} style={{ marginBottom: "15px" }}>
-        <Grid container justify="center" spacing={3}>
-          <Grid item xs={12} md={11}>
-            <Typography variant="h6" className={classes.title}>
-              Finanzas y tesorería
-            </Typography>
-          </Grid>
-          {submenuContent.map((content, index) => {
-            return content.submenu.orden !== 0 ? (
-              <Grid
-                item
-                xs={12}
-                md={5}
-                key={index}
-                style={{ marginBottom: "15px" }}
-              >
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  disabled={content.permisos === 0}
-                  className={classes.buttons}
+    <div style={{ padding: "15px" }}>
+      <Toolbar>
+        <Grid container alignItems="center">
+          <Grid item xs={8} sm={6} md={6} style={{ alignSelf: "flex-end" }}>
+            <Typography
+              className={classes.titleTable}
+              variant="h6"
+              id="tableTitle"
+            >
+              <Tooltip title="Cerrar">
+                <IconButton
+                  aria-label="cerrar"
                   onClick={() => {
-                    setNombreSubmenu(content.submenu.nombre_submenu);
-                    setShowComponent(content.submenu.idsubmenu === 46 ? 1 : 2);
+                    setShowComponent(0);
                   }}
                 >
-                  {content.submenu.nombre_submenu}
+                  <CloseIcon color="secondary" />
+                </IconButton>
+              </Tooltip>
+              Flujos de Efectivo
+            </Typography>
+          </Grid>
+        </Grid>
+      </Toolbar>
+
+      <Grid container spacing={3} style={{ marginBottom: "15px" }}>
+        <Grid item xs={12}>
+          <Divider />
+        </Grid>
+        <Grid item xs={12}>
+          <Stepper activeStep={activeStep} alternativeLabel>
+            {steps.map((label, index) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </Grid>
+        <Grid item xs={12} style={{ textAlign: "center" }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Button
+                disabled={activeStep === 0}
+                variant="contained"
+                color="primary"
+                onClick={handleBack}
+                className={classes.backButton}
+              >
+                Anterior
+              </Button>
+              <Button variant="contained" color="primary" onClick={handleNext}>
+                {activeStep === steps.length - 1 ? "Finalizar" : "Siguiente"}
+              </Button>
+            </Grid>
+            {activeStep === 0 ? (
+              <Grid item xs={12}>
+                <Button
+                  disabled={activeStep >= 2}
+                  variant="contained"
+                  onClick={handleSinPagosProveedores}
+                >
+                  Sin pagos a proveedores
                 </Button>
               </Grid>
-            ) : null;
-          })}
-        </Grid>
-      </Card>
-      <Card style={{ marginTop: "15px" }}>
-        {showComponent === 1 ? (
-          <div style={{ padding: "15px" }}>
-            <Toolbar>
-              <Grid container alignItems="center">
-                <Grid
-                  item
-                  xs={8}
-                  sm={6}
-                  md={6}
-                  style={{ alignSelf: "flex-end" }}
-                >
+            ) : null}
+            <Grid item xs={12} style={{ marginTop: "15px" }}>
+              <Grid container justify="center" spacing={3}>
+                <Grid item xs={12} md={2}>
+                  <TextField
+                    className={classes.textFields}
+                    id="disponible"
+                    variant="outlined"
+                    type="text"
+                    label="Disponible"
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    inputProps={{
+                      maxLength: 20,
+                    }}
+                    InputProps={{
+                      inputComponent: NumberFormatCustom,
+                    }}
+                    value={disponible}
+                    onKeyPress={(e) => {
+                      doubleKeyValidation(e, 2);
+                    }}
+                    /* onChange={handleChange} */
+                    onChange={(e) => {
+                      /* doublePasteValidation(e, 2); */
+                      setDisponible(e.target.value);
+                      setRestante(parseFloat(e.target.value) - aplicado);
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={2} style={{ alignSelf: "center" }}>
                   <Typography
-                    className={classes.titleTable}
-                    variant="h6"
-                    id="tableTitle"
+                    variant="subtitle1"
+                    style={{ textAlign: "center" }}
                   >
-                    <Tooltip title="Cerrar">
-                      <IconButton
-                        aria-label="cerrar"
-                        onClick={() => {
-                          setShowComponent(0);
-                        }}
-                      >
-                        <CloseIcon color="secondary" />
-                      </IconButton>
-                    </Tooltip>
-                    {nombreSubmenu}
+                    <span>
+                      <strong>Aplicado:</strong>
+                    </span>
+                    <span>{` $${number_format(aplicado, 2, ".", ",")}`}</span>
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={2} style={{ alignSelf: "center" }}>
+                  <Typography
+                    variant="subtitle1"
+                    style={{ textAlign: "center" }}
+                  >
+                    <span>
+                      <strong>Restante: </strong>
+                    </span>
+                    <span
+                      style={{
+                        color:
+                          restante > 0
+                            ? "#8bc34a"
+                            : restante < 0
+                            ? "#d50000"
+                            : "black",
+                      }}
+                    >{` $${number_format(restante, 2, ".", ",")}`}</span>
                   </Typography>
                 </Grid>
               </Grid>
-            </Toolbar>
-
-            <Grid container spacing={3} style={{ marginBottom: "15px" }}>
-              <Grid item xs={12}>
-                <Divider />
-              </Grid>
-              <Grid item xs={12}>
-                <Stepper activeStep={activeStep} alternativeLabel>
-                  {steps.map((label, index) => (
-                    <Step key={label}>
-                      <StepLabel>{label}</StepLabel>
-                    </Step>
-                  ))}
-                </Stepper>
-              </Grid>
-              <Grid item xs={12} style={{ textAlign: "center" }}>
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <Button
-                      disabled={activeStep === 0}
-                      variant="contained"
-                      color="primary"
-                      onClick={handleBack}
-                      className={classes.backButton}
-                    >
-                      Anterior
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleNext}
-                    >
-                      {activeStep === steps.length - 1
-                        ? "Finalizar"
-                        : "Siguiente"}
-                    </Button>
-                  </Grid>
-                  {activeStep === 0 ? (
-                    <Grid item xs={12}>
-                      <Button
-                        disabled={activeStep >= 2}
-                        variant="contained"
-                        onClick={handleSinPagosProveedores}
-                      >
-                        Sin pagos a proveedores
-                      </Button>
-                    </Grid>
-                  ) : null}
-                  <Grid item xs={12} style={{ marginTop: "15px" }}>
-                    <Grid container justify="center" spacing={3}>
-                      <Grid item xs={12} md={2}>
-                        <TextField
-                          className={classes.textFields}
-                          id="disponible"
-                          variant="outlined"
-                          type="text"
-                          label="Disponible"
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                          inputProps={{
-                            maxLength: 20,
-                          }}
-                          InputProps={{
-                            inputComponent: NumberFormatCustom,
-                          }}
-                          value={disponible}
-                          onKeyPress={(e) => {
-                            doubleKeyValidation(e, 2);
-                          }}
-                          /* onChange={handleChange} */
-                          onChange={(e) => {
-                            /* doublePasteValidation(e, 2); */
-                            setDisponible(e.target.value);
-                            setRestante(parseFloat(e.target.value) - aplicado);
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={2} style={{ alignSelf: "center" }}>
-                        <Typography
-                          variant="subtitle1"
-                          style={{ textAlign: "center" }}
-                        >
-                          <span>
-                            <strong>Aplicado:</strong>
-                          </span>
-                          <span>{` $${number_format(
-                            aplicado,
-                            2,
-                            ".",
-                            ","
-                          )}`}</span>
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} md={2} style={{ alignSelf: "center" }}>
-                        <Typography
-                          variant="subtitle1"
-                          style={{ textAlign: "center" }}
-                        >
-                          <span>
-                            <strong>Restante: </strong>
-                          </span>
-                          <span
-                            style={{
-                              color:
-                                restante > 0
-                                  ? "#8bc34a"
-                                  : restante < 0
-                                  ? "#d50000"
-                                  : "black",
-                            }}
-                          >{` $${number_format(restante, 2, ".", ",")}`}</span>
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                </Grid>
-              </Grid>
-              <Grid item xs={12}>
-                <Divider />
-              </Grid>
-              {getStepContent(activeStep)}
             </Grid>
-          </div>
-        ) : null}
-      </Card>
+          </Grid>
+        </Grid>
+        <Grid item xs={12}>
+          <Divider />
+        </Grid>
+        {getStepContent(activeStep)}
+      </Grid>
     </div>
   );
 }
@@ -573,6 +740,7 @@ function Paso1(props) {
   const passwordUsuario = props.password;
   const setLoading = props.setLoading;
   const rfcEmpresa = props.rfc;
+  const proveedores = props.proveedores;
   const documentosSeleccionados = props.documentosSeleccionados;
   const setDocumentosSeleccionados = props.setDocumentosSeleccionados;
   /* const coordenada1 = props.coordenada1;
@@ -596,7 +764,6 @@ function Paso1(props) {
   const [flujosEfectivoFiltrados, setFlujosEfectivoFiltrados] = useState([]);
   const [pendiente, setPendiente] = useState(0.0);
   const [openPrioritariosDialog, setOpenPrioritariosDialog] = useState(false);
-  const [proveedores, setProveedores] = useState([]);
   const [proveedoresPrioritarios, setProveedoresPrioritarios] = useState([]);
   const [totalEspecificos, setTotalEspecificos] = useState(0.0);
   const [tituloFlujosFiltrados, setTituloFlujosFiltrados] = useState("");
@@ -647,48 +814,6 @@ function Paso1(props) {
   );
   const [
     {
-      data: getCuentasPropiasData,
-      loading: getCuentasPropiasLoading,
-      error: getCuentasPropiasError,
-    },
-  ] = useAxios(
-    {
-      url: API_BASE_URL + `/getCuentasPropias`,
-      method: "GET",
-      params: {
-        usuario: correoUsuario,
-        pwd: passwordUsuario,
-        rfc: rfcEmpresa,
-        idsubmenu: 46,
-      },
-    },
-    {
-      useCache: false,
-    }
-  );
-  const [
-    {
-      data: getCuentasClientesProveedoresData,
-      loading: getCuentasClientesProveedoresLoading,
-      error: getCuentasClientesProveedoresError,
-    },
-  ] = useAxios(
-    {
-      url: API_BASE_URL + `/getCuentasClientesProveedores`,
-      method: "GET",
-      params: {
-        usuario: correoUsuario,
-        pwd: passwordUsuario,
-        rfc: rfcEmpresa,
-        idsubmenu: 46,
-      },
-    },
-    {
-      useCache: false,
-    }
-  );
-  const [
-    {
       data: traerFlujosEfectivoFiltradosData,
       loading: traerFlujosEfectivoFiltradosLoading,
       error: traerFlujosEfectivoFiltradosError,
@@ -704,23 +829,7 @@ function Paso1(props) {
       manual: true,
     }
   );
-  const [
-    {
-      data: traerProveedoresData,
-      loading: traerProveedoresLoading,
-      error: traerProveedoresError,
-    },
-    executeTraerProveedores,
-  ] = useAxios(
-    {
-      url: API_BASE_URL + `/traerProveedores`,
-      method: "GET",
-    },
-    {
-      useCache: false,
-      manual: true,
-    }
-  );
+
   const [
     {
       data: guardarFlwPagosData,
@@ -777,42 +886,6 @@ function Paso1(props) {
 
   useEffect(() => {
     function checkData() {
-      if (getCuentasPropiasData) {
-        if (getCuentasPropiasData.error !== 0) {
-          return (
-            <Typography variant="h5">
-              {dataBaseErrores(getCuentasPropiasData.error)}
-            </Typography>
-          );
-        } else {
-          console.log(getCuentasPropiasData.cuentas);
-        }
-      }
-    }
-
-    checkData();
-  }, [getCuentasPropiasData]);
-
-  useEffect(() => {
-    function checkData() {
-      if (getCuentasClientesProveedoresData) {
-        if (getCuentasClientesProveedoresData.error !== 0) {
-          return (
-            <Typography variant="h5">
-              {dataBaseErrores(getCuentasClientesProveedoresData.error)}
-            </Typography>
-          );
-        } else {
-          console.log(getCuentasClientesProveedoresData.cuentas);
-        }
-      }
-    }
-
-    checkData();
-  }, [getCuentasClientesProveedoresData]);
-
-  useEffect(() => {
-    function checkData() {
       if (traerFlujosEfectivoFiltradosData) {
         if (traerFlujosEfectivoFiltradosData.error !== 0) {
           return (
@@ -846,24 +919,6 @@ function Paso1(props) {
 
   useEffect(() => {
     function checkData() {
-      if (traerProveedoresData) {
-        if (traerProveedoresData.error !== 0) {
-          return (
-            <Typography variant="h5">
-              {dataBaseErrores(traerProveedoresData.error)}
-            </Typography>
-          );
-        } else {
-          setProveedores(traerProveedoresData.proveedores);
-        }
-      }
-    }
-
-    checkData();
-  }, [traerProveedoresData]);
-
-  useEffect(() => {
-    function checkData() {
       if (guardarFlwPagosData) {
         if (guardarFlwPagosData.error !== 0) {
           return (
@@ -881,10 +936,7 @@ function Paso1(props) {
   if (
     traerFlujosEfectivoLoading ||
     getFlwPagosLoading ||
-    getCuentasPropiasLoading ||
-    getCuentasClientesProveedoresLoading ||
     traerFlujosEfectivoFiltradosLoading ||
-    traerProveedoresLoading ||
     guardarFlwPagosLoading
   ) {
     setLoading(true);
@@ -895,10 +947,7 @@ function Paso1(props) {
   if (
     traerFlujosEfectivoError ||
     getFlwPagosError ||
-    getCuentasPropiasError ||
-    getCuentasClientesProveedoresError ||
     traerFlujosEfectivoFiltradosError ||
-    traerProveedoresError ||
     guardarFlwPagosError
   ) {
     return <ErrorQueryDB />;
@@ -1425,14 +1474,14 @@ function Paso1(props) {
                       variant="contained"
                       color="primary"
                       onClick={() => {
-                        executeTraerProveedores({
+                        /* executeTraerProveedores({
                           params: {
                             usuario: correoUsuario,
                             pwd: passwordUsuario,
                             rfc: rfcEmpresa,
                             idsubmenu: 46,
                           },
-                        });
+                        }); */
                         handleClickOpenPrioritariosDialog();
                       }}
                     >
@@ -1790,14 +1839,14 @@ function Paso2(props) {
                       native: true,
                     }}
                     inputProps={{
-                      maxLength: 20,
+                      maxLength: 100,
                     }}
                     value={instrucciones.cuentasOrigen[index]}
-                    onKeyPress={(e) => {
+                    /* onKeyPress={(e) => {
                       keyValidation(e, 5);
-                    }}
+                    }} */
                     onChange={(e) => {
-                      pasteValidation(e, 5);
+                      /* pasteValidation(e, 5); */
                       let nuevasCuentasOrigen = instrucciones.cuentasOrigen;
                       nuevasCuentasOrigen[index] = e.target.value;
                       setInstrucciones({
@@ -1807,11 +1856,13 @@ function Paso2(props) {
                     }}
                   >
                     <option value="0">Seleccione una cuenta de origen</option>
-                    {cuentasOrigen.map((cuenta, index) => (
-                      <option value={cuenta} key={index}>
-                        {cuenta}
-                      </option>
-                    ))}
+                    {cuentasOrigen.length > 0
+                      ? cuentasOrigen.map((cuenta, index) => (
+                          <option value={cuenta} key={index}>
+                            {cuenta}
+                          </option>
+                        ))
+                      : null}
                   </TextField>
                 </TableCell>
                 <TableCell align="right">
@@ -1956,16 +2007,20 @@ function Paso3(props) {
   //const setInstrucciones = props.setInstrucciones;
   const instruccionesAdicionales = props.instruccionesAdicionales;
   const setInstruccionesAdicionales = props.setInstruccionesAdicionales;
+  const proveedores = props.proveedores;
   const cuentasOrigen = props.cuentasOrigen;
   const cuentasDestino = props.cuentasDestino;
   const disponible = props.disponible;
   const aplicado = props.aplicado;
   const setAplicado = props.setAplicado;
   const setRestante = props.setRestante;
+  const proveedorAutocomplete = props.proveedorAutocomplete;
+  const setProveedorAutocomplete = props.setProveedorAutocomplete;
   const [tipoDocumento, setTipoDocumento] = useState("Anticipo a proveedores");
   const [openDialogInstrucciones, setOpenDialogInstrucciones] = useState(false);
   const [flujosEfectivoFiltrados, setFlujosEfectivoFiltrados] = useState([]);
   const [totalEspecificos, setTotalEspecificos] = useState(0.0);
+  const [importeAntiguo, setImporteAntiguo] = useState(0.0);
   const [
     {
       data: traerFlujosEfectivoFiltradosData,
@@ -2225,7 +2280,7 @@ function Paso3(props) {
               {instruccionesAdicionales.tipos[index]}
             </TableCell>
             <TableCell align="right">
-              <TextField
+              {/* <TextField
                 className={classes.textFields}
                 select
                 SelectProps={{
@@ -2255,7 +2310,48 @@ function Paso3(props) {
                 <option value="proveedor1">Proveedor 1</option>
                 <option value="proveedor2">Proveedor 2</option>
                 <option value="proveedor3">Proveedor 3</option>
-              </TextField>
+              </TextField> */}
+              <Autocomplete
+                options={proveedores}
+                getOptionLabel={(option) =>
+                  `${option.rfc}-${option.razonsocial}`
+                }
+                id="autocomplete2"
+                inputValue={proveedorAutocomplete}
+                onInputChange={(e, value) => {
+                  console.log(value);
+                  setProveedorAutocomplete(value);
+                  const separacion = value.split("-");
+                  let nombreLargo = "0";
+                  if (separacion.length === 2) {
+                    nombreLargo = separacion[1];
+                  }
+                  let nuevosProveedores = instruccionesAdicionales.proveedores;
+                  nuevosProveedores[index] = nombreLargo;
+                  setInstruccionesAdicionales({
+                    ...instruccionesAdicionales,
+                    proveedores: nuevosProveedores,
+                  });
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    id={"paso3Proveedor" + index}
+                    style={{ width: "100%" }}
+                    value={instruccionesAdicionales.proveedores[index]}
+                    onKeyPress={(e) => {
+                      keyValidation(e, 5);
+                    }}
+                    onChange={(e) => {
+                      console.log(e.target.value);
+                      pasteValidation(e, 5);
+                    }}
+                    label="Proveedor"
+                    margin="normal"
+                    variant="outlined"
+                  />
+                )}
+              />
             </TableCell>
             <TableCell align="right">
               <TextField
@@ -2271,11 +2367,11 @@ function Paso3(props) {
                   maxLength: 20,
                 }}
                 value={instruccionesAdicionales.cuentasOrigen[index]}
-                onKeyPress={(e) => {
+                /* onKeyPress={(e) => {
                   keyValidation(e, 5);
-                }}
+                }} */
                 onChange={(e) => {
-                  pasteValidation(e, 5);
+                  /* pasteValidation(e, 5); */
                   let nuevasCuentasOrigen =
                     instruccionesAdicionales.cuentasOrigen;
                   nuevasCuentasOrigen[index] = e.target.value;
@@ -2307,11 +2403,11 @@ function Paso3(props) {
                   maxLength: 20,
                 }}
                 value={instruccionesAdicionales.cuentasDestino[index]}
-                onKeyPress={(e) => {
+                /* onKeyPress={(e) => {
                   keyValidation(e, 5);
-                }}
+                }} */
                 onChange={(e) => {
-                  pasteValidation(e, 5);
+                  /* pasteValidation(e, 5); */
                   let nuevasCuentasDestino =
                     instruccionesAdicionales.cuentasDestino;
                   nuevasCuentasDestino[index] = e.target.value;
@@ -2365,35 +2461,47 @@ function Paso3(props) {
                 onKeyPress={(e) => {
                   doubleKeyValidation(e, 2);
                 }}
+                onFocus={(e) => {
+                  const valor = e.target.value
+                    .replace("$", "")
+                    .replace(",", "");
+                  setImporteAntiguo(parseFloat(valor));
+                  console.log("si");
+                }}
                 onChange={(e) => {
                   let nuevosImportes = instruccionesAdicionales.importes;
-                  nuevosImportes[index] = e.target.value;
+                  nuevosImportes[index] =
+                    typeof e.target.value !== "undefined" ? e.target.value : 0;
                   setInstruccionesAdicionales({
                     ...instruccionesAdicionales,
                     importes: nuevosImportes,
                   });
 
-                  /* console.log(e.target);
-                  console.log(e.target.value, e.target.value ? "si" : "no");
-                  console.log(
-                    aplicado,
-                    parseFloat(e.target.value),
-                    aplicado + parseFloat(e.target.value)
-                  );
-                  console.log(
-                    disponible,
-                    aplicado,
-                    parseFloat(e.target.value),
-                    disponible - (aplicado + parseFloat(e.target.value))
-                  ); */
-                  if (e.target.value) {
-                    setAplicado(aplicado + parseFloat(e.target.value));
-                    setRestante(
-                      disponible - (aplicado + parseFloat(e.target.value))
-                    );
-                  } else {
-                    setAplicado(aplicado);
-                    setRestante(disponible - aplicado);
+                  if (typeof e.target.value !== "undefined") {
+                    console.log("actual:", parseFloat(e.target.value));
+                    console.log("antiguo:", importeAntiguo);
+                    if (parseFloat(e.target.value) > importeAntiguo) {
+                      console.log("mayor");
+                      setAplicado(
+                        aplicado + (parseFloat(e.target.value) - importeAntiguo)
+                      );
+                      setRestante(
+                        disponible -
+                          (aplicado +
+                            (parseFloat(e.target.value) - importeAntiguo))
+                      );
+                    } else if (parseFloat(e.target.value) < importeAntiguo) {
+                      console.log("menor");
+                      setAplicado(
+                        aplicado - (importeAntiguo - parseFloat(e.target.value))
+                      );
+                      setRestante(
+                        disponible -
+                          (aplicado -
+                            (importeAntiguo - parseFloat(e.target.value)))
+                      );
+                    }
+                    setImporteAntiguo(parseFloat(e.target.value));
                   }
                 }}
               />
