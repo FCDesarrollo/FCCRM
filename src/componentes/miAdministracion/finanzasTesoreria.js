@@ -184,8 +184,12 @@ function FlujosEfectivo(props) {
     tipos: [],
     proveedores: [],
     importes: [],
+    idsBancosOrigen: [],
     cuentasOrigen: [],
+    valoresCuentasOrigen: [],
+    idsBancosDestino: [],
     cuentasDestino: [],
+    valoresCuentasDestino: [],
     fechas: [],
     llavesMatch: [],
   });
@@ -194,8 +198,12 @@ function FlujosEfectivo(props) {
     tipos: [],
     proveedores: [],
     importes: [],
+    idsBancosOrigen: [],
     cuentasOrigen: [],
+    valoresCuentasOrigen: [],
+    idsBancosDestino: [],
     cuentasDestino: [],
+    valoresCuentasDestino: [],
     fechas: [],
     llavesMatch: [],
   });
@@ -204,7 +212,9 @@ function FlujosEfectivo(props) {
     tipos: [],
     proveedores: [],
     importes: [],
+    idsBancosOrigen: [],
     cuentasOrigen: [],
+    idsBancosDestino: [],
     cuentasDestino: [],
     fechas: [],
     llavesMatch: [],
@@ -304,11 +314,11 @@ function FlujosEfectivo(props) {
           );
         } else {
           console.log(getCuentasPropiasData.cuentas);
-          let cuentas = [];
+          /* let cuentas = [];
           for (let x = 0; x < getCuentasPropiasData.cuentas.length; x++) {
             cuentas.push(getCuentasPropiasData.cuentas[x].Nombre);
-          }
-          setCuentasOrigen(cuentas);
+          } */
+          setCuentasOrigen(getCuentasPropiasData.cuentas);
         }
       }
     }
@@ -327,13 +337,24 @@ function FlujosEfectivo(props) {
           );
         } else {
           console.log(getCuentasClientesProveedoresData.cuentas);
-          let cuentas = [];
-          for(let x=0 ; x<getCuentasClientesProveedoresData.cuentas.length ; x++) {
-            let nombre = getCuentasClientesProveedoresData.cuentas[x].Banco.replace(", S.A.","");
-            let numero = getCuentasClientesProveedoresData.cuentas[x].Num.substr(-4);
-            cuentas.push(nombre + " " + numero);
+          /* let cuentas = []; */
+          for (
+            let x = 0;
+            x < getCuentasClientesProveedoresData.cuentas.length;
+            x++
+          ) {
+            let nombre = getCuentasClientesProveedoresData.cuentas[
+              x
+            ].Banco.replace(", S.A.", "");
+            let numero = getCuentasClientesProveedoresData.cuentas[
+              x
+            ].Num.substr(-4);
+            getCuentasClientesProveedoresData.cuentas[x].Layout =
+              nombre + " " + numero;
+            /* cuentas.push(nombre + " " + numero); */
           }
-          setCuentasDestino(cuentas);
+          console.log(getCuentasClientesProveedoresData.cuentas);
+          setCuentasDestino(getCuentasClientesProveedoresData.cuentas);
         }
       }
     }
@@ -383,8 +404,8 @@ function FlujosEfectivo(props) {
     if (activeStep === 1) {
       for (let x = 0; x < instrucciones.proveedores.length; x++) {
         if (
-          instrucciones.cuentasOrigen[x] === "0" ||
-          instrucciones.cuentasDestino[x] === "0" ||
+          instrucciones.valoresCuentasOrigen[x] === "-1" ||
+          instrucciones.valoresCuentasDestino[x] === "-1" ||
           instrucciones.fechas[x] === ""
         ) {
           validacionPaso2++;
@@ -402,8 +423,14 @@ function FlujosEfectivo(props) {
       let importes = instrucciones.importes.concat(
         instruccionesAdicionales.importes
       );
+      let idsBancosOrigen = instrucciones.idsBancosOrigen.concat(
+        instruccionesAdicionales.idsBancosOrigen
+      );
       let cuentasOrigen = instrucciones.cuentasOrigen.concat(
         instruccionesAdicionales.cuentasOrigen
+      );
+      let idsBancosDestino = instrucciones.idsBancosDestino.concat(
+        instruccionesAdicionales.idsBancosDestino
       );
       let cuentasDestino = instrucciones.cuentasDestino.concat(
         instruccionesAdicionales.cuentasDestino
@@ -417,7 +444,9 @@ function FlujosEfectivo(props) {
         tipos: tipos,
         proveedores: proveedores,
         importes: importes,
+        idsBancosOrigen: idsBancosOrigen,
         cuentasOrigen: cuentasOrigen,
+        idsBancosDestino: idsBancosDestino,
         cuentasDestino: cuentasDestino,
         fechas: fechas,
         llavesMatch: llavesMatch,
@@ -443,12 +472,12 @@ function FlujosEfectivo(props) {
       /* console.log(cuentasOrigen);
       console.log(cuentasDestino); */
       /* console.log(instrucciones.ids.length, instruccionesAdicionales.ids.length); */
-      if(instruccionesAdicionales.ids.length !== 0) {
+      if (instruccionesAdicionales.ids.length !== 0) {
         for (let x = 0; x < instruccionesAdicionales.proveedores.length; x++) {
           if (
             instruccionesAdicionales.proveedores[x] === "0" ||
-            instruccionesAdicionales.cuentasOrigen[x] === "0" ||
-            instruccionesAdicionales.cuentasDestino[x] === "0" ||
+            instruccionesAdicionales.valoresCuentasOrigen[x] === "-1" ||
+            instruccionesAdicionales.valoresCuentasDestino[x] === "-1" ||
             instruccionesAdicionales.fechas[x] === "" ||
             instruccionesAdicionales.importes[x] === "" ||
             parseFloat(instruccionesAdicionales.importes[x]) === "0"
@@ -457,8 +486,7 @@ function FlujosEfectivo(props) {
             break;
           }
         }
-      }
-      else {
+      } else if (instrucciones.ids.length === 0) {
         validacionPaso3++;
       }
     }
@@ -1201,8 +1229,14 @@ function Paso1(props) {
                   let nuevosTipos = instrucciones.tipos;
                   let nuevosProveedores = instrucciones.proveedores;
                   let nuevosImportes = instrucciones.importes;
+                  let nuevosIdsBancosOrigen = instrucciones.idsBancosOrigen;
                   let nuevasCuentasOrigen = instrucciones.cuentasOrigen;
+                  let nuevosValoresCuentasOrigen =
+                    instrucciones.valoresCuentasOrigen;
+                  let nuevosIdsBancosDestino = instrucciones.idsBancosDestino;
                   let nuevasCuentasDestino = instrucciones.cuentasDestino;
+                  let nuevosValoresCuentasDestino =
+                    instrucciones.valoresCuentasDestino;
                   let nuevasFechas = instrucciones.fechas;
                   let nuevasLlavesMatch = instrucciones.llavesMatch;
 
@@ -1225,8 +1259,12 @@ function Paso1(props) {
                       nuevosTipos.push("Pago a proveedor");
                       nuevosProveedores.push(flujoEfectivo.Razon);
                       nuevosImportes.push(flujoEfectivo.Pendiente);
-                      nuevasCuentasOrigen.push("0");
-                      nuevasCuentasDestino.push("0");
+                      nuevosIdsBancosOrigen.push(0);
+                      nuevasCuentasOrigen.push("");
+                      nuevosValoresCuentasOrigen.push("-1");
+                      nuevosIdsBancosDestino.push(0);
+                      nuevasCuentasDestino.push("");
+                      nuevosValoresCuentasDestino.push("-1");
                       nuevasFechas.push(moment().format("YYYY-MM-DD"));
                       nuevasLlavesMatch.push("");
                     } else {
@@ -1266,9 +1304,6 @@ function Paso1(props) {
                         Suc: flujoEfectivo.Suc,
                         cRFC: flujoEfectivo.cRFC,
                         SaldoInt: flujoEfectivo.SaldoInt,
-                        IdUsuarioDocumento: flujoEfectivo.IdUsuarioDocumento,
-                        Comentarios: flujoEfectivo.Comentarios,
-                        Prioridad: flujoEfectivo.Prioridad,
                         FechaPago: moment().format("YYYY-MM-DD"),
                         Importe: parseFloat(flujoEfectivo.Pendiente),
                         LlaveMatch: "",
@@ -1313,8 +1348,12 @@ function Paso1(props) {
                       nuevosTipos.splice(posicionEliminar, 1);
                       nuevosProveedores.splice(posicionEliminar, 1);
                       nuevosImportes.splice(posicionEliminar, 1);
+                      nuevosIdsBancosOrigen.splice(posicionEliminar, 1);
                       nuevasCuentasOrigen.splice(posicionEliminar, 1);
+                      nuevosValoresCuentasOrigen.splice(posicionEliminar, 1);
+                      nuevosIdsBancosDestino.splice(posicionEliminar, 1);
                       nuevasCuentasDestino.splice(posicionEliminar, 1);
+                      nuevosValoresCuentasDestino.splice(posicionEliminar, 1);
                       nuevasFechas.splice(posicionEliminar, 1);
                       nuevasLlavesMatch.splice(posicionEliminar, 1);
                     } else {
@@ -1358,8 +1397,12 @@ function Paso1(props) {
                     tipos: nuevosTipos,
                     proveedores: nuevosProveedores,
                     importes: nuevosImportes,
+                    idsBancosOrigen: nuevosIdsBancosOrigen,
                     cuentasOrigen: nuevasCuentasOrigen,
+                    valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+                    idsBancosDestino: nuevosIdsBancosDestino,
                     cuentasDestino: nuevasCuentasDestino,
+                    valoresCuentasDestino: nuevosValoresCuentasDestino,
                     fechas: nuevasFechas,
                     llavesMatch: nuevasLlavesMatch,
                   });
@@ -1844,25 +1887,40 @@ function Paso2(props) {
                     inputProps={{
                       maxLength: 100,
                     }}
-                    value={instrucciones.cuentasOrigen[index]}
+                    value={instrucciones.valoresCuentasOrigen[index]}
                     /* onKeyPress={(e) => {
                       keyValidation(e, 5);
                     }} */
                     onChange={(e) => {
                       /* pasteValidation(e, 5); */
+
+                      let nuevosIdsBancosOrigen = instrucciones.idsBancosOrigen;
+                      nuevosIdsBancosOrigen[index] =
+                        e.target.value !== "-1"
+                          ? cuentasOrigen[parseInt(e.target.value)].IdBanco
+                          : 0;
                       let nuevasCuentasOrigen = instrucciones.cuentasOrigen;
-                      nuevasCuentasOrigen[index] = e.target.value;
+                      nuevasCuentasOrigen[index] =
+                        e.target.value !== "-1"
+                          ? cuentasOrigen[parseInt(e.target.value)].Nombre
+                          : "";
+                      let nuevosValoresCuentasOrigen =
+                        instrucciones.valoresCuentasOrigen;
+                      nuevosValoresCuentasOrigen[index] =
+                        e.target.value !== "-1" ? e.target.value : "-1";
                       setInstrucciones({
                         ...instrucciones,
+                        idsBancosOrigen: nuevosIdsBancosOrigen,
                         cuentasOrigen: nuevasCuentasOrigen,
+                        valoresCuentasOrigen: nuevosValoresCuentasOrigen,
                       });
                     }}
                   >
-                    <option value="0">Seleccione una cuenta de origen</option>
+                    <option value="-1">Seleccione una cuenta de origen</option>
                     {cuentasOrigen.length > 0
                       ? cuentasOrigen.map((cuenta, index) => (
-                          <option value={cuenta} key={index}>
-                            {cuenta}
+                          <option value={index} key={index}>
+                            {cuenta.Nombre}
                           </option>
                         ))
                       : null}
@@ -1881,26 +1939,44 @@ function Paso2(props) {
                     SelectProps={{
                       native: true,
                     }}
-                    value={instrucciones.cuentasDestino[index]}
-                    onKeyPress={(e) => {
+                    value={instrucciones.valoresCuentasDestino[index]}
+                    /* onKeyPress={(e) => {
                       keyValidation(e, 5);
-                    }}
+                    }} */
                     onChange={(e) => {
-                      pasteValidation(e, 5);
+                      /* pasteValidation(e, 5); */
+
+                      let nuevosIdsBancosDestino =
+                        instrucciones.idsBancosDestino;
+                      nuevosIdsBancosDestino[index] =
+                        e.target.value !== "-1"
+                          ? cuentasDestino[parseInt(e.target.value)].IdBanco
+                          : 0;
                       let nuevasCuentasDestino = instrucciones.cuentasDestino;
-                      nuevasCuentasDestino[index] = e.target.value;
+                      nuevasCuentasDestino[index] =
+                        e.target.value !== "-1"
+                          ? cuentasDestino[parseInt(e.target.value)].Layout
+                          : "";
+                      let nuevosValoresCuentasDestino =
+                        instrucciones.valoresCuentasDestino;
+                      nuevosValoresCuentasDestino[index] =
+                        e.target.value !== "-1" ? e.target.value : "-1";
                       setInstrucciones({
                         ...instrucciones,
+                        idsBancosDestino: nuevosIdsBancosDestino,
                         cuentasDestino: nuevasCuentasDestino,
+                        valoresCuentasDestino: nuevosValoresCuentasDestino,
                       });
                     }}
                   >
-                    <option value="0">Seleccione una cuenta de destino</option>
-                    {cuentasDestino.map((cuenta, index) => (
-                      <option value={cuenta} key={index}>
-                        {cuenta}
-                      </option>
-                    ))}
+                    <option value="-1">Seleccione una cuenta de destino</option>
+                    {cuentasDestino.length > 0
+                      ? cuentasDestino.map((cuenta, index) => (
+                          <option value={index} key={index}>
+                            {cuenta.Layout}
+                          </option>
+                        ))
+                      : null}
                   </TextField>
                 </TableCell>
                 <TableCell align="right">
@@ -2017,8 +2093,8 @@ function Paso3(props) {
   const aplicado = props.aplicado;
   const setAplicado = props.setAplicado;
   const setRestante = props.setRestante;
-  const proveedorAutocomplete = props.proveedorAutocomplete;
-  const setProveedorAutocomplete = props.setProveedorAutocomplete;
+  /* const proveedorAutocomplete = props.proveedorAutocomplete;
+  const setProveedorAutocomplete = props.setProveedorAutocomplete; */
   const [tipoDocumento, setTipoDocumento] = useState("Anticipo a proveedores");
   const [openDialogInstrucciones, setOpenDialogInstrucciones] = useState(false);
   const [flujosEfectivoFiltrados, setFlujosEfectivoFiltrados] = useState([]);
@@ -2283,7 +2359,7 @@ function Paso3(props) {
               {instruccionesAdicionales.tipos[index]}
             </TableCell>
             <TableCell align="right">
-              {/* <TextField
+              <TextField
                 className={classes.textFields}
                 select
                 SelectProps={{
@@ -2292,15 +2368,15 @@ function Paso3(props) {
                 id={"paso3Proveedor" + index}
                 variant="outlined"
                 type="text"
-                inputProps={{
+                /* inputProps={{
                   maxLength: 100,
-                }}
+                }} */
                 value={instruccionesAdicionales.proveedores[index]}
-                onKeyPress={(e) => {
+                /* onKeyPress={(e) => {
                   keyValidation(e, 3);
-                }}
+                }} */
                 onChange={(e) => {
-                  pasteValidation(e, 3);
+                  /* pasteValidation(e, 3); */
                   let nuevosProveedores = instruccionesAdicionales.proveedores;
                   nuevosProveedores[index] = e.target.value;
                   setInstruccionesAdicionales({
@@ -2310,11 +2386,18 @@ function Paso3(props) {
                 }}
               >
                 <option value="0">Seleccione un proveedor</option>
-                <option value="proveedor1">Proveedor 1</option>
+                {proveedores.length > 0
+                  ? proveedores.map((proveedor, index) => (
+                      <option value={proveedor.razonsocial} key={index}>
+                        {`${proveedor.razonsocial} (${proveedor.rfc})`}
+                      </option>
+                    ))
+                  : null}
+                {/* <option value="proveedor1">Proveedor 1</option>
                 <option value="proveedor2">Proveedor 2</option>
-                <option value="proveedor3">Proveedor 3</option>
-              </TextField> */}
-              <Autocomplete
+                <option value="proveedor3">Proveedor 3</option> */}
+              </TextField>
+              {/* <Autocomplete
                 options={proveedores}
                 getOptionLabel={(option) =>
                   `${option.rfc}-${option.razonsocial}`
@@ -2354,7 +2437,7 @@ function Paso3(props) {
                     variant="outlined"
                   />
                 )}
-              />
+              /> */}
             </TableCell>
             <TableCell align="right">
               <TextField
@@ -2369,27 +2452,54 @@ function Paso3(props) {
                 inputProps={{
                   maxLength: 20,
                 }}
-                value={instruccionesAdicionales.cuentasOrigen[index]}
+                value={instruccionesAdicionales.valoresCuentasOrigen[index]}
                 /* onKeyPress={(e) => {
                   keyValidation(e, 5);
                 }} */
                 onChange={(e) => {
                   /* pasteValidation(e, 5); */
+
+                  let nuevosIdsBancosOrigen =
+                    instruccionesAdicionales.idsBancosOrigen;
+                  nuevosIdsBancosOrigen[index] =
+                    e.target.value !== "-1"
+                      ? cuentasOrigen[parseInt(e.target.value)].IdBanco
+                      : 0;
                   let nuevasCuentasOrigen =
+                    instruccionesAdicionales.cuentasOrigen;
+                  nuevasCuentasOrigen[index] =
+                    e.target.value !== "-1"
+                      ? cuentasOrigen[parseInt(e.target.value)].Nombre
+                      : "";
+                  let nuevosValoresCuentasOrigen =
+                    instruccionesAdicionales.valoresCuentasOrigen;
+                  nuevosValoresCuentasOrigen[index] =
+                    e.target.value !== "-1" ? e.target.value : "-1";
+
+                  setInstruccionesAdicionales({
+                    ...instruccionesAdicionales,
+                    idsBancosOrigen: nuevosIdsBancosOrigen,
+                    cuentasOrigen: nuevasCuentasOrigen,
+                    valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+                  });
+
+                  /* let nuevasCuentasOrigen =
                     instruccionesAdicionales.cuentasOrigen;
                   nuevasCuentasOrigen[index] = e.target.value;
                   setInstruccionesAdicionales({
                     ...instruccionesAdicionales,
                     cuentasOrigen: nuevasCuentasOrigen,
-                  });
+                  }); */
                 }}
               >
                 <option value="0">Seleccione una cuenta de origen</option>
-                {cuentasOrigen.map((cuenta, index) => (
-                  <option value={cuenta} key={index}>
-                    {cuenta}
-                  </option>
-                ))}
+                {cuentasOrigen.length > 0
+                  ? cuentasOrigen.map((cuenta, index) => (
+                      <option value={index} key={index}>
+                        {cuenta.Nombre}
+                      </option>
+                    ))
+                  : null}
               </TextField>
             </TableCell>
             <TableCell align="right">
@@ -2405,27 +2515,46 @@ function Paso3(props) {
                 inputProps={{
                   maxLength: 20,
                 }}
-                value={instruccionesAdicionales.cuentasDestino[index]}
+                value={instruccionesAdicionales.valoresCuentasDestino[index]}
                 /* onKeyPress={(e) => {
                   keyValidation(e, 5);
                 }} */
                 onChange={(e) => {
                   /* pasteValidation(e, 5); */
+
+                  let nuevosIdsBancosDestino =
+                    instruccionesAdicionales.idsBancosDestino;
+                  nuevosIdsBancosDestino[index] =
+                    e.target.value !== "-1"
+                      ? cuentasDestino[parseInt(e.target.value)].IdBanco
+                      : 0;
                   let nuevasCuentasDestino =
                     instruccionesAdicionales.cuentasDestino;
-                  nuevasCuentasDestino[index] = e.target.value;
+                  nuevasCuentasDestino[index] =
+                    e.target.value !== "-1"
+                      ? cuentasDestino[parseInt(e.target.value)].Layout
+                      : "";
+                  let nuevosValoresCuentasDestino =
+                    instruccionesAdicionales.valoresCuentasDestino;
+                  nuevosValoresCuentasDestino[index] =
+                    e.target.value !== "-1" ? e.target.value : "-1";
+
                   setInstruccionesAdicionales({
                     ...instruccionesAdicionales,
+                    idsBancosDestino: nuevosIdsBancosDestino,
                     cuentasDestino: nuevasCuentasDestino,
+                    valoresCuentasDestino: nuevosValoresCuentasDestino,
                   });
                 }}
               >
                 <option value="0">Seleccione una cuenta de destino</option>
-                {cuentasDestino.map((cuenta, index) => (
-                  <option value={cuenta} key={index}>
-                    {cuenta}
-                  </option>
-                ))}
+                {cuentasDestino.length > 0
+                  ? cuentasDestino.map((cuenta, index) => (
+                      <option value={index} key={index}>
+                        {cuenta.Layout}
+                      </option>
+                    ))
+                  : null}
               </TextField>
             </TableCell>
             <TableCell align="right">
@@ -2540,16 +2669,26 @@ function Paso3(props) {
     let nuevosTipos = instruccionesAdicionales.tipos;
     let nuevosProveedores = instruccionesAdicionales.proveedores;
     let nuevosImportes = instruccionesAdicionales.importes;
+    let nuevosIdsBancosOrigen = instruccionesAdicionales.idsBancosOrigen;
     let nuevasCuentasOrigen = instruccionesAdicionales.cuentasOrigen;
+    let nuevosValoresCuentasOrigen =
+      instruccionesAdicionales.valoresCuentasOrigen;
+    let nuevosIdsBancosDestino = instruccionesAdicionales.idsBancosDestino;
     let nuevasCuentasDestino = instruccionesAdicionales.cuentasDestino;
+    let nuevosValoresCuentasDestino =
+      instruccionesAdicionales.valoresCuentasDestino;
     let nuevasFechas = instruccionesAdicionales.fechas;
     let nuevasLlavesMatch = instruccionesAdicionales.llavesMatch;
     nuevosIds.push(1);
     nuevosTipos.push(tipoDocumento);
     nuevosProveedores.push("0");
     nuevosImportes.push(0.0);
+    nuevosIdsBancosOrigen.push(0);
     nuevasCuentasOrigen.push("0");
+    nuevosValoresCuentasOrigen.push("-1");
+    nuevosIdsBancosDestino.push(0);
     nuevasCuentasDestino.push("0");
+    nuevosValoresCuentasDestino.push("-1");
     nuevasFechas.push(moment().format("YYYY-MM-DD"));
     nuevasLlavesMatch.push("");
     setInstruccionesAdicionales({
@@ -2557,8 +2696,12 @@ function Paso3(props) {
       tipos: nuevosTipos,
       proveedores: nuevosProveedores,
       importes: nuevosImportes,
+      idsBancosOrigen: nuevosIdsBancosOrigen,
       cuentasOrigen: nuevasCuentasOrigen,
+      valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+      idsBancosDestino: nuevosIdsBancosDestino,
       cuentasDestino: nuevasCuentasDestino,
+      valoresCuentasDestino: nuevosValoresCuentasDestino,
       fechas: nuevasFechas,
       llavesMatch: nuevasLlavesMatch,
     });
@@ -2569,16 +2712,26 @@ function Paso3(props) {
     let nuevosTipos = instruccionesAdicionales.tipos;
     let nuevosProveedores = instruccionesAdicionales.proveedores;
     let nuevosImportes = instruccionesAdicionales.importes;
+    let nuevosIdsBancosOrigen = instruccionesAdicionales.idsBancosOrigen;
     let nuevasCuentasOrigen = instruccionesAdicionales.cuentasOrigen;
+    let nuevosValoresCuentasOrigen =
+      instruccionesAdicionales.valoresCuentasOrigen;
+    let nuevosIdsBancosDestino = instruccionesAdicionales.idsBancosDestino;
     let nuevasCuentasDestino = instruccionesAdicionales.cuentasDestino;
+    let nuevosValoresCuentasDestino =
+      instruccionesAdicionales.valoresCuentasDestino;
     let nuevasFechas = instruccionesAdicionales.fechas;
     let nuevasLlavesMatch = instruccionesAdicionales.llavesMatch;
     nuevosIds.splice(pos, 1);
     nuevosTipos.splice(pos, 1);
     nuevosProveedores.splice(pos, 1);
     nuevosImportes.splice(pos, 1);
+    nuevosIdsBancosOrigen.splice(pos, 1);
     nuevasCuentasOrigen.splice(pos, 1);
+    nuevosValoresCuentasOrigen.splice(pos, 1);
+    nuevosIdsBancosDestino.splice(pos, 1);
     nuevasCuentasDestino.splice(pos, 1);
+    nuevosValoresCuentasDestino.splice(pos, 1);
     nuevasFechas.splice(pos, 1);
     nuevasLlavesMatch.splice(pos, 1);
     setInstruccionesAdicionales({
@@ -2586,8 +2739,12 @@ function Paso3(props) {
       tipos: nuevosTipos,
       proveedores: nuevosProveedores,
       importes: nuevosImportes,
+      idsBancosOrigen: nuevosIdsBancosOrigen,
       cuentasOrigen: nuevasCuentasOrigen,
+      valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+      idsBancosDestino: nuevosIdsBancosDestino,
       cuentasDestino: nuevasCuentasDestino,
+      valoresCuentasDestino: nuevosValoresCuentasDestino,
       fechas: nuevasFechas,
       llavesMatch: nuevasLlavesMatch,
     });
