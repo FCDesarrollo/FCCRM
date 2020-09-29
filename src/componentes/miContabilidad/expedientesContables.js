@@ -346,7 +346,7 @@ export default function ExpedientesContables(props) {
               bit.periodo < 10 ? `0${bit.periodo}` : bit.periodo,
               bit.ejercicio,
               bit.fechacorte,
-              bit.nombrearchivoE,
+              bit.nombrearchivoE !== null ? bit.nombrearchivoE : bit.archivodet,
               bit.usuarioEntrego,
               bit.urlarchivo
             )

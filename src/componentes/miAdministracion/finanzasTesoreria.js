@@ -80,6 +80,9 @@ const useStyles = makeStyles((theme) => ({
   backButton: {
     marginRight: theme.spacing(1),
   },
+  table: {
+    overflow: "auto",
+  },
 }));
 
 /* function getSteps() {
@@ -221,6 +224,10 @@ function FlujosEfectivo(props) {
   });
   const [cuentasOrigen, setCuentasOrigen] = useState([]);
   const [proveedores, setProveedores] = useState([]);
+  const [proveedoresPrioritarios, setProveedoresPrioritarios] = useState([]);
+  const [proveedoresNoPrioritarios, setProveedoresNoPrioritarios] = useState(
+    []
+  );
   const [cuentasDestino, setCuentasDestino] = useState([]);
   const [proveedorAutocomplete, setProveedorAutocomplete] = useState("");
   const steps = [
@@ -281,14 +288,14 @@ function FlujosEfectivo(props) {
   );
   const [
     {
-      data: traerProveedoresData,
-      loading: traerProveedoresLoading,
-      error: traerProveedoresError,
+      data: traerProveedoresFiltroData,
+      loading: traerProveedoresFiltroLoading,
+      error: traerProveedoresFiltroError,
     },
-    /* executeTraerProveedores, */
+    executeTraerProveedoresFiltro,
   ] = useAxios(
     {
-      url: API_BASE_URL + `/traerProveedores`,
+      url: API_BASE_URL + `/traerProveedoresFiltro`,
       method: "GET",
       params: {
         usuario: correoUsuario,
@@ -313,7 +320,6 @@ function FlujosEfectivo(props) {
             </Typography>
           );
         } else {
-          console.log(getCuentasPropiasData.cuentas);
           /* let cuentas = [];
           for (let x = 0; x < getCuentasPropiasData.cuentas.length; x++) {
             cuentas.push(getCuentasPropiasData.cuentas[x].Nombre);
@@ -336,9 +342,7 @@ function FlujosEfectivo(props) {
             </Typography>
           );
         } else {
-          console.log(getCuentasClientesProveedoresData.cuentas);
-          /* let cuentas = []; */
-          for (
+          /* for (
             let x = 0;
             x < getCuentasClientesProveedoresData.cuentas.length;
             x++
@@ -351,9 +355,7 @@ function FlujosEfectivo(props) {
             ].Num.substr(-4);
             getCuentasClientesProveedoresData.cuentas[x].Layout =
               nombre + " " + numero;
-            /* cuentas.push(nombre + " " + numero); */
-          }
-          console.log(getCuentasClientesProveedoresData.cuentas);
+          } */
           setCuentasDestino(getCuentasClientesProveedoresData.cuentas);
         }
       }
@@ -364,26 +366,36 @@ function FlujosEfectivo(props) {
 
   useEffect(() => {
     function checkData() {
-      if (traerProveedoresData) {
-        if (traerProveedoresData.error !== 0) {
+      if (traerProveedoresFiltroData) {
+        if (traerProveedoresFiltroData.error !== 0) {
           return (
             <Typography variant="h5">
-              {dataBaseErrores(traerProveedoresData.error)}
+              {dataBaseErrores(traerProveedoresFiltroData.error)}
             </Typography>
           );
         } else {
-          setProveedores(traerProveedoresData.proveedores);
+          setProveedores(traerProveedoresFiltroData.proveedores);
+          setProveedoresPrioritarios(
+            traerProveedoresFiltroData.proveedores.filter(
+              (proveedor) => proveedor.Prioridad === 1
+            )
+          );
+          setProveedoresNoPrioritarios(
+            traerProveedoresFiltroData.proveedores.filter(
+              (proveedor) => proveedor.Prioridad === 0
+            )
+          );
         }
       }
     }
 
     checkData();
-  }, [traerProveedoresData]);
+  }, [traerProveedoresFiltroData]);
 
   if (
     getCuentasPropiasLoading ||
     getCuentasClientesProveedoresLoading ||
-    traerProveedoresLoading
+    traerProveedoresFiltroLoading
   ) {
     setLoading(true);
     return <div></div>;
@@ -393,7 +405,7 @@ function FlujosEfectivo(props) {
   if (
     getCuentasPropiasError ||
     getCuentasClientesProveedoresError ||
-    traerProveedoresError
+    traerProveedoresFiltroError
   ) {
     return <ErrorQueryDB />;
   }
@@ -532,8 +544,11 @@ function FlujosEfectivo(props) {
             password={passwordUsuario}
             setLoading={setLoading}
             rfc={rfcEmpresa}
-            proveedores={proveedores}
+            //proveedores={proveedores}
+            proveedoresPrioritarios={proveedoresPrioritarios}
+            proveedoresNoPrioritarios={proveedoresNoPrioritarios}
             documentosSeleccionados={documentosSeleccionados}
+            executeTraerProveedoresFiltro={executeTraerProveedoresFiltro}
             setDocumentosSeleccionados={setDocumentosSeleccionados}
             /* coordenada1={coordenada1}
             setCoordenada1={setCoordenada1}
@@ -768,7 +783,10 @@ function Paso1(props) {
   const passwordUsuario = props.password;
   const setLoading = props.setLoading;
   const rfcEmpresa = props.rfc;
-  const proveedores = props.proveedores;
+  //const proveedores = props.proveedores;
+  const proveedoresPrioritarios = props.proveedoresPrioritarios;
+  const proveedoresNoPrioritarios = props.proveedoresNoPrioritarios;
+  const executeTraerProveedoresFiltro = props.executeTraerProveedoresFiltro;
   const documentosSeleccionados = props.documentosSeleccionados;
   const setDocumentosSeleccionados = props.setDocumentosSeleccionados;
   /* const coordenada1 = props.coordenada1;
@@ -792,10 +810,11 @@ function Paso1(props) {
   const [flujosEfectivoFiltrados, setFlujosEfectivoFiltrados] = useState([]);
   const [pendiente, setPendiente] = useState(0.0);
   const [openPrioritariosDialog, setOpenPrioritariosDialog] = useState(false);
-  const [proveedoresPrioritarios, setProveedoresPrioritarios] = useState([]);
+  /*  const [proveedoresPrioritarios, setProveedoresPrioritarios] = useState([]); */
   const [totalEspecificos, setTotalEspecificos] = useState(0.0);
   const [tituloFlujosFiltrados, setTituloFlujosFiltrados] = useState("");
   const [showTable, setShowTable] = useState(1);
+  const [idProveedor, setIdProveedor] = useState(0);
   const [
     {
       data: traerFlujosEfectivoData,
@@ -876,6 +895,24 @@ function Paso1(props) {
     }
   );
 
+  const [
+    {
+      data: cambiarPrioridadProveedorData,
+      loading: cambiarPrioridadProveedorLoading,
+      error: cambiarPrioridadProveedorError,
+    },
+    executeCambiarPrioridadProveedor,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/cambiarPrioridadProveedor`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
   useEffect(() => {
     function checkData() {
       if (traerFlujosEfectivoData) {
@@ -904,7 +941,7 @@ function Paso1(props) {
             </Typography>
           );
         } else {
-          console.log(getFlwPagosData.pagospendientes);
+          //console.log(getFlwPagosData.pagospendientes);
         }
       }
     }
@@ -961,11 +998,31 @@ function Paso1(props) {
     checkData();
   }, [guardarFlwPagosData]);
 
+  useEffect(() => {
+    function checkData() {
+      if (cambiarPrioridadProveedorData) {
+        if (cambiarPrioridadProveedorData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(cambiarPrioridadProveedorData.error)}
+            </Typography>
+          );
+        } else {
+          executeTraerProveedoresFiltro();
+          /* setOpenPrioritariosDialog(true); */
+        }
+      }
+    }
+
+    checkData();
+  }, [cambiarPrioridadProveedorData, executeTraerProveedoresFiltro]);
+
   if (
     traerFlujosEfectivoLoading ||
     getFlwPagosLoading ||
     traerFlujosEfectivoFiltradosLoading ||
-    guardarFlwPagosLoading
+    guardarFlwPagosLoading ||
+    cambiarPrioridadProveedorLoading
   ) {
     setLoading(true);
     return <div></div>;
@@ -976,7 +1033,8 @@ function Paso1(props) {
     traerFlujosEfectivoError ||
     getFlwPagosError ||
     traerFlujosEfectivoFiltradosError ||
-    guardarFlwPagosError
+    guardarFlwPagosError ||
+    cambiarPrioridadProveedorError
   ) {
     return <ErrorQueryDB />;
   }
@@ -997,8 +1055,8 @@ function Paso1(props) {
         if (!columnas.includes(flujosEfectivo[x].Tipo)) {
           columnas.push(flujosEfectivo[x].Tipo);
         }
-        if (!filas.includes(flujosEfectivo[x].Razon)) {
-          filas.push(flujosEfectivo[x].Razon);
+        if (!filas.includes(flujosEfectivo[x].RazonPrincipal)) {
+          filas.push(flujosEfectivo[x].RazonPrincipal);
         }
       }
 
@@ -1016,7 +1074,7 @@ function Paso1(props) {
           for (let z = 0; z < flujosEfectivo.length; z++) {
             if (
               flujosEfectivo[z].Tipo === columnas[y] &&
-              flujosEfectivo[z].Razon === filas[x]
+              flujosEfectivo[z].RazonPrincipal === filas[x]
             ) {
               pendientes[x][y] =
                 pendientes[x][y] + parseFloat(flujosEfectivo[z].Pendiente);
@@ -1040,6 +1098,10 @@ function Paso1(props) {
       for (let x = 0; x < sumaFilas.length; x++) {
         sumaTotal = sumaTotal + sumaFilas[x];
       }
+
+      /* console.log(columnas);
+      console.log(filas);
+      console.log(pendiente); */
 
       return (
         <Table className={classes.table} aria-label="simple table">
@@ -1507,20 +1569,36 @@ function Paso1(props) {
             {flujosEfectivo.length > 0 ? (
               <Grid item xs={12}>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={2} style={{ alignSelf: "flex-end" }}>
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={2}
+                    style={{ alignSelf: "flex-end" }}
+                  >
                     <FormControlLabel
                       control={
-                        <Checkbox name="soloPrioritarios" color="primary" />
+                        <Checkbox
+                          name="soloProveedoresPrioritarios"
+                          color="primary"
+                        />
                       }
-                      label="Solo Prioritarios"
+                      label="Solo Proveedores Prioritarios"
                     />
                   </Grid>
-                  <Grid item xs={8} md={2} style={{ alignSelf: "center" }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => {
-                        /* executeTraerProveedores({
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={2}
+                    style={{ alignSelf: "center" }}
+                  >
+                    <Tooltip title="Configurar proveedores prioritarios">
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                          /* executeTraerProveedores({
                           params: {
                             usuario: correoUsuario,
                             pwd: passwordUsuario,
@@ -1528,13 +1606,50 @@ function Paso1(props) {
                             idsubmenu: 46,
                           },
                         }); */
-                        handleClickOpenPrioritariosDialog();
-                      }}
-                    >
-                      ...
-                    </Button>
+                          handleClickOpenPrioritariosDialog();
+                        }}
+                      >
+                        ...
+                      </Button>
+                    </Tooltip>
                   </Grid>
-                  <Grid item xs={4} md={2}>
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={2}
+                    style={{ alignSelf: "flex-end" }}
+                  >
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          name="soloDocumentosPrioritarios"
+                          color="primary"
+                        />
+                      }
+                      label="Solo Documentos Prioritarios"
+                    />
+                  </Grid>
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={2}
+                    style={{ alignSelf: "center" }}
+                  >
+                    <Tooltip title="Configurar documentos prioritarios">
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                          //handleClickOpenPrioritariosDialog();
+                        }}
+                      >
+                        ...
+                      </Button>
+                    </Tooltip>
+                  </Grid>
+                  <Grid item xs={12} md={2}>
                     <TextField
                       className={classes.textFields}
                       id="pendienteMayorIgual"
@@ -1648,11 +1763,14 @@ function Paso1(props) {
           <Grid container spacing={3}>
             <Grid item xs={12} md={9}>
               <Autocomplete
-                options={proveedores}
+                options={proveedoresNoPrioritarios}
                 getOptionLabel={(option) =>
-                  `${option.rfc}-${option.razonsocial}`
+                  `${option.razonsocial} (${option.rfc})`
                 }
                 id="debug"
+                onChange={(event, values) => {
+                  setIdProveedor(values !== null ? values.id : 0);
+                }}
                 onInputChange={(e, value) => {
                   const separacion = value.split("-");
                   if (separacion.length === 2) {
@@ -1689,7 +1807,22 @@ function Paso1(props) {
                 color="primary"
                 style={{ width: "100%" }}
                 onClick={() => {
-                  setProveedoresPrioritarios([]); //esto se remplazara por la llamada a la api que convertira en prioritario el proveedor escojido
+                  if (idProveedor !== 0) {
+                    executeCambiarPrioridadProveedor({
+                      data: {
+                        usuario: correoUsuario,
+                        pwd: passwordUsuario,
+                        rfc: rfcEmpresa,
+                        idsubmenu: 46,
+                        idproveedor: idProveedor,
+                        prioridad: 1,
+                      },
+                    });
+                  } else {
+                    swal("Error", "Selecciona un proveedor", "warning");
+                  }
+
+                  //setProveedoresPrioritarios([]); //esto se remplazara por la llamada a la api que convertira en prioritario el proveedor escojido
                 }}
               >
                 Agregar a prioritarios
@@ -1706,15 +1839,17 @@ function Paso1(props) {
                 {proveedoresPrioritarios.length > 0 ? (
                   proveedoresPrioritarios.map((proveedor, index) => {
                     return (
-                      <ListItem button>
+                      <ListItem button key={index}>
                         <ListItemText
-                          primary={proveedor.rfc}
-                          secondary={proveedor.razonsocial}
+                          primary={proveedor.razonsocial}
+                          secondary={proveedor.rfc}
                         />
                         <ListItemSecondaryAction>
-                          <IconButton edge="end" aria-label="delete">
-                            <CloseIcon color="secondary" />
-                          </IconButton>
+                          <Tooltip title="Quitar de prioritarios">
+                            <IconButton edge="end" aria-label="delete">
+                              <CloseIcon color="secondary" />
+                            </IconButton>
+                          </Tooltip>
                         </ListItemSecondaryAction>
                       </ListItem>
                     );
@@ -2458,6 +2593,7 @@ function Paso3(props) {
                 }} */
                 onChange={(e) => {
                   /* pasteValidation(e, 5); */
+                  //no pone el valor en el combo. Aqui me quede
 
                   let nuevosIdsBancosOrigen =
                     instruccionesAdicionales.idsBancosOrigen;
@@ -2492,7 +2628,7 @@ function Paso3(props) {
                   }); */
                 }}
               >
-                <option value="0">Seleccione una cuenta de origen</option>
+                <option value="-1">Seleccione una cuenta de origen</option>
                 {cuentasOrigen.length > 0
                   ? cuentasOrigen.map((cuenta, index) => (
                       <option value={index} key={index}>
@@ -2547,7 +2683,7 @@ function Paso3(props) {
                   });
                 }}
               >
-                <option value="0">Seleccione una cuenta de destino</option>
+                <option value="-1">Seleccione una cuenta de destino</option>
                 {cuentasDestino.length > 0
                   ? cuentasDestino.map((cuenta, index) => (
                       <option value={index} key={index}>
@@ -2598,7 +2734,6 @@ function Paso3(props) {
                     .replace("$", "")
                     .replace(",", "");
                   setImporteAntiguo(parseFloat(valor));
-                  console.log("si");
                 }}
                 onChange={(e) => {
                   let nuevosImportes = instruccionesAdicionales.importes;
@@ -2610,10 +2745,7 @@ function Paso3(props) {
                   });
 
                   if (typeof e.target.value !== "undefined") {
-                    console.log("actual:", parseFloat(e.target.value));
-                    console.log("antiguo:", importeAntiguo);
                     if (parseFloat(e.target.value) > importeAntiguo) {
-                      console.log("mayor");
                       setAplicado(
                         aplicado + (parseFloat(e.target.value) - importeAntiguo)
                       );
@@ -2623,7 +2755,6 @@ function Paso3(props) {
                             (parseFloat(e.target.value) - importeAntiguo))
                       );
                     } else if (parseFloat(e.target.value) < importeAntiguo) {
-                      console.log("menor");
                       setAplicado(
                         aplicado - (importeAntiguo - parseFloat(e.target.value))
                       );
@@ -2903,12 +3034,15 @@ function Paso3(props) {
 function Paso4(props) {
   const classes = useStyles();
   const instruccionesCombinadas = props.instruccionesCombinadas;
+  //console.log(instruccionesCombinadas);
   const [informacionBancos, setInformacionBancos] = useState({
     ids: [],
     tipos: [],
     proveedores: [],
     importes: [],
+    idsBancosOrigen: [],
     cuentasOrigen: [],
+    idsBancosDestino: [],
     cuentasDestino: [],
     fechas: [],
     llavesMatch: [],
@@ -2919,12 +3053,14 @@ function Paso4(props) {
     let nuevosTipos = [];
     let nuevosProveedores = [];
     let nuevosImportes = [];
+    let nuevosIdsBancosOrigen = [];
     let nuevasCuentasOrigen = [];
+    let nuevosIdsBancosDestino = [];
     let nuevasCuentasDestino = [];
     let nuevasFechas = [];
     let nuevasLlavesMatch = [];
 
-    function verExistencia(cuentaOrigen, cuentaDestino, proveedor) {
+    /* function verExistencia(cuentaOrigen, cuentaDestino, proveedor) {
       let pos = -1;
       for (let x = 0; x < nuevasCuentasOrigen.length; x++) {
         if (
@@ -2937,12 +3073,32 @@ function Paso4(props) {
         }
       }
       return pos;
+    } */
+
+    function verExistencia(idBancoOrigen, idBancoDestino, proveedor) {
+      let pos = -1;
+      for (let x = 0; x < nuevasCuentasOrigen.length; x++) {
+        if (
+          nuevosIdsBancosOrigen[x] === idBancoOrigen &&
+          nuevosIdsBancosDestino[x] === idBancoDestino &&
+          nuevosProveedores[x] === proveedor
+        ) {
+          pos = x;
+          break;
+        }
+      }
+      return pos;
     }
 
-    for (let x = 0; x < instruccionesCombinadas.cuentasOrigen.length; x++) {
-      let pos = verExistencia(
+    for (let x = 0; x < instruccionesCombinadas.idsBancosOrigen.length; x++) {
+      /* let pos = verExistencia(
         instruccionesCombinadas.cuentasOrigen[x],
         instruccionesCombinadas.cuentasDestino[x],
+        instruccionesCombinadas.proveedores[x]
+      ); */
+      let pos = verExistencia(
+        instruccionesCombinadas.idsBancosOrigen[x],
+        instruccionesCombinadas.idsBancosDestino[x],
         instruccionesCombinadas.proveedores[x]
       );
       if (pos === -1) {
@@ -2950,7 +3106,11 @@ function Paso4(props) {
         nuevosTipos.push(instruccionesCombinadas.tipos[x]);
         nuevosProveedores.push(instruccionesCombinadas.proveedores[x]);
         nuevosImportes.push(instruccionesCombinadas.importes[x]);
+        nuevosIdsBancosOrigen.push(instruccionesCombinadas.idsBancosOrigen[x]);
         nuevasCuentasOrigen.push(instruccionesCombinadas.cuentasOrigen[x]);
+        nuevosIdsBancosDestino.push(
+          instruccionesCombinadas.idsBancosDestino[x]
+        );
         nuevasCuentasDestino.push(instruccionesCombinadas.cuentasDestino[x]);
         nuevasFechas.push(instruccionesCombinadas.fechas[x]);
         nuevasLlavesMatch.push(instruccionesCombinadas.llavesMatch[x]);
@@ -2969,7 +3129,9 @@ function Paso4(props) {
       tipos: nuevosTipos,
       proveedores: nuevosProveedores,
       importes: nuevosImportes,
+      idsBancosOrigen: nuevosIdsBancosOrigen,
       cuentasOrigen: nuevasCuentasOrigen,
+      idsBancosDestino: nuevosIdsBancosDestino,
       cuentasDestino: nuevasCuentasDestino,
       fechas: nuevasFechas,
       llavesMatch: nuevasLlavesMatch,
@@ -2979,7 +3141,6 @@ function Paso4(props) {
   const getInformacionBancos = () => {
     if (informacionBancos.cuentasOrigen.length > 0) {
       console.log(informacionBancos);
-
       return informacionBancos.cuentasOrigen.map((cuentaOrigen, index) => {
         return (
           <TableRow key={index}>
@@ -2992,7 +3153,7 @@ function Paso4(props) {
             </TableCell>
             <TableCell align="right">{cuentaOrigen}</TableCell>
             <TableCell align="right">
-              {informacionBancos.cuentasDestino[index]}
+              {informacionBancos.cuentasDestino[index].slice(0, -5)}
             </TableCell>
             <TableCell align="right">
               ${number_format(informacionBancos.importes[index], 2, ".", ",")}
