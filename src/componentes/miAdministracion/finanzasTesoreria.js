@@ -186,6 +186,7 @@ function FlujosEfectivo(props) {
     ids: [],
     tipos: [],
     proveedores: [],
+    rfcProveedores: [],
     importes: [],
     idsBancosOrigen: [],
     cuentasOrigen: [],
@@ -200,6 +201,8 @@ function FlujosEfectivo(props) {
     ids: [],
     tipos: [],
     proveedores: [],
+    rfcProveedores: [],
+    valoresProveedores: [],
     importes: [],
     idsBancosOrigen: [],
     cuentasOrigen: [],
@@ -230,6 +233,15 @@ function FlujosEfectivo(props) {
   );
   const [cuentasDestino, setCuentasDestino] = useState([]);
   const [proveedorAutocomplete, setProveedorAutocomplete] = useState("");
+  const [openPrioritariosDialog, setOpenPrioritariosDialog] = useState(false);
+  const [
+    validacionDialogProveedoresPrioritarios,
+    setValidacionDialogProveedoresPrioritarios,
+  ] = useState(false);
+  const [
+    filtroApiTraerFlujosEfectivo,
+    setFiltroApiTraerFlujosEfectivo,
+  ] = useState(1);
   const steps = [
     "1. Indicar el Efectivo Disponible y Aplicación  de Pagos",
     "2. Completar instrucciones de Pago",
@@ -392,6 +404,13 @@ function FlujosEfectivo(props) {
     checkData();
   }, [traerProveedoresFiltroData]);
 
+  useEffect(() => {
+    if (validacionDialogProveedoresPrioritarios) {
+      setOpenPrioritariosDialog(true);
+      setValidacionDialogProveedoresPrioritarios(false);
+    }
+  }, [validacionDialogProveedoresPrioritarios]);
+
   if (
     getCuentasPropiasLoading ||
     getCuentasClientesProveedoresLoading ||
@@ -487,7 +506,7 @@ function FlujosEfectivo(props) {
       if (instruccionesAdicionales.ids.length !== 0) {
         for (let x = 0; x < instruccionesAdicionales.proveedores.length; x++) {
           if (
-            instruccionesAdicionales.proveedores[x] === "0" ||
+            instruccionesAdicionales.valoresProveedores[x] === "-1" ||
             instruccionesAdicionales.valoresCuentasOrigen[x] === "-1" ||
             instruccionesAdicionales.valoresCuentasDestino[x] === "-1" ||
             instruccionesAdicionales.fechas[x] === "" ||
@@ -566,6 +585,13 @@ function FlujosEfectivo(props) {
             setInstrucciones={setInstrucciones}
             instruccionesPagoProveedores={instruccionesPagoProveedores}
             setInstruccionesPagoProveedores={setInstruccionesPagoProveedores}
+            openPrioritariosDialog={openPrioritariosDialog}
+            setOpenPrioritariosDialog={setOpenPrioritariosDialog}
+            setValidacionDialogProveedoresPrioritarios={
+              setValidacionDialogProveedoresPrioritarios
+            }
+            filtroApiTraerFlujosEfectivo={filtroApiTraerFlujosEfectivo}
+            setFiltroApiTraerFlujosEfectivo={setFiltroApiTraerFlujosEfectivo}
           />
         );
       case 1:
@@ -804,17 +830,24 @@ function Paso1(props) {
   //descomentar estas dos variables
   const instrucciones = props.instrucciones;
   const setInstrucciones = props.setInstrucciones;
+  const openPrioritariosDialog = props.openPrioritariosDialog;
+  const setOpenPrioritariosDialog = props.setOpenPrioritariosDialog;
   const instruccionesPagoProveedores = props.instruccionesPagoProveedores;
   const setInstruccionesPagoProveedores = props.setInstruccionesPagoProveedores;
+  const setValidacionDialogProveedoresPrioritarios =
+    props.setValidacionDialogProveedoresPrioritarios;
+  const filtroApiTraerFlujosEfectivo = props.filtroApiTraerFlujosEfectivo;
+  const setFiltroApiTraerFlujosEfectivo = props.setFiltroApiTraerFlujosEfectivo;
   const [flujosEfectivo, setFlujosEfectivo] = useState([]);
   const [flujosEfectivoFiltrados, setFlujosEfectivoFiltrados] = useState([]);
   const [pendiente, setPendiente] = useState(0.0);
-  const [openPrioritariosDialog, setOpenPrioritariosDialog] = useState(false);
   /*  const [proveedoresPrioritarios, setProveedoresPrioritarios] = useState([]); */
   const [totalEspecificos, setTotalEspecificos] = useState(0.0);
   const [tituloFlujosFiltrados, setTituloFlujosFiltrados] = useState("");
   const [showTable, setShowTable] = useState(1);
   const [idProveedor, setIdProveedor] = useState(0);
+  const [pendienteGuardado, setPendienteGuardado] = useState(0.0);
+
   const [
     {
       data: traerFlujosEfectivoData,
@@ -830,12 +863,15 @@ function Paso1(props) {
         pwd: passwordUsuario,
         rfc: rfcEmpresa,
         idsubmenu: 46,
+        filtro: filtroApiTraerFlujosEfectivo,
+        pendiente: pendienteGuardado
       },
     },
     {
       useCache: false,
     }
   );
+
   const [
     {
       data: getFlwPagosData,
@@ -1132,6 +1168,10 @@ function Paso1(props) {
                     let idsEstraidos = ids[index][index2].toString().split(",");
                     ciclo1: for (let x = 0; x < idsEstraidos.length; x++) {
                       for (let y = 0; y < documentosSeleccionados.length; y++) {
+                        console.log(
+                          documentosSeleccionados[y],
+                          parseInt(idsEstraidos[x])
+                        );
                         if (
                           documentosSeleccionados[y] ===
                           parseInt(idsEstraidos[x])
@@ -1159,6 +1199,7 @@ function Paso1(props) {
                               forma: 3,
                               razon: filas[index],
                               tipo: columnas[index2],
+                              filtro: filtroApiTraerFlujosEfectivo,
                             },
                           });
                           setShowTable(2);
@@ -1184,6 +1225,7 @@ function Paso1(props) {
                           idsubmenu: 46,
                           forma: 1,
                           razon: filas[index],
+                          filtro: filtroApiTraerFlujosEfectivo,
                         },
                       });
                       setShowTable(2);
@@ -1215,6 +1257,7 @@ function Paso1(props) {
                         idsubmenu: 46,
                         forma: 2,
                         tipo: columnas[index],
+                        filtro: filtroApiTraerFlujosEfectivo,
                       },
                     });
                     setShowTable(2);
@@ -1237,6 +1280,7 @@ function Paso1(props) {
                       rfc: rfcEmpresa,
                       idsubmenu: 46,
                       forma: 5,
+                      filtro: filtroApiTraerFlujosEfectivo,
                     },
                   });
                   setShowTable(2);
@@ -1290,6 +1334,7 @@ function Paso1(props) {
                   let nuevosIds = instrucciones.ids;
                   let nuevosTipos = instrucciones.tipos;
                   let nuevosProveedores = instrucciones.proveedores;
+                  let nuevosRfcProveedores = instrucciones.rfcProveedores;
                   let nuevosImportes = instrucciones.importes;
                   let nuevosIdsBancosOrigen = instrucciones.idsBancosOrigen;
                   let nuevasCuentasOrigen = instrucciones.cuentasOrigen;
@@ -1320,6 +1365,7 @@ function Paso1(props) {
                       nuevosIds.push(flujoEfectivo.id);
                       nuevosTipos.push("Pago a proveedor");
                       nuevosProveedores.push(flujoEfectivo.Razon);
+                      nuevosRfcProveedores.push(flujoEfectivo.cRFC);
                       nuevosImportes.push(flujoEfectivo.Pendiente);
                       nuevosIdsBancosOrigen.push(0);
                       nuevasCuentasOrigen.push("");
@@ -1409,6 +1455,7 @@ function Paso1(props) {
                       nuevosIds.splice(posicionEliminar, 1);
                       nuevosTipos.splice(posicionEliminar, 1);
                       nuevosProveedores.splice(posicionEliminar, 1);
+                      nuevosRfcProveedores.splice(posicionEliminar, 1);
                       nuevosImportes.splice(posicionEliminar, 1);
                       nuevosIdsBancosOrigen.splice(posicionEliminar, 1);
                       nuevasCuentasOrigen.splice(posicionEliminar, 1);
@@ -1458,6 +1505,7 @@ function Paso1(props) {
                     ids: nuevosIds,
                     tipos: nuevosTipos,
                     proveedores: nuevosProveedores,
+                    rfcProveedores: nuevosRfcProveedores,
                     importes: nuevosImportes,
                     idsBancosOrigen: nuevosIdsBancosOrigen,
                     cuentasOrigen: nuevasCuentasOrigen,
@@ -1566,39 +1614,53 @@ function Paso1(props) {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Grid container spacing={3}>
-            {flujosEfectivo.length > 0 ? (
-              <Grid item xs={12}>
-                <Grid container spacing={3}>
-                  <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={2}
-                    style={{ alignSelf: "flex-end" }}
-                  >
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          name="soloProveedoresPrioritarios"
-                          color="primary"
-                        />
-                      }
-                      label="Solo Proveedores Prioritarios"
-                    />
-                  </Grid>
-                  <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={2}
-                    style={{ alignSelf: "center" }}
-                  >
-                    <Tooltip title="Configurar proveedores prioritarios">
-                      <Button
-                        variant="contained"
+            <Grid item xs={12}>
+              <Grid container spacing={3}>
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={2}
+                  style={{ alignSelf: "flex-end" }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="soloProveedoresPrioritarios"
                         color="primary"
-                        onClick={() => {
-                          /* executeTraerProveedores({
+                        checked={
+                          filtroApiTraerFlujosEfectivo === 3 ||
+                          filtroApiTraerFlujosEfectivo === 6
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFiltroApiTraerFlujosEfectivo(
+                              filtroApiTraerFlujosEfectivo + 2
+                            );
+                          } else {
+                            setFiltroApiTraerFlujosEfectivo(
+                              filtroApiTraerFlujosEfectivo - 2
+                            );
+                          }
+                        }}
+                      />
+                    }
+                    label="Solo Proveedores Prioritarios"
+                  />
+                </Grid>
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={2}
+                  style={{ alignSelf: "center" }}
+                >
+                  <Tooltip title="Configurar proveedores prioritarios">
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => {
+                        /* executeTraerProveedores({
                           params: {
                             usuario: correoUsuario,
                             pwd: passwordUsuario,
@@ -1606,80 +1668,102 @@ function Paso1(props) {
                             idsubmenu: 46,
                           },
                         }); */
-                          handleClickOpenPrioritariosDialog();
-                        }}
-                      >
-                        ...
-                      </Button>
-                    </Tooltip>
-                  </Grid>
-                  <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={2}
-                    style={{ alignSelf: "flex-end" }}
-                  >
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          name="soloDocumentosPrioritarios"
-                          color="primary"
-                        />
-                      }
-                      label="Solo Documentos Prioritarios"
-                    />
-                  </Grid>
-                  <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={2}
-                    style={{ alignSelf: "center" }}
-                  >
-                    <Tooltip title="Configurar documentos prioritarios">
-                      <Button
-                        variant="contained"
+                        handleClickOpenPrioritariosDialog();
+                      }}
+                    >
+                      ...
+                    </Button>
+                  </Tooltip>
+                </Grid>
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={2}
+                  style={{ alignSelf: "flex-end" }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="soloDocumentosPrioritarios"
                         color="primary"
-                        onClick={() => {
-                          //handleClickOpenPrioritariosDialog();
+                        checked={
+                          filtroApiTraerFlujosEfectivo === 4 ||
+                          filtroApiTraerFlujosEfectivo === 6
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFiltroApiTraerFlujosEfectivo(
+                              filtroApiTraerFlujosEfectivo + 3
+                            );
+                          } else {
+                            setFiltroApiTraerFlujosEfectivo(
+                              filtroApiTraerFlujosEfectivo - 3
+                            );
+                          }
                         }}
-                      >
-                        ...
-                      </Button>
-                    </Tooltip>
-                  </Grid>
-                  <Grid item xs={12} md={2}>
-                    <TextField
-                      className={classes.textFields}
-                      id="pendienteMayorIgual"
-                      label="Pendiente >="
-                      type="text"
-                      margin="normal"
-                      value={pendiente}
-                      inputProps={{
-                        maxLength: 20,
-                      }}
-                      InputProps={{
-                        inputComponent: NumberFormatCustom,
-                      }}
-                      onChange={(e) => {
-                        setPendiente(e.target.value);
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={2} style={{ alignSelf: "center" }}>
+                      />
+                    }
+                    label="Solo Documentos Prioritarios"
+                  />
+                </Grid>
+                {/* <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={2}
+                  style={{ alignSelf: "center" }}
+                >
+                  <Tooltip title="Configurar documentos prioritarios">
                     <Button
                       variant="contained"
                       color="primary"
-                      style={{ width: "100%" }}
+                      onClick={() => {
+                      }}
                     >
-                      Consultar
+                      ...
                     </Button>
-                  </Grid>
+                  </Tooltip>
+                </Grid> */}
+                <Grid item xs={12} md={2}>
+                  <TextField
+                    className={classes.textFields}
+                    id="pendienteMayorIgual"
+                    label="Pendiente >="
+                    type="text"
+                    margin="normal"
+                    value={pendiente}
+                    inputProps={{
+                      maxLength: 20,
+                    }}
+                    InputProps={{
+                      inputComponent: NumberFormatCustom,
+                    }}
+                    onKeyPress={(e) => {
+                      doubleKeyValidation(e, 2);
+                    }}
+                    onChange={(e) => {
+                      setPendiente(e.target.value);
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={2} style={{ alignSelf: "center" }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    style={{ width: "100%" }}
+                    onClick={() => {
+                      setPendienteGuardado(pendiente);
+                    }}
+                  >
+                    Consultar
+                  </Button>
                 </Grid>
               </Grid>
-            ) : null}
+            </Grid>
+            {/* {flujosEfectivo.length > 0 ? (
+              
+            ) : null} */}
             <Grid item xs={12} /* md={8} */>
               <TableContainer>{getFlujosEfectivo()}</TableContainer>
             </Grid>
@@ -1794,7 +1878,7 @@ function Paso1(props) {
                     onChange={(e) => {
                       pasteValidation(e, 5);
                     }}
-                    label="RFC"
+                    label="Proveedores"
                     margin="normal"
                     variant="outlined"
                   />
@@ -1818,6 +1902,7 @@ function Paso1(props) {
                         prioridad: 1,
                       },
                     });
+                    setValidacionDialogProveedoresPrioritarios(true);
                   } else {
                     swal("Error", "Selecciona un proveedor", "warning");
                   }
@@ -1846,7 +1931,34 @@ function Paso1(props) {
                         />
                         <ListItemSecondaryAction>
                           <Tooltip title="Quitar de prioritarios">
-                            <IconButton edge="end" aria-label="delete">
+                            <IconButton
+                              edge="end"
+                              aria-label="delete"
+                              onClick={() => {
+                                swal({
+                                  text:
+                                    "¿Está seguro de quitar este proveedor de prioritarios?",
+                                  buttons: ["No", "Sí"],
+                                  dangerMode: true,
+                                }).then((value) => {
+                                  if (value) {
+                                    executeCambiarPrioridadProveedor({
+                                      data: {
+                                        usuario: correoUsuario,
+                                        pwd: passwordUsuario,
+                                        rfc: rfcEmpresa,
+                                        idsubmenu: 46,
+                                        idproveedor: proveedor.id,
+                                        prioridad: 0,
+                                      },
+                                    });
+                                    setValidacionDialogProveedoresPrioritarios(
+                                      true
+                                    );
+                                  }
+                                });
+                              }}
+                            >
                               <CloseIcon color="secondary" />
                             </IconButton>
                           </Tooltip>
@@ -2002,6 +2114,12 @@ function Paso2(props) {
       return (
         <TableBody>
           {instrucciones.proveedores.map((proveedor, index) => {
+            /* console.log(instrucciones.rfcProveedores[index]);
+            console.log(
+              cuentasDestino.filter(
+                (cuenta) => cuenta.RFC === instrucciones.rfcProveedores[index]
+              )
+            ); */
             return (
               <TableRow key={index}>
                 <TableCell padding="checkbox" />
@@ -2085,12 +2203,20 @@ function Paso2(props) {
                         instrucciones.idsBancosDestino;
                       nuevosIdsBancosDestino[index] =
                         e.target.value !== "-1"
-                          ? cuentasDestino[parseInt(e.target.value)].IdBanco
+                          ? cuentasDestino.filter(
+                              (cuenta) =>
+                                cuenta.RFC ===
+                                instrucciones.rfcProveedores[index]
+                            )[parseInt(e.target.value)].IdBanco
                           : 0;
                       let nuevasCuentasDestino = instrucciones.cuentasDestino;
                       nuevasCuentasDestino[index] =
                         e.target.value !== "-1"
-                          ? cuentasDestino[parseInt(e.target.value)].Layout
+                          ? cuentasDestino.filter(
+                              (cuenta) =>
+                                cuenta.RFC ===
+                                instrucciones.rfcProveedores[index]
+                            )[parseInt(e.target.value)].Layout
                           : "";
                       let nuevosValoresCuentasDestino =
                         instrucciones.valoresCuentasDestino;
@@ -2106,11 +2232,16 @@ function Paso2(props) {
                   >
                     <option value="-1">Seleccione una cuenta de destino</option>
                     {cuentasDestino.length > 0
-                      ? cuentasDestino.map((cuenta, index) => (
-                          <option value={index} key={index}>
-                            {cuenta.Layout}
-                          </option>
-                        ))
+                      ? cuentasDestino
+                          .filter(
+                            (cuenta) =>
+                              cuenta.RFC === instrucciones.rfcProveedores[index]
+                          )
+                          .map((cuenta, index) => (
+                            <option value={index} key={index}>
+                              {cuenta.Layout}
+                            </option>
+                          ))
                       : null}
                   </TextField>
                 </TableCell>
@@ -2451,6 +2582,7 @@ function Paso3(props) {
         idsubmenu: 46,
         forma: 4,
         ids: nuevosIds,
+        filtro: 1,
       },
     });
     handleClickOpenDialogInstrucciones();
@@ -2487,6 +2619,8 @@ function Paso3(props) {
   const getInstruccionesPago = () => {
     if (instruccionesAdicionales.proveedores.length > 0) {
       return instruccionesAdicionales.proveedores.map((proveedor, index) => {
+        /* console.log(instruccionesAdicionales.rfcProveedores[index]);
+        console.log(cuentasDestino.filter(cuenta => cuenta.RFC === instruccionesAdicionales.rfcProveedores[index])); */
         return (
           <TableRow key={index}>
             <TableCell padding="checkbox" />
@@ -2506,27 +2640,44 @@ function Paso3(props) {
                 /* inputProps={{
                   maxLength: 100,
                 }} */
-                value={instruccionesAdicionales.proveedores[index]}
+                value={instruccionesAdicionales.valoresProveedores[index]}
                 /* onKeyPress={(e) => {
                   keyValidation(e, 3);
                 }} */
                 onChange={(e) => {
                   /* pasteValidation(e, 3); */
                   let nuevosProveedores = instruccionesAdicionales.proveedores;
-                  nuevosProveedores[index] = e.target.value;
+                  nuevosProveedores[index] =
+                    e.target.value !== "-1"
+                      ? proveedores[parseInt(e.target.value)].razonsocial
+                      : "";
+                  let nuevosRfcProveedores =
+                    instruccionesAdicionales.rfcProveedores;
+                  nuevosRfcProveedores[index] =
+                    e.target.value !== "-1"
+                      ? proveedores[parseInt(e.target.value)].rfc
+                      : "";
+                  let nuevosValoresProveedores =
+                    instruccionesAdicionales.valoresProveedores;
+                  nuevosValoresProveedores[index] =
+                    e.target.value !== "-1" ? parseInt(e.target.value) : "-1";
                   setInstruccionesAdicionales({
                     ...instruccionesAdicionales,
                     proveedores: nuevosProveedores,
+                    rfcProveedores: nuevosRfcProveedores,
+                    valoresProveedores: nuevosValoresProveedores,
                   });
                 }}
               >
-                <option value="0">Seleccione un proveedor</option>
+                <option value="-1">Seleccione un proveedor</option>
                 {proveedores.length > 0
-                  ? proveedores.map((proveedor, index) => (
-                      <option value={proveedor.razonsocial} key={index}>
-                        {`${proveedor.razonsocial} (${proveedor.rfc})`}
-                      </option>
-                    ))
+                  ? proveedores.map((proveedor, index) => {
+                      return (
+                        <option value={index} key={index}>
+                          {`${proveedor.razonsocial} (${proveedor.rfc})`}
+                        </option>
+                      );
+                    })
                   : null}
                 {/* <option value="proveedor1">Proveedor 1</option>
                 <option value="proveedor2">Proveedor 2</option>
@@ -2662,13 +2813,21 @@ function Paso3(props) {
                     instruccionesAdicionales.idsBancosDestino;
                   nuevosIdsBancosDestino[index] =
                     e.target.value !== "-1"
-                      ? cuentasDestino[parseInt(e.target.value)].IdBanco
+                      ? cuentasDestino.filter(
+                          (cuenta) =>
+                            cuenta.RFC ===
+                            instruccionesAdicionales.rfcProveedores[index]
+                        )[parseInt(e.target.value)].IdBanco
                       : 0;
                   let nuevasCuentasDestino =
                     instruccionesAdicionales.cuentasDestino;
                   nuevasCuentasDestino[index] =
                     e.target.value !== "-1"
-                      ? cuentasDestino[parseInt(e.target.value)].Layout
+                      ? cuentasDestino.filter(
+                          (cuenta) =>
+                            cuenta.RFC ===
+                            instruccionesAdicionales.rfcProveedores[index]
+                        )[parseInt(e.target.value)].Layout
                       : "";
                   let nuevosValoresCuentasDestino =
                     instruccionesAdicionales.valoresCuentasDestino;
@@ -2685,11 +2844,17 @@ function Paso3(props) {
               >
                 <option value="-1">Seleccione una cuenta de destino</option>
                 {cuentasDestino.length > 0
-                  ? cuentasDestino.map((cuenta, index) => (
-                      <option value={index} key={index}>
-                        {cuenta.Layout}
-                      </option>
-                    ))
+                  ? cuentasDestino
+                      .filter(
+                        (cuenta) =>
+                          cuenta.RFC ===
+                          instruccionesAdicionales.rfcProveedores[index]
+                      )
+                      .map((cuenta, index) => (
+                        <option value={index} key={index}>
+                          {cuenta.Layout}
+                        </option>
+                      ))
                   : null}
               </TextField>
             </TableCell>
@@ -2799,6 +2964,8 @@ function Paso3(props) {
     let nuevosIds = instruccionesAdicionales.ids;
     let nuevosTipos = instruccionesAdicionales.tipos;
     let nuevosProveedores = instruccionesAdicionales.proveedores;
+    let nuevosRfcProveedores = instruccionesAdicionales.rfcProveedores;
+    let nuevosValoresProveedores = instruccionesAdicionales.valoresProveedores;
     let nuevosImportes = instruccionesAdicionales.importes;
     let nuevosIdsBancosOrigen = instruccionesAdicionales.idsBancosOrigen;
     let nuevasCuentasOrigen = instruccionesAdicionales.cuentasOrigen;
@@ -2812,7 +2979,9 @@ function Paso3(props) {
     let nuevasLlavesMatch = instruccionesAdicionales.llavesMatch;
     nuevosIds.push(1);
     nuevosTipos.push(tipoDocumento);
-    nuevosProveedores.push("0");
+    nuevosProveedores.push("-1");
+    nuevosRfcProveedores.push("");
+    nuevosValoresProveedores.push("-1");
     nuevosImportes.push(0.0);
     nuevosIdsBancosOrigen.push(0);
     nuevasCuentasOrigen.push("0");
@@ -2826,6 +2995,8 @@ function Paso3(props) {
       ids: nuevosIds,
       tipos: nuevosTipos,
       proveedores: nuevosProveedores,
+      rfcProveedores: nuevosRfcProveedores,
+      valoresProveedores: nuevosValoresProveedores,
       importes: nuevosImportes,
       idsBancosOrigen: nuevosIdsBancosOrigen,
       cuentasOrigen: nuevasCuentasOrigen,
@@ -2842,6 +3013,8 @@ function Paso3(props) {
     let nuevosIds = instruccionesAdicionales.ids;
     let nuevosTipos = instruccionesAdicionales.tipos;
     let nuevosProveedores = instruccionesAdicionales.proveedores;
+    let nuevosRfcProveedores = instruccionesAdicionales.rfcProveedores;
+    let nuevosValoresProveedores = instruccionesAdicionales.valoresProveedores;
     let nuevosImportes = instruccionesAdicionales.importes;
     let nuevosIdsBancosOrigen = instruccionesAdicionales.idsBancosOrigen;
     let nuevasCuentasOrigen = instruccionesAdicionales.cuentasOrigen;
@@ -2856,6 +3029,8 @@ function Paso3(props) {
     nuevosIds.splice(pos, 1);
     nuevosTipos.splice(pos, 1);
     nuevosProveedores.splice(pos, 1);
+    nuevosRfcProveedores.splice(pos, 1);
+    nuevosValoresProveedores.splice(pos, 1);
     nuevosImportes.splice(pos, 1);
     nuevosIdsBancosOrigen.splice(pos, 1);
     nuevasCuentasOrigen.splice(pos, 1);
@@ -2869,6 +3044,8 @@ function Paso3(props) {
       ids: nuevosIds,
       tipos: nuevosTipos,
       proveedores: nuevosProveedores,
+      rfcProveedores: nuevosRfcProveedores,
+      valoresProveedores: nuevosValoresProveedores,
       importes: nuevosImportes,
       idsBancosOrigen: nuevosIdsBancosOrigen,
       cuentasOrigen: nuevasCuentasOrigen,
@@ -3105,7 +3282,7 @@ function Paso4(props) {
         nuevosIds.push(instruccionesCombinadas.ids[x]);
         nuevosTipos.push(instruccionesCombinadas.tipos[x]);
         nuevosProveedores.push(instruccionesCombinadas.proveedores[x]);
-        nuevosImportes.push(instruccionesCombinadas.importes[x]);
+        nuevosImportes.push(parseFloat(instruccionesCombinadas.importes[x]));
         nuevosIdsBancosOrigen.push(instruccionesCombinadas.idsBancosOrigen[x]);
         nuevasCuentasOrigen.push(instruccionesCombinadas.cuentasOrigen[x]);
         nuevosIdsBancosDestino.push(

@@ -517,7 +517,7 @@ export default function CumplimientoFiscal(props) {
           </Grid>
           {submenuContent.map((content, index) => {
             return content.submenu.orden !== 0 ? (
-              <Grid item xs={12} md={4} key={index}>
+              <Grid item xs={12} md={4} key={index} style={{ marginBottom: "15px" }}>
                 <Button
                   variant="outlined"
                   color="primary"
