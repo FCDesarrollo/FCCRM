@@ -181,7 +181,7 @@ export default function CambiarContra() {
     } else if (repiteContra.trim() === "") {
       swal("Error", "Vuelva a ingresar la contraseña", "warning");
     } else if (repiteContra.trim() !== contra.trim()) {
-      swal("Error", "La contraseñas no coinciden", "warning");
+      swal("Error", "Las contraseñas no coinciden", "warning");
     } else if (codigo.trim() === "") {
       swal("Error", "Ingrese un código de confirmación", "warning");
     } else if (codigo.trim() !== codigoUsuario) {

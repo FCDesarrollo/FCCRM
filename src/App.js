@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import Header from "./componentes/header/header";
 import Login from "./componentes/login/login";
+import OlvidoContra from "./componentes/login/olvidoContra";
 import Registrate from "./componentes/login/registrate";
 import VerificarCodigo from "./componentes/login/verificarCodigo";
 import ReenviarCodigoVerificacion from "./componentes/login/reenviarCodigoVerificacion";
@@ -51,6 +52,9 @@ function App() {
       <Switch>
         <Route exact path="/login">
           <Login />
+        </Route>
+        <Route exact path="/olvidoContra">
+          <OlvidoContra />
         </Route>
         <Route exact path="/registrate">
           <Registrate />

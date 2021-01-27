@@ -552,10 +552,10 @@ function TablaADE(props) {
   const setSelectedAlmacen = props.setSelectedAlmacen;
   const setArchivosAlmacen = props.setArchivosAlmacen;
   const sucursalesEmpresa = empresaDatos.sucursales;
-  const [order, setOrder] = React.useState("desc");
-  const [orderBy, setOrderBy] = React.useState("fecha");
+  const [order, setOrder] = useState("desc");
+  const [orderBy, setOrderBy] = useState("fecha");
   //const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorMenuEl, setAnchorMenuEl] = useState(null);
   const [openDialogNuevoADO, setOpenDialogNuevoADO] = useState(false);
   const [nuevoADO, setNuevoADO] = useState({

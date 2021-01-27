@@ -1285,7 +1285,7 @@ export default function Home(props) {
             </Grid>
             <Grid item xs={12}>
               <Typography variant="subtitle1">
-                {`${selectedModulo} > ${selectedMenu} > ${
+                {`${selectedModulo ? selectedModulo : 'Sin módulo elejido'} > ${selectedMenu ? selectedMenu : 'Sin menú elejido'} > ${
                   selectedIdUsuario !== 0
                     ? selectedNombreUsuario
                     : "Todos los usuarios"

@@ -175,7 +175,10 @@ export default function Login() {
               <Link to="/registrate" style={{ textDecoration: "none" }}>
                 <strong className={classes.links}>Regístrate</strong>
               </Link>{" "}
-              / <span className={classes.links}>¿olvidaste tu contraseña?</span>
+              /{" "}
+              <Link to="/olvidoContra" style={{ textDecoration: "none" }}>
+                <span className={classes.links}>¿olvidaste tu contraseña?</span>
+              </Link>
             </Typography>
           ) : null}
         </Card>

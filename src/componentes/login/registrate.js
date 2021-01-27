@@ -108,7 +108,7 @@ export default function Registrate() {
   const registrar = () => {
     setDisabledButton(true);
     if (nombre.trim() === "") {
-      swal("Faltan llenar campos", "Ingresa un nombre", "warning").then(() => {
+      swal("Faltan llenar campos", "Ingrese un nombre", "warning").then(() => {
         setRegistroData({
           ...registroData,
           nombre: ""
@@ -119,7 +119,7 @@ export default function Registrate() {
     } else if (apellidop.trim() === "") {
       swal(
         "Faltan llenar campos",
-        "Ingresa un apellido paterno",
+        "Ingrese un apellido paterno",
         "warning"
       ).then(() => {
         setRegistroData({
@@ -132,7 +132,7 @@ export default function Registrate() {
     } else if (apellidom.trim() === "") {
       swal(
         "Faltan llenar campos",
-        "Ingresa un apellido materno",
+        "Ingrese un apellido materno",
         "warning"
       ).then(() => {
         setRegistroData({
@@ -145,7 +145,7 @@ export default function Registrate() {
     } else if (cel.trim() === "") {
       swal(
         "Faltan llenar campos",
-        "Ingresa un teléfono paterno",
+        "Ingrese un teléfono paterno",
         "warning"
       ).then(() => {
         setRegistroData({
@@ -158,7 +158,7 @@ export default function Registrate() {
     } else if (correo.trim() === "") {
       swal(
         "Faltan llenar campos",
-        "Ingresa un correo electrónico",
+        "Ingrese un correo electrónico",
         "warning"
       ).then(() => {
         setRegistroData({
@@ -171,14 +171,14 @@ export default function Registrate() {
     } else if (!validarCorreo(correo.trim())) {
       swal(
         "Faltan llenar campos",
-        "Ingresa un correo electrónico valido",
+        "Ingrese un correo electrónico valido",
         "warning"
       ).then(() => {
         inputCorreo.current.focus();
       });
       setDisabledButton(false);
     } else if (password.trim() === "") {
-      swal("Faltan llenar campos", "Ingresa una contraseña", "warning").then(
+      swal("Faltan llenar campos", "Ingrese una contraseña", "warning").then(
         () => {
           setRegistroData({
             ...registroData,
