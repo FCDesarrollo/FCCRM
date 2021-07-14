@@ -48,7 +48,8 @@ import {
   Error as ErrorIcon,
   Settings as SettingsIcon,
   MonetizationOn as MonetizationOnIcon,
-  Visibility as VisibilityIcon
+  Visibility as VisibilityIcon,
+  Close as CloseIcon,
 } from "@material-ui/icons";
 import { makeStyles, withStyles, useTheme } from "@material-ui/core/styles";
 import {
@@ -175,6 +176,7 @@ export default function Empresa(props) {
   const classes = useStyles();
   const submenuContent = props.submenuContent;
   const usuarioDatos = props.usuarioDatos;
+  const idUsuario = usuarioDatos.idusuario;
   const correo = usuarioDatos.correo;
   const password = usuarioDatos.password;
   const empresaDatos = props.empresaDatos;
@@ -234,6 +236,7 @@ export default function Empresa(props) {
                     ) : content.submenu.idsubmenu === 40 ? (
                       <ServiciosContratados
                         setLoading={setLoading}
+                        idUsuario={idUsuario}
                         correo={correo}
                         password={password}
                         idEmpresa={idEmpresa}
@@ -300,9 +303,8 @@ function InformacionGeneral(props) {
   const [telefono, setTelefono] = useState(
     empresaDatos.telefono !== null ? empresaDatos.telefono : ""
   );
-  const [openMenuRenovarCetificado, setOpenMenuRenovarCetificado] = useState(
-    false
-  );
+  const [openMenuRenovarCetificado, setOpenMenuRenovarCetificado] =
+    useState(false);
   const [datosCertificado, setDatosCertificado] = useState({
     certificado: null,
     key: null,
@@ -910,6 +912,7 @@ function ServiciosContratados(props) {
   const classes = useStyles();
   const theme = useTheme();
   const smScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const idUsuario = props.idUsuario;
   const correo = props.correo;
   const password = props.password;
   const setLoading = props.setLoading;
@@ -918,16 +921,23 @@ function ServiciosContratados(props) {
   const idSubmenu = props.idSubmenu;
   const [servicios, setServicios] = useState([]);
   const [pagoMensual, setPagoMenual] = useState(0);
-  const [validacionAgregarServicio, setValidacionAgregarServicio] = useState(
-    false
-  );
+  const [validacionAgregarServicio, setValidacionAgregarServicio] =
+    useState(false);
+  const [validacionCancelarServicio, setValidacionCancelarServicio] =
+    useState(false);
   const [detallesServicios, setDetallesServicios] = useState({
     idsServicios: [],
     preciosServicios: [],
   });
   const [totalPrecioServicios, setTotalPreciosServicios] = useState(0);
   const [openDialogContenido, setOpenDialogContenido] = useState(false);
+  const [
+    openDialogConfigurarNotificaciones,
+    setOpenDialogConfigurarNotificaciones,
+  ] = useState(false);
   const [contenido, setContenido] = useState([]);
+  const [servicioSelected, setServicioSelected] = useState(0);
+  const [usuariosNotificaciones, setUsuarioNotificaciones] = useState([]);
 
   const [
     {
@@ -972,11 +982,28 @@ function ServiciosContratados(props) {
   );
   const [
     {
+      data: cancelarServicioEmpresaClienteData,
+      loading: cancelarServicioEmpresaClienteLoading,
+      error: cancelarServicioEmpresaClienteError,
+    },
+    executeCancelarServicioEmpresaCliente,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/cancelarServicioEmpresaCliente`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+  const [
+    {
       data: getContenidoServicioClientesData,
       loading: getContenidoServicioClientesLoading,
       error: getContenidoServicioClientesError,
-    }, executeGetContenidoServicioClientes
-    ,
+    },
+    executeGetContenidoServicioClientes,
   ] = useAxios(
     {
       url: API_BASE_URL + `/getContenidoServicioClientes`,
@@ -984,7 +1011,41 @@ function ServiciosContratados(props) {
     },
     {
       useCache: false,
-      manual: true
+      manual: true,
+    }
+  );
+  const [
+    {
+      data: getNotificacionesUsuarioPorServicioData,
+      loading: getNotificacionesUsuarioPorServicioLoading,
+      error: getNotificacionesUsuarioPorServicioError,
+    },
+    executeGetNotificacionesUsuarioPorServicio,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getNotificacionesUsuarioPorServicio`,
+      method: "GET",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+  const [
+    {
+      data: guardarConfiguracionUsuariosNotificacionesData,
+      loading: guardarConfiguracionUsuariosNotificacionesLoading,
+      error: guardarConfiguracionUsuariosNotificacionesError,
+    },
+    executeGuardarConfiguracionUsuariosNotificaciones,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/guardarConfiguracionUsuariosNotificaciones`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
     }
   );
 
@@ -1011,8 +1072,7 @@ function ServiciosContratados(props) {
           x++
         ) {
           if (
-            getServiciosEmpresaClienteData.servicios[x].serviciocontratado !==
-            null
+            getServiciosEmpresaClienteData.servicios[x].statuscontratacion !== 0
           ) {
             cantidad =
               cantidad + getServiciosEmpresaClienteData.servicios[x].precio;
@@ -1038,6 +1098,20 @@ function ServiciosContratados(props) {
   }, [agregarServicioEmpresaClienteData]);
 
   useEffect(() => {
+    if (cancelarServicioEmpresaClienteData) {
+      if (cancelarServicioEmpresaClienteData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(cancelarServicioEmpresaClienteData.error),
+          "warning"
+        );
+      } else {
+        setValidacionCancelarServicio(true);
+      }
+    }
+  }, [cancelarServicioEmpresaClienteData]);
+
+  useEffect(() => {
     if (validacionAgregarServicio) {
       swal("Servicio Agregado", "Servicio agregado con éxito", "success");
       setDetallesServicios({
@@ -1048,6 +1122,18 @@ function ServiciosContratados(props) {
       setValidacionAgregarServicio(false);
     }
   }, [validacionAgregarServicio, executeGetServiciosEmpresa]);
+
+  useEffect(() => {
+    if (validacionCancelarServicio) {
+      swal("Servicio Cancelado", "Servicio cancelado con éxito", "success");
+      /* setDetallesServicios({
+        idsServicios: [],
+        preciosServicios: [],
+      }); */
+      executeGetServiciosEmpresa();
+      setValidacionCancelarServicio(false);
+    }
+  }, [validacionCancelarServicio, executeGetServiciosEmpresa]);
 
   useEffect(() => {
     if (getContenidoServicioClientesData) {
@@ -1063,17 +1149,59 @@ function ServiciosContratados(props) {
     }
   }, [getContenidoServicioClientesData]);
 
+  useEffect(() => {
+    if (getNotificacionesUsuarioPorServicioData) {
+      if (getNotificacionesUsuarioPorServicioData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(getNotificacionesUsuarioPorServicioData.error),
+          "warning"
+        );
+      } else {
+        setUsuarioNotificaciones(
+          getNotificacionesUsuarioPorServicioData.usuariosNotificaciones
+        );
+      }
+    }
+  }, [getNotificacionesUsuarioPorServicioData]);
+
+  useEffect(() => {
+    if (guardarConfiguracionUsuariosNotificacionesData) {
+      if (guardarConfiguracionUsuariosNotificacionesData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(guardarConfiguracionUsuariosNotificacionesData.error),
+          "warning"
+        );
+      } else {
+        setUsuarioNotificaciones(
+          guardarConfiguracionUsuariosNotificacionesData.usuariosNotificaciones
+        );
+      }
+    }
+  }, [guardarConfiguracionUsuariosNotificacionesData]);
+
   if (
     getServiciosEmpresaClienteLoading ||
     agregarServicioEmpresaClienteLoading ||
-    getContenidoServicioClientesLoading
+    cancelarServicioEmpresaClienteLoading ||
+    getContenidoServicioClientesLoading ||
+    getNotificacionesUsuarioPorServicioLoading ||
+    guardarConfiguracionUsuariosNotificacionesLoading
   ) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (getServiciosEmpresaClienteError || agregarServicioEmpresaClienteError || getContenidoServicioClientesError) {
+  if (
+    getServiciosEmpresaClienteError ||
+    agregarServicioEmpresaClienteError ||
+    cancelarServicioEmpresaClienteError ||
+    getContenidoServicioClientesError ||
+    getNotificacionesUsuarioPorServicioError ||
+    guardarConfiguracionUsuariosNotificacionesError
+  ) {
     return <ErrorQueryDB />;
   }
 
@@ -1083,6 +1211,52 @@ function ServiciosContratados(props) {
 
   const handleCloseDialogContenido = () => {
     setOpenDialogContenido(false);
+  };
+
+  const handleOpenDialogConfigurarNotificaciones = () => {
+    setOpenDialogConfigurarNotificaciones(true);
+  };
+
+  const handleCloseDialogConfigurarNotificaciones = () => {
+    setOpenDialogConfigurarNotificaciones(false);
+  };
+
+  const handleChangeNotificaciones = (e, index, variable) => {
+    let newUsuariosNotificaciones = usuariosNotificaciones.slice();
+    switch (variable) {
+      case 1:
+        newUsuariosNotificaciones[index].notificacionCRM = e.target.checked
+          ? 1
+          : 0;
+        break;
+      case 2:
+        newUsuariosNotificaciones[index].notificacionCorreo = e.target.checked
+          ? 1
+          : 0;
+        break;
+      default:
+        newUsuariosNotificaciones[index].notificacionSMS = e.target.checked
+          ? 1
+          : 0;
+        break;
+    }
+
+    setUsuarioNotificaciones(newUsuariosNotificaciones);
+  };
+
+  const handleClickGuardarUsuarioNotificaciones = () => {
+    /* console.log(usuariosNotificaciones); */
+    executeGuardarConfiguracionUsuariosNotificaciones({
+      data: {
+        usuario: correo,
+        pwd: password,
+        rfc: rfc,
+        idsubmenu: idSubmenu,
+        idservicio: servicioSelected,
+        idempresa: idEmpresa,
+        usuariosnotificaciones: usuariosNotificaciones,
+      },
+    });
   };
 
   const getServicios = () => {
@@ -1149,9 +1323,7 @@ function ServiciosContratados(props) {
                 <Button
                   size="small"
                   color={
-                    servicio.serviciocontratado !== null
-                      ? "secondary"
-                      : "primary"
+                    servicio.statuscontratacion !== 0 ? "primary" : "secondary"
                   }
                   style={{
                     flex: "auto",
@@ -1163,11 +1335,11 @@ function ServiciosContratados(props) {
                     outline: "inherit",
                   }}
                 >
-                  {servicio.serviciocontratado !== null
+                  {servicio.statuscontratacion !== 0
                     ? "Contratado"
                     : "No Contratado"}
                 </Button>
-                {servicio.serviciocontratado === null ? (
+                {servicio.statuscontratacion === 0 ? (
                   <Checkbox
                     color="primary"
                     onChange={(e) => {
@@ -1200,7 +1372,36 @@ function ServiciosContratados(props) {
                       setTotalPreciosServicios(nuevoTotal);
                     }}
                   />
-                ) : null}
+                ) : (
+                  <Tooltip title="Cancelar Contratación">
+                    <IconButton
+                      onClick={() => {
+                        swal({
+                          text: `¿Está seguro de cancelar este servicio?`,
+                          buttons: ["No", "Sí"],
+                          dangerMode: true,
+                        }).then((value) => {
+                          if (value) {
+                            executeCancelarServicioEmpresaCliente({
+                              data: {
+                                usuario: correo,
+                                pwd: password,
+                                rfc: rfc,
+                                idsubmenu: idSubmenu,
+                                idempresa: idEmpresa,
+                                idservicio: servicio.id,
+                                fechacancelacion: moment().format("YYYY-MM-DD"),
+                                idusuariocancelacion: idUsuario,
+                              },
+                            });
+                          }
+                        });
+                      }}
+                    >
+                      <CloseIcon color="secondary" />
+                    </IconButton>
+                  </Tooltip>
+                )}
               </CardActions>
             </Card>
           </Grid>
@@ -1254,78 +1455,17 @@ function ServiciosContratados(props) {
           <Grid item xs={12} md={3}>
             <Grid container>
               <Grid item xs={12}>
-                <TableContainer component={Paper}>
-                  <Table className={classes.table} aria-label="simple table">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell component="th" scope="row">
-                          <strong>Pago mensual actual:</strong>
-                        </TableCell>
-                        <TableCell align="right">{`$${pagoMensual}`}</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    {detallesServicios.idsServicios.length > 0 ? (
-                      <TableBody>
-                        <TableRow>
-                          <TableCell>
-                            <strong>{`Total de servicios contratados:`}</strong>
-                          </TableCell>
-                          <TableCell align="right">{`$${totalPrecioServicios}`}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell component="th" scope="row">
-                            <strong>Nuevo pago mensual:</strong>
-                          </TableCell>
-                          <TableCell align="right">{`$${
-                            pagoMensual + totalPrecioServicios
-                          }`}</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    ) : null}
-                  </Table>
-                </TableContainer>
-              </Grid>
-              {detallesServicios.idsServicios.length > 0 ? (
-                <Grid item xs={12}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    style={{ width: "100%", marginTop: "15px" }}
-                    onClick={() => {
-                      executeAgregarServicioEmpresaCliente({
-                        data: {
-                          usuario: correo,
-                          pwd: password,
-                          rfc: rfc,
-                          idsubmenu: idSubmenu,
-                          idempresa: idEmpresa,
-                          idservicios: detallesServicios.idsServicios,
-                          fecha: moment().format("YYYY-MM-DD"),
-                        },
-                      });
-                    }}
+                <Tooltip
+                  title="Configurar notificaciones"
+                  style={{ float: "right" }}
+                >
+                  <IconButton
+                    onClick={handleOpenDialogConfigurarNotificaciones}
                   >
-                    Confirmar
-                  </Button>
-                </Grid>
-              ) : null}
-            </Grid>
-          </Grid>
-          <Grid item xs={12} md={9}>
-            <Grid container spacing={3}>
-              {getServicios()}
-            </Grid>
-          </Grid>
-        </Grid>
-      ) : (
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={9}>
-            <Grid container spacing={3}>
-              {getServicios()}
-            </Grid>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Grid container>
+                    <SettingsIcon color="primary" />
+                  </IconButton>
+                </Tooltip>
+              </Grid>
               <Grid item xs={12}>
                 <TableContainer component={Paper}>
                   <Table className={classes.table} aria-label="simple table">
@@ -1373,7 +1513,94 @@ function ServiciosContratados(props) {
                           idsubmenu: idSubmenu,
                           idempresa: idEmpresa,
                           idservicios: detallesServicios.idsServicios,
-                          fecha: moment().format("YYYY-MM-DD"),
+                          fechaContratacion: moment().format("YYYY-MM-DD"),
+                          idusuariocontratacion: idUsuario,
+                        },
+                      });
+                    }}
+                  >
+                    Confirmar
+                  </Button>
+                </Grid>
+              ) : null}
+            </Grid>
+          </Grid>
+          <Grid item xs={12} md={9}>
+            <Grid container spacing={3}>
+              {getServicios()}
+            </Grid>
+          </Grid>
+        </Grid>
+      ) : (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={9}>
+            <Grid container spacing={3}>
+              {getServicios()}
+            </Grid>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Grid container>
+              <Grid item xs={12}>
+                <Tooltip
+                  title="Configurar notificaciones"
+                  style={{ float: "right" }}
+                >
+                  <IconButton
+                    onClick={handleOpenDialogConfigurarNotificaciones}
+                  >
+                    <SettingsIcon color="primary" />
+                  </IconButton>
+                </Tooltip>
+              </Grid>
+              <Grid item xs={12}>
+                <TableContainer component={Paper}>
+                  <Table className={classes.table} aria-label="simple table">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell component="th" scope="row">
+                          <strong>Pago mensual actual:</strong>
+                        </TableCell>
+                        <TableCell align="right">{`$${pagoMensual}`}</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    {detallesServicios.idsServicios.length > 0 ? (
+                      <TableBody>
+                        <TableRow>
+                          <TableCell>
+                            <strong>{`Total de servicios contratados:`}</strong>
+                          </TableCell>
+                          <TableCell align="right">{`$${totalPrecioServicios}`}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell component="th" scope="row">
+                            <strong>Nuevo pago mensual:</strong>
+                          </TableCell>
+                          <TableCell align="right">{`$${
+                            pagoMensual + totalPrecioServicios
+                          }`}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    ) : null}
+                  </Table>
+                </TableContainer>
+              </Grid>
+              {detallesServicios.idsServicios.length > 0 ? (
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    style={{ width: "100%", marginTop: "15px" }}
+                    onClick={() => {
+                      executeAgregarServicioEmpresaCliente({
+                        data: {
+                          usuario: correo,
+                          pwd: password,
+                          rfc: rfc,
+                          idsubmenu: idSubmenu,
+                          idempresa: idEmpresa,
+                          idservicios: detallesServicios.idsServicios,
+                          fechaContratacion: moment().format("YYYY-MM-DD"),
+                          idusuariocontratacion: idUsuario,
                         },
                       });
                     }}
@@ -1419,6 +1646,137 @@ function ServiciosContratados(props) {
             }}
           >
             Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        onClose={handleCloseDialogConfigurarNotificaciones}
+        aria-labelledby="simple-dialog-title"
+        open={openDialogConfigurarNotificaciones}
+        fullScreen={smScreen}
+        maxWidth="lg"
+        fullWidth={true}
+      >
+        <DialogTitle id="simple-dialog-title">
+          Configurar Notificaciones
+        </DialogTitle>
+        <DialogContent dividers>
+          <Grid container justify="center" spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                className={classes.textFields}
+                select
+                SelectProps={{
+                  native: true,
+                }}
+                variant="outlined"
+                label="Tipo"
+                type="text"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                margin="normal"
+                value={servicioSelected}
+                onChange={(e) => {
+                  setServicioSelected(e.target.value);
+                  executeGetNotificacionesUsuarioPorServicio({
+                    params: {
+                      usuario: correo,
+                      pwd: password,
+                      rfc: rfc,
+                      idsubmenu: idSubmenu,
+                      idempresa: idEmpresa,
+                      idservicio: parseInt(e.target.value),
+                    },
+                  });
+                }}
+              >
+                <option value={0}>Elija un servicio</option>
+                {servicios.map((servicio, index) => (
+                  <option value={servicio.id} key={index}>
+                    {servicio.nombreservicio}
+                  </option>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <TableContainer component={Paper}>
+                <Table className={classes.table} aria-label="simple table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Usuario</TableCell>
+                      <TableCell align="right">CRM</TableCell>
+                      <TableCell align="right">Correo</TableCell>
+                      <TableCell align="right">SMS</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {usuariosNotificaciones.map(
+                      (usuarioNotificacion, index) => (
+                        <TableRow key={index}>
+                          <TableCell component="th" scope="row">
+                            {usuarioNotificacion.usuario}
+                          </TableCell>
+                          <TableCell align="right">
+                            <Checkbox
+                              color="primary"
+                              checked={true}
+                              disabled
+                              /* checked={
+                                usuarioNotificacion.notificacionCRM === 1
+                              }
+                              onChange={(e) => {
+                                handleChangeNotificaciones(e, index, 1);
+                              }} */
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Checkbox
+                              color="primary"
+                              checked={
+                                usuarioNotificacion.notificacionCorreo === 1
+                              }
+                              onChange={(e) => {
+                                handleChangeNotificaciones(e, index, 2);
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Checkbox
+                              color="primary"
+                              checked={
+                                usuarioNotificacion.notificacionSMS === 1
+                              }
+                              onChange={(e) => {
+                                handleChangeNotificaciones(e, index, 3);
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              handleCloseDialogConfigurarNotificaciones();
+            }}
+          >
+            Cerrar
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleClickGuardarUsuarioNotificaciones}
+          >
+            Guardar
           </Button>
         </DialogActions>
       </Dialog>

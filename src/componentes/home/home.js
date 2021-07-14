@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import {
   Grid,
@@ -17,10 +18,31 @@ import {
   CardContent,
   TextField,
   Button,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
+  AppBar,
+  Tabs,
+  Tab,
+  Box,
+  Tooltip,
 } from "@material-ui/core";
 import {
   Settings as SettingsIcon,
   Error as ErrorIcon,
+  FileCopy as FileCopyIcon,
+  StarBorder as StarBorderIcon,
+  Star as StarIcon,
+  Delete as DeleteIcon,
+  Email as EmailIcon,
+  Drafts as DraftsIcon,
 } from "@material-ui/icons";
 import { makeStyles } from "@material-ui/core/styles";
 import Chart from "react-apexcharts";
@@ -29,8 +51,8 @@ import useAxios from "axios-hooks";
 import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
 import jwt from "jsonwebtoken";
 import moment from "moment";
-/* import { dataBaseErrores } from "../../helpers/erroresDB";
-import swal from "sweetalert"; */
+import { dataBaseErrores } from "../../helpers/erroresDB";
+import swal from "sweetalert";
 
 const useStyles = makeStyles((theme) => ({
   title: {
@@ -278,13 +300,848 @@ function EnhancedTableHead(props) {
   );
 }
 
+const meses = [
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
+];
+
 export default function Home(props) {
   const usuarioDatos = props.usuarioDatos;
   const idUsuario = usuarioDatos.idusuario;
-  const classes = useStyles();
+  const correoUsuario = usuarioDatos.correo;
+  const passwordUsuario = usuarioDatos.password;
   const setLoading = props.setLoading;
   const empresaDatos = props.empresaDatos;
   const dbEmpresa = empresaDatos.rutaempresa;
+  const idEmpresa = empresaDatos.idempresa;
+
+  const [vista, setVista] = useState("notificaciones");
+
+  const handleChangeVista = (event) => {
+    setVista(event.target.value);
+  };
+
+  return (
+    <div>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <FormControl component="fieldset">
+            <FormLabel component="legend">Vista</FormLabel>
+            <RadioGroup
+              aria-label="vista"
+              name="vista"
+              row
+              value={vista}
+              onChange={handleChangeVista}
+            >
+              <FormControlLabel
+                value="notificaciones"
+                control={<Radio />}
+                label="Notificaciones"
+              />
+              <FormControlLabel
+                value="dashboard"
+                control={<Radio />}
+                label="Dashboard"
+              />
+            </RadioGroup>
+          </FormControl>
+        </Grid>
+      </Grid>
+      {vista === "notificaciones" ? (
+        <Notificaciones
+          idUsuario={idUsuario}
+          correoUsuario={correoUsuario}
+          passwordUsuario={passwordUsuario}
+          setLoading={setLoading}
+          idEmpresa={idEmpresa}
+        />
+      ) : (
+        <Dashboard
+          idUsuario={idUsuario}
+          setLoading={setLoading}
+          dbEmpresa={dbEmpresa}
+        />
+      )}
+    </div>
+  );
+}
+
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box>
+          <div>{children}</div>
+        </Box>
+      )}
+    </div>
+  );
+}
+
+TabPanel.propTypes = {
+  children: PropTypes.node,
+  index: PropTypes.any.isRequired,
+  value: PropTypes.any.isRequired,
+};
+
+function a11yProps(index) {
+  return {
+    id: `simple-tab-${index}`,
+    "aria-controls": `simple-tabpanel-${index}`,
+  };
+}
+
+const useStylesNotificaciones = makeStyles((theme) => ({
+  root: {
+    flexGrow: 1,
+    backgroundColor: theme.palette.background.paper,
+  },
+  listItemText: {
+    fontWeight: "bold",
+  },
+}));
+
+function Notificaciones(props) {
+  const classes = useStylesNotificaciones();
+
+  const idUsuario = props.idUsuario;
+  const correoUsuario = props.correoUsuario;
+  const passwordUsuario = props.passwordUsuario;
+  const setLoading = props.setLoading;
+  const idEmpresa = props.idEmpresa;
+
+  const [value, setValue] = useState(0);
+  const [notificaciones, setNotificaciones] = useState([]);
+
+  const [
+    {
+      data: getNotificacionesServiciosData,
+      loading: getNotificacionesServiciosLoading,
+      error: getNotificacionesServiciosError,
+    },
+    executeGetNotificacionesServicios,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getNotificacionesServicios`,
+      method: "GET",
+      params: {
+        usuario: correoUsuario,
+        pwd: passwordUsuario,
+        idusuario: idUsuario,
+        idempresa: idEmpresa,
+        accion: value,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+
+  const [
+    {
+      data: agregarNotificacionFavoritasData,
+      loading: agregarNotificacionFavoritasLoading,
+      error: agregarNotificacionFavoritasError,
+    },
+    executeAgregarNotificacionFavoritas,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/agregarNotificacionFavoritas`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  const [
+    {
+      data: cambiarVistaNotificacionServiciosData,
+      loading: cambiarVistaNotificacionServiciosLoading,
+      error: cambiarVistaNotificacionServiciosError,
+    },
+    executeCambiarVistaNotificacionServicios,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/cambiarVistaNotificacionServicios`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  const [
+    {
+      data: eliminarNotificacionServiciosData,
+      loading: eliminarNotificacionServiciosLoading,
+      error: eliminarNotificacionServiciosError,
+    },
+    executeEliminarNotificacionServicios,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/eliminarNotificacionServicios`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  useEffect(() => {
+    if (getNotificacionesServiciosData) {
+      if (getNotificacionesServiciosData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(getNotificacionesServiciosData.error),
+          "warning"
+        );
+      } else {
+        setNotificaciones(getNotificacionesServiciosData.notificaciones);
+      }
+    }
+  }, [getNotificacionesServiciosData]);
+
+  useEffect(() => {
+    if (agregarNotificacionFavoritasData) {
+      if (agregarNotificacionFavoritasData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(agregarNotificacionFavoritasData.error),
+          "warning"
+        );
+      } else {
+        executeGetNotificacionesServicios();
+      }
+    }
+  }, [agregarNotificacionFavoritasData, executeGetNotificacionesServicios]);
+
+  useEffect(() => {
+    if (cambiarVistaNotificacionServiciosData) {
+      if (cambiarVistaNotificacionServiciosData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(cambiarVistaNotificacionServiciosData.error),
+          "warning"
+        );
+      } else {
+        executeGetNotificacionesServicios();
+      }
+    }
+  }, [
+    cambiarVistaNotificacionServiciosData,
+    executeGetNotificacionesServicios,
+  ]);
+
+  useEffect(() => {
+    if (eliminarNotificacionServiciosData) {
+      if (eliminarNotificacionServiciosData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(eliminarNotificacionServiciosData.error),
+          "warning"
+        );
+      } else {
+        executeGetNotificacionesServicios();
+      }
+    }
+  }, [eliminarNotificacionServiciosData, executeGetNotificacionesServicios]);
+
+  if (
+    getNotificacionesServiciosLoading ||
+    agregarNotificacionFavoritasLoading ||
+    cambiarVistaNotificacionServiciosLoading ||
+    eliminarNotificacionServiciosLoading
+  ) {
+    setLoading(true);
+    return <div></div>;
+  } else {
+    setLoading(false);
+  }
+  if (
+    getNotificacionesServiciosError ||
+    agregarNotificacionFavoritasError ||
+    cambiarVistaNotificacionServiciosError ||
+    eliminarNotificacionServiciosError
+  ) {
+    return <ErrorQueryDB />;
+  }
+
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
+
+  return (
+    <div className={classes.root}>
+      <AppBar position="static">
+        <Tabs
+          value={value}
+          onChange={handleChange}
+          aria-label="simple tabs example"
+        >
+          <Tab label="Todas las empresas" {...a11yProps(0)} />
+          <Tab label="Empresa actual" {...a11yProps(1)} />
+          <Tab label="Favoritos" {...a11yProps(2)} />
+        </Tabs>
+      </AppBar>
+      <TabPanel value={value} index={0}>
+        <Paper>
+          <List>
+            {notificaciones.length > 0 ? (
+              notificaciones.map((notificacion, index) => (
+                <ListItem key={index} button>
+                  <Tooltip
+                    title={
+                      notificacion.favorita === 1
+                        ? "Quitar de favoritas"
+                        : "Agregar a favoritas"
+                    }
+                  >
+                    <IconButton
+                      style={{ marginRight: 10 }}
+                      onClick={() => {
+                        executeAgregarNotificacionFavoritas({
+                          data: {
+                            usuario: correoUsuario,
+                            pwd: passwordUsuario,
+                            idnotificacion: notificacion.id,
+                            favorita: notificacion.favorita === 1 ? 0 : 1,
+                          },
+                        });
+                      }}
+                    >
+                      {notificacion.favorita === 1 ? (
+                        <StarIcon style={{ color: "#ffd600" }} />
+                      ) : (
+                        <StarBorderIcon />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  <ListItemText
+                    classes={{
+                      primary:
+                        notificacion.vista === 0 ? classes.listItemText : "",
+                    }}
+                    primary={`${notificacion.nombreservicio} - ${notificacion.fechaCorte}`}
+                    secondary={
+                        <span>
+                          {`${meses[parseInt(notificacion.periodo) - 1]} - ${notificacion.ejercicio}`}<br/>
+                          {`${notificacion.nombreempresa} - ${notificacion.nombreusuariocreador}`}
+                        </span>
+                    }
+                    onClick={() => {
+                      window.open(notificacion.linkDocumento);
+                      if (notificacion.vista === 0) {
+                        executeCambiarVistaNotificacionServicios({
+                          data: {
+                            usuario: correoUsuario,
+                            pwd: passwordUsuario,
+                            idnotificacion: notificacion.id,
+                            vista: 1,
+                          },
+                        });
+                      }
+                    }}
+                  />
+                  <Link to={notificacion.refmenu}>
+                    <Tooltip title="Ir a sección">
+                      <IconButton
+                        onClick={() => {
+                          /* if (notificacion.vista === 0) {
+                            executeCambiarVistaNotificacionServicios({
+                              data: {
+                                usuario: correoUsuario,
+                                pwd: passwordUsuario,
+                                idnotificacion: notificacion.id,
+                                vista: 1,
+                              },
+                            });
+                          } */
+                          const token = jwt.sign(
+                            {
+                              data: {
+                                idDocumento: notificacion.idDocumento,
+                                idSubmenu: notificacion.idsubmenu,
+                                titulo: notificacion.nombresubmenu,
+                                busquedaFiltro: notificacion.busquedaFiltro,
+                              },
+                            },
+                            "mysecretpassword"
+                          );
+                          localStorage.setItem("dataNotificacionHome", token);
+                        }}
+                      >
+                        <FileCopyIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Link>
+                  {/* <Tooltip title="Ver documento">
+                    <IconButton
+                      onClick={() => {
+                        window.open(notificacion.linkDocumento);
+                      }}
+                    >
+                      <AttachmentIcon />
+                    </IconButton>
+                  </Tooltip> */}
+                  <Tooltip
+                    title={
+                      notificacion.vista === 0
+                        ? "Marcar como leído"
+                        : "Marcar como no leído"
+                    }
+                  >
+                    <IconButton
+                      onClick={() => {
+                        executeCambiarVistaNotificacionServicios({
+                          data: {
+                            usuario: correoUsuario,
+                            pwd: passwordUsuario,
+                            idnotificacion: notificacion.id,
+                            vista: notificacion.vista === 1 ? 0 : 1,
+                          },
+                        });
+                      }}
+                    >
+                      {notificacion.vista === 0 ? (
+                        <DraftsIcon />
+                      ) : (
+                        <EmailIcon />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Eliminar Notificación">
+                    <IconButton
+                      style={{ marginRight: 130 }}
+                      onClick={() => {
+                        swal({
+                          text: `¿Está seguro de eliminar esta notificación?`,
+                          buttons: ["No", "Sí"],
+                          dangerMode: true,
+                        }).then((value) => {
+                          if (value) {
+                            executeEliminarNotificacionServicios({
+                              data: {
+                                usuario: correoUsuario,
+                                pwd: passwordUsuario,
+                                idnotificacion: notificacion.id,
+                                status: 0,
+                              },
+                            });
+                          }
+                        });
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <ListItemSecondaryAction>
+                    <Typography variant="subtitle1" align="center">
+                      Fecha De Entrega
+                    </Typography>
+                    <Typography variant="subtitle1" align="center">
+                      {notificacion.fechaEntrega}
+                    </Typography>
+                    <Typography variant="subtitle1" align="center">
+                      {notificacion.horaEntrega}
+                    </Typography>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))
+            ) : (
+              <ListItem>
+                <ListItemText
+                  style={{ textAlign: "center" }}
+                  primary="Sin Notificaciones"
+                />
+              </ListItem>
+            )}
+          </List>
+        </Paper>
+      </TabPanel>
+      <TabPanel value={value} index={1}>
+        <Paper>
+          <List>
+            {notificaciones.length > 0 ? (
+              notificaciones.map((notificacion, index) => (
+                <ListItem key={index} button>
+                  <Tooltip
+                    title={
+                      notificacion.favorita === 1
+                        ? "Quitar de favoritas"
+                        : "Agregar a favoritas"
+                    }
+                  >
+                    <IconButton
+                      style={{ marginRight: 10 }}
+                      onClick={() => {
+                        executeAgregarNotificacionFavoritas({
+                          data: {
+                            usuario: correoUsuario,
+                            pwd: passwordUsuario,
+                            idnotificacion: notificacion.id,
+                            favorita: notificacion.favorita === 1 ? 0 : 1,
+                          },
+                        });
+                      }}
+                    >
+                      {notificacion.favorita === 1 ? (
+                        <StarIcon style={{ color: "#ffd600" }} />
+                      ) : (
+                        <StarBorderIcon />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  <ListItemText
+                    classes={{
+                      primary:
+                        notificacion.vista === 0 ? classes.listItemText : "",
+                    }}
+                    primary={`${notificacion.nombreservicio} - ${notificacion.fechaCorte}`}
+                    secondary={
+                        <span>
+                          {`${meses[parseInt(notificacion.periodo) - 1]} - ${notificacion.ejercicio}`}<br/>
+                          {`${notificacion.nombreempresa} - ${notificacion.nombreusuariocreador}`}
+                        </span>
+                    }
+                    onClick={() => {
+                      window.open(notificacion.linkDocumento);
+                      if (notificacion.vista === 0) {
+                        executeCambiarVistaNotificacionServicios({
+                          data: {
+                            usuario: correoUsuario,
+                            pwd: passwordUsuario,
+                            idnotificacion: notificacion.id,
+                            vista: 1,
+                          },
+                        });
+                      }
+                    }}
+                  />
+                  <Link to={notificacion.refmenu}>
+                    <Tooltip title="Ir a sección">
+                      <IconButton
+                        onClick={() => {
+                          /* if (notificacion.vista === 0) {
+                            executeCambiarVistaNotificacionServicios({
+                              data: {
+                                usuario: correoUsuario,
+                                pwd: passwordUsuario,
+                                idnotificacion: notificacion.id,
+                                vista: 1,
+                              },
+                            });
+                          } */
+                          const token = jwt.sign(
+                            {
+                              data: {
+                                idDocumento: notificacion.idDocumento,
+                                idSubmenu: notificacion.idsubmenu,
+                                titulo: notificacion.nombresubmenu,
+                                busquedaFiltro: notificacion.busquedaFiltro,
+                              },
+                            },
+                            "mysecretpassword"
+                          );
+                          localStorage.setItem("dataNotificacionHome", token);
+                        }}
+                      >
+                        <FileCopyIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Link>
+                  {/* <Tooltip title="Ver documento">
+                    <IconButton
+                      onClick={() => {
+                        window.open(notificacion.linkDocumento);
+                      }}
+                    >
+                      <AttachmentIcon />
+                    </IconButton>
+                  </Tooltip> */}
+                  <Tooltip
+                    title={
+                      notificacion.vista === 0
+                        ? "Marcar como leído"
+                        : "Marcar como no leído"
+                    }
+                  >
+                    <IconButton
+                      onClick={() => {
+                        executeCambiarVistaNotificacionServicios({
+                          data: {
+                            usuario: correoUsuario,
+                            pwd: passwordUsuario,
+                            idnotificacion: notificacion.id,
+                            vista: notificacion.vista === 1 ? 0 : 1,
+                          },
+                        });
+                      }}
+                    >
+                      {notificacion.vista === 0 ? (
+                        <DraftsIcon />
+                      ) : (
+                        <EmailIcon />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Eliminar Notificación">
+                    <IconButton
+                      style={{ marginRight: 130 }}
+                      onClick={() => {
+                        swal({
+                          text: `¿Está seguro de eliminar esta notificación?`,
+                          buttons: ["No", "Sí"],
+                          dangerMode: true,
+                        }).then((value) => {
+                          if (value) {
+                            executeEliminarNotificacionServicios({
+                              data: {
+                                usuario: correoUsuario,
+                                pwd: passwordUsuario,
+                                idnotificacion: notificacion.id,
+                                status: 0,
+                              },
+                            });
+                          }
+                        });
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <ListItemSecondaryAction>
+                    <Typography variant="subtitle1" align="center">
+                      Fecha De Entrega
+                    </Typography>
+                    <Typography variant="subtitle1" align="center">
+                      {notificacion.fechaEntrega}
+                    </Typography>
+                    <Typography variant="subtitle1" align="center">
+                      {notificacion.horaEntrega}
+                    </Typography>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))
+            ) : (
+              <ListItem>
+                <ListItemText
+                  style={{ textAlign: "center" }}
+                  primary="Sin Notificaciones"
+                />
+              </ListItem>
+            )}
+          </List>
+        </Paper>
+      </TabPanel>
+      <TabPanel value={value} index={2}>
+        <Paper>
+          <List>
+            {notificaciones.length > 0 ? (
+              notificaciones.map((notificacion, index) => (
+                <ListItem key={index} button>
+                  <Tooltip
+                    title={
+                      notificacion.favorita === 1
+                        ? "Quitar de favoritas"
+                        : "Agregar a favoritas"
+                    }
+                  >
+                    <IconButton
+                      style={{ marginRight: 10 }}
+                      onClick={() => {
+                        executeAgregarNotificacionFavoritas({
+                          data: {
+                            usuario: correoUsuario,
+                            pwd: passwordUsuario,
+                            idnotificacion: notificacion.id,
+                            favorita: notificacion.favorita === 1 ? 0 : 1,
+                          },
+                        });
+                      }}
+                    >
+                      {notificacion.favorita === 1 ? (
+                        <StarIcon style={{ color: "#ffd600" }} />
+                      ) : (
+                        <StarBorderIcon />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  <ListItemText
+                    classes={{
+                      primary:
+                        notificacion.vista === 0 ? classes.listItemText : "",
+                    }}
+                    primary={`${notificacion.nombreservicio} - ${notificacion.fechaCorte}`}
+                    secondary={
+                        <span>
+                          {`${meses[parseInt(notificacion.periodo) - 1]} - ${notificacion.ejercicio}`}<br/>
+                          {`${notificacion.nombreempresa} - ${notificacion.nombreusuariocreador}`}
+                        </span>
+                    }
+                    onClick={() => {
+                      window.open(notificacion.linkDocumento);
+                      if (notificacion.vista === 0) {
+                        executeCambiarVistaNotificacionServicios({
+                          data: {
+                            usuario: correoUsuario,
+                            pwd: passwordUsuario,
+                            idnotificacion: notificacion.id,
+                            vista: 1,
+                          },
+                        });
+                      }
+                    }}
+                  />
+                  <Link to={notificacion.refmenu}>
+                    <Tooltip title="Ir a sección">
+                      <IconButton
+                        onClick={() => {
+                          /* if (notificacion.vista === 0) {
+                            executeCambiarVistaNotificacionServicios({
+                              data: {
+                                usuario: correoUsuario,
+                                pwd: passwordUsuario,
+                                idnotificacion: notificacion.id,
+                                vista: 1,
+                              },
+                            });
+                          } */
+                          const token = jwt.sign(
+                            {
+                              data: {
+                                idDocumento: notificacion.idDocumento,
+                                idSubmenu: notificacion.idsubmenu,
+                                titulo: notificacion.nombresubmenu,
+                                busquedaFiltro: notificacion.busquedaFiltro,
+                              },
+                            },
+                            "mysecretpassword"
+                          );
+                          localStorage.setItem("dataNotificacionHome", token);
+                        }}
+                      >
+                        <FileCopyIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Link>
+                  {/* <Tooltip title="Ver documento">
+                    <IconButton
+                      onClick={() => {
+                        window.open(notificacion.linkDocumento);
+                      }}
+                    >
+                      <AttachmentIcon />
+                    </IconButton>
+                  </Tooltip> */}
+                  <Tooltip
+                    title={
+                      notificacion.vista === 0
+                        ? "Marcar como leído"
+                        : "Marcar como no leído"
+                    }
+                  >
+                    <IconButton
+                      onClick={() => {
+                        executeCambiarVistaNotificacionServicios({
+                          data: {
+                            usuario: correoUsuario,
+                            pwd: passwordUsuario,
+                            idnotificacion: notificacion.id,
+                            vista: notificacion.vista === 1 ? 0 : 1,
+                          },
+                        });
+                      }}
+                    >
+                      {notificacion.vista === 0 ? (
+                        <DraftsIcon />
+                      ) : (
+                        <EmailIcon />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Eliminar Notificación">
+                    <IconButton
+                      style={{ marginRight: 130 }}
+                      onClick={() => {
+                        swal({
+                          text: `¿Está seguro de eliminar esta notificación?`,
+                          buttons: ["No", "Sí"],
+                          dangerMode: true,
+                        }).then((value) => {
+                          if (value) {
+                            executeEliminarNotificacionServicios({
+                              data: {
+                                usuario: correoUsuario,
+                                pwd: passwordUsuario,
+                                idnotificacion: notificacion.id,
+                                status: 0,
+                              },
+                            });
+                          }
+                        });
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <ListItemSecondaryAction>
+                    <Typography variant="subtitle1" align="center">
+                      Fecha De Entrega
+                    </Typography>
+                    <Typography variant="subtitle1" align="center">
+                      {notificacion.fechaEntrega}
+                    </Typography>
+                    <Typography variant="subtitle1" align="center">
+                      {notificacion.horaEntrega}
+                    </Typography>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))
+            ) : (
+              <ListItem>
+                <ListItemText
+                  style={{ textAlign: "center" }}
+                  primary="Sin Notificaciones"
+                />
+              </ListItem>
+            )}
+          </List>
+        </Paper>
+      </TabPanel>
+      </div>
+  );
+}
+
+function Dashboard(props) {
+  const classes = useStyles();
+
+  const idUsuario = props.idUsuario;
+  const setLoading = props.setLoading;
+  const dbEmpresa = props.dbEmpresa;
+
   const [documentos, setDocumentos] = useState([]);
   const [rowsPrincipal, setRowsPrincipal] = useState([]);
   const [pagePrincipal, setPagePrincipal] = useState(0);
@@ -322,7 +1179,7 @@ export default function Home(props) {
   const [selectedPeriodo, setSelectedPeriodo] = useState("0");
   const [selectedEjercicio, setSelectedEjercicio] = useState("0");
   const [selectedIdDocumento, setSelectedIdDocumento] = useState(0);
-  const meses = [
+  /* const meses = [
     "enero",
     "febrero",
     "marzo",
@@ -335,7 +1192,7 @@ export default function Home(props) {
     "octubre",
     "noviembre",
     "diciembre",
-  ];
+  ]; */
 
   const [
     {
@@ -765,14 +1622,14 @@ export default function Home(props) {
     setRows(newRows);
 
     let idDocumento = 0;
-    if(localStorage.getItem("home")) {
+    if (localStorage.getItem("home")) {
       const decodedToken = jwt.verify(
         localStorage.getItem("home"),
         "mysecretpassword"
       );
       idDocumento = decodedToken.home.idDocumento;
     }
-    
+
     const token = jwt.sign(
       {
         home: {
@@ -1184,422 +2041,416 @@ export default function Home(props) {
   };
 
   return (
-    <div>
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Typography
-                variant="subtitle1"
-                style={{
-                  fontSize: ".625rem",
-                  color: "#818ea3",
-                  letterSpacing: ".125rem",
-                  fontWeight: "500",
-                  textTransform: "uppercase",
-                }}
-              >
-                Dashboard de transacciones
-              </Typography>
-              <Typography
-                variant="subtitle1"
-                style={{
-                  fontSize: "1.625rem",
-                  color: "#3d5170",
-                  lineHeight: "1",
-                  fontWeight: "500",
-                  margin: 0,
-                  padding: 0,
-                }}
-              >
-                {selectedPeriodo === "0" && selectedEjercicio === "0"
-                  ? "Todos los períodos y todos los ejercicios"
-                  : selectedPeriodo === "0" && selectedEjercicio !== "0"
-                  ? `Cualquier período de ${selectedEjercicio}`
-                  : selectedPeriodo !== "0" && selectedEjercicio === "0"
-                  ? `Período de ${
-                      meses[parseInt(selectedPeriodo - 1)]
-                    } de cualquier ejercicio`
-                  : `Período de ${
-                      meses[parseInt(selectedPeriodo - 1)]
-                    } de ${selectedEjercicio}`}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField
-                id="periodo"
-                className={classes.textFields}
-                label="Período"
-                select
-                SelectProps={{
-                  native: true,
-                }}
-                value={selectedPeriodo}
-                margin="normal"
-                onChange={(e) => {
-                  setSelectedPeriodo(e.target.value);
-                  setPage(0);
-                  llenarTabla(
-                    selectedIdModulo,
-                    selectedIdMenu,
-                    0,
-                    selectedIdUsuario,
-                    0,
-                    e.target.value,
-                    selectedEjercicio
-                  );
-                }}
-              >
-                <option value="0">Selecciona un período</option>
-                {getPeriodos()}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField
-                id="ejercicio"
-                className={classes.textFields}
-                label="Ejercicio"
-                select
-                SelectProps={{
-                  native: true,
-                }}
-                value={selectedEjercicio}
-                margin="normal"
-                onChange={(e) => {
-                  setSelectedEjercicio(e.target.value);
-                  setPage(0);
-                  llenarTabla(
-                    selectedIdModulo,
-                    selectedIdMenu,
-                    0,
-                    selectedIdUsuario,
-                    0,
-                    selectedPeriodo,
-                    e.target.value
-                  );
-                }}
-              >
-                <option value="0">Selecciona un ejercicio</option>
-                {getEjercicios()}
-              </TextField>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="subtitle1">
-                {`${selectedModulo ? selectedModulo : 'Sin módulo elejido'} > ${selectedMenu ? selectedMenu : 'Sin menú elejido'} > ${
-                  selectedIdUsuario !== 0
-                    ? selectedNombreUsuario
-                    : "Todos los usuarios"
-                }`}
-              </Typography>
-            </Grid>
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Typography
+              variant="subtitle1"
+              style={{
+                fontSize: ".625rem",
+                color: "#818ea3",
+                letterSpacing: ".125rem",
+                fontWeight: "500",
+                textTransform: "uppercase",
+              }}
+            >
+              Dashboard de transacciones
+            </Typography>
+            <Typography
+              variant="subtitle1"
+              style={{
+                fontSize: "1.625rem",
+                color: "#3d5170",
+                lineHeight: "1",
+                fontWeight: "500",
+                margin: 0,
+                padding: 0,
+              }}
+            >
+              {selectedPeriodo === "0" && selectedEjercicio === "0"
+                ? "Todos los períodos y todos los ejercicios"
+                : selectedPeriodo === "0" && selectedEjercicio !== "0"
+                ? `Cualquier período de ${selectedEjercicio}`
+                : selectedPeriodo !== "0" && selectedEjercicio === "0"
+                ? `Período de ${
+                    meses[parseInt(selectedPeriodo - 1)]
+                  } de cualquier ejercicio`
+                : `Período de ${
+                    meses[parseInt(selectedPeriodo - 1)]
+                  } de ${selectedEjercicio}`}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <TextField
+              id="periodo"
+              className={classes.textFields}
+              label="Período"
+              select
+              SelectProps={{
+                native: true,
+              }}
+              value={selectedPeriodo}
+              margin="normal"
+              onChange={(e) => {
+                setSelectedPeriodo(e.target.value);
+                setPage(0);
+                llenarTabla(
+                  selectedIdModulo,
+                  selectedIdMenu,
+                  0,
+                  selectedIdUsuario,
+                  0,
+                  e.target.value,
+                  selectedEjercicio
+                );
+              }}
+            >
+              <option value="0">Selecciona un período</option>
+              {getPeriodos()}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <TextField
+              id="ejercicio"
+              className={classes.textFields}
+              label="Ejercicio"
+              select
+              SelectProps={{
+                native: true,
+              }}
+              value={selectedEjercicio}
+              margin="normal"
+              onChange={(e) => {
+                setSelectedEjercicio(e.target.value);
+                setPage(0);
+                llenarTabla(
+                  selectedIdModulo,
+                  selectedIdMenu,
+                  0,
+                  selectedIdUsuario,
+                  0,
+                  selectedPeriodo,
+                  e.target.value
+                );
+              }}
+            >
+              <option value="0">Selecciona un ejercicio</option>
+              {getEjercicios()}
+            </TextField>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle1">
+              {`${selectedModulo ? selectedModulo : "Sin módulo elejido"} > ${
+                selectedMenu ? selectedMenu : "Sin menú elejido"
+              } > ${
+                selectedIdUsuario !== 0
+                  ? selectedNombreUsuario
+                  : "Todos los usuarios"
+              }`}
+            </Typography>
           </Grid>
         </Grid>
-        <Grid item xs={12}>
-          <Grid container spacing={3}>
-            {usuarios.nombre.map((usuario, index) => {
-              return (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-                  <Card
-                    style={{
-                      border:
+      </Grid>
+      <Grid item xs={12}>
+        <Grid container spacing={3}>
+          {usuarios.nombre.map((usuario, index) => {
+            return (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                <Card
+                  style={{
+                    border:
+                      selectedIdUsuario === usuarios.ids[index]
+                        ? "1px solid green"
+                        : "",
+                  }}
+                >
+                  <CardActionArea
+                    style={{ height: "200px" }}
+                    onClick={() => {
+                      setPage(0);
+                      llenarTabla(
+                        selectedIdModulo,
+                        selectedIdMenu,
+                        0,
                         selectedIdUsuario === usuarios.ids[index]
-                          ? "1px solid green"
-                          : "",
+                          ? 0
+                          : usuarios.ids[index],
+                        0,
+                        selectedPeriodo,
+                        selectedEjercicio
+                      );
+
+                      setSelectedIdUsuario(
+                        selectedIdUsuario === usuarios.ids[index]
+                          ? 0
+                          : usuarios.ids[index]
+                      );
+                      setSelectedNombreUsuario(
+                        selectedNombreUsuario === usuarios.nombre[index]
+                          ? ""
+                          : usuarios.nombre[index]
+                      );
                     }}
                   >
-                    <CardActionArea
-                      style={{ height: "200px" }}
-                      onClick={() => {
-                        setPage(0);
-                        llenarTabla(
-                          selectedIdModulo,
-                          selectedIdMenu,
-                          0,
-                          selectedIdUsuario === usuarios.ids[index]
-                            ? 0
-                            : usuarios.ids[index],
-                          0,
-                          selectedPeriodo,
-                          selectedEjercicio
-                        );
-
-                        setSelectedIdUsuario(
-                          selectedIdUsuario === usuarios.ids[index]
-                            ? 0
-                            : usuarios.ids[index]
-                        );
-                        setSelectedNombreUsuario(
-                          selectedNombreUsuario === usuarios.nombre[index]
-                            ? ""
-                            : usuarios.nombre[index]
-                        );
-                      }}
-                    >
-                      <CardContent style={{ padding: "15px" }}>
-                        <Typography
-                          variant="h6"
-                          style={{
-                            color: "#818ea3",
-                            textAlign: "center",
-                            fontWeight: "500",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          {usuario}
-                        </Typography>
-                        <Typography
-                          variant="subtitle1"
-                          style={{
-                            fontSize: "2.0625rem",
-                            color: "#3d5170",
-                            textAlign: "center",
-                            fontWeight: "500",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          {usuarios.cantidad[index]}
-                        </Typography>
-                      </CardContent>
-                    </CardActionArea>
-                  </Card>
-                </Grid>
-              );
-            })}
-          </Grid>
+                    <CardContent style={{ padding: "15px" }}>
+                      <Typography
+                        variant="h6"
+                        style={{
+                          color: "#818ea3",
+                          textAlign: "center",
+                          fontWeight: "500",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {usuario}
+                      </Typography>
+                      <Typography
+                        variant="subtitle1"
+                        style={{
+                          fontSize: "2.0625rem",
+                          color: "#3d5170",
+                          textAlign: "center",
+                          fontWeight: "500",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {usuarios.cantidad[index]}
+                      </Typography>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
-        <Grid item xs={12}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={8}>
-              <Paper>
-                <TableContainer>
-                  <Table
-                    className={classes.table}
-                    aria-labelledby="tableTitle"
-                    size={"medium"}
-                    aria-label="enhanced table"
-                  >
-                    <EnhancedTableHead
-                      classes={classes}
-                      order={orderPrincipal}
-                      orderBy={orderByPrincipal}
-                      onRequestSort={handleRequestSortPrincipal}
-                      rowCount={rowsPrincipal.length}
-                      headCells={headCellsPrincipal}
-                    />
-                    <TableBody>
-                      {rowsPrincipal.length > 0 ? (
-                        stableSort(
-                          rowsPrincipal,
-                          getComparator(orderPrincipal, orderByPrincipal)
+      </Grid>
+      <Grid item xs={12}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={8}>
+            <Paper>
+              <TableContainer>
+                <Table
+                  className={classes.table}
+                  aria-labelledby="tableTitle"
+                  size={"medium"}
+                  aria-label="enhanced table"
+                >
+                  <EnhancedTableHead
+                    classes={classes}
+                    order={orderPrincipal}
+                    orderBy={orderByPrincipal}
+                    onRequestSort={handleRequestSortPrincipal}
+                    rowCount={rowsPrincipal.length}
+                    headCells={headCellsPrincipal}
+                  />
+                  <TableBody>
+                    {rowsPrincipal.length > 0 ? (
+                      stableSort(
+                        rowsPrincipal,
+                        getComparator(orderPrincipal, orderByPrincipal)
+                      )
+                        .slice(
+                          pagePrincipal * rowsPerPagePrincipal,
+                          pagePrincipal * rowsPerPagePrincipal +
+                            rowsPerPagePrincipal
                         )
-                          .slice(
-                            pagePrincipal * rowsPerPagePrincipal,
-                            pagePrincipal * rowsPerPagePrincipal +
-                              rowsPerPagePrincipal
-                          )
-                          .map((row, index) => {
-                            const labelId = `enhanced-table-checkbox-${index}`;
+                        .map((row, index) => {
+                          const labelId = `enhanced-table-checkbox-${index}`;
 
-                            return (
-                              <TableRow
-                                hover
-                                role="checkbox"
-                                tabIndex={-1}
-                                className={classes.rootRow}
-                                key={index}
+                          return (
+                            <TableRow
+                              hover
+                              role="checkbox"
+                              tabIndex={-1}
+                              className={classes.rootRow}
+                              key={index}
+                            >
+                              <TableCell padding="checkbox" />
+                              <TableCell
+                                component="th"
+                                id={labelId}
+                                scope="row"
                               >
-                                <TableCell padding="checkbox" />
-                                <TableCell
-                                  component="th"
-                                  id={labelId}
-                                  scope="row"
-                                >
-                                  {row.nombreModulo}
-                                </TableCell>
-                                <TableCell align="right">
-                                  {row.nombreMenu}
-                                </TableCell>
-                                <TableCell align="right">
-                                  {row.nombreSubmenu}
-                                </TableCell>
-                                <TableCell align="right">
-                                  {row.cantidad}
-                                </TableCell>
-                                <TableCell
-                                  align="right"
-                                  onClick={() => {
-                                    setPage(0);
-                                    llenarTabla(
-                                      selectedIdModulo,
-                                      selectedIdMenu,
-                                      row.idSubmenu,
-                                      selectedIdUsuario,
-                                      2,
-                                      selectedPeriodo,
-                                      selectedEjercicio
-                                    );
-                                  }}
-                                >
-                                  {row.acciones}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={6}>
-                            <Typography variant="subtitle1">
-                              <ErrorIcon
-                                style={{ color: "red", verticalAlign: "sub" }}
-                              />
-                              No hay documentos disponibles
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                <TablePagination
-                  rowsPerPageOptions={[10, 25, 50]}
-                  component="div"
-                  labelRowsPerPage="Filas por página"
-                  labelDisplayedRows={(e) => {
-                    return `${e.from}-${e.to} de ${e.count}`;
-                  }}
-                  count={rowsPrincipal.length}
-                  rowsPerPage={rowsPerPagePrincipal}
-                  page={
-                    rowsPrincipal.length > 0 &&
-                    rowsPrincipal.length >= rowsPerPagePrincipal
-                      ? pagePrincipal
-                      : 0
-                  }
-                  onChangePage={handleChangePagePrincipal}
-                  onChangeRowsPerPage={handleChangeRowsPerPagePrincipal}
-                />
-              </Paper>
-              <Paper style={{ marginTop: "15px" }}>
-                <TableContainer>
-                  <Table
-                    className={classes.table}
-                    aria-labelledby="tableTitle"
-                    size={"medium"}
-                    aria-label="enhanced table"
-                  >
-                    <EnhancedTableHead
-                      classes={classes}
-                      order={order}
-                      orderBy={orderBy}
-                      onRequestSort={handleRequestSort}
-                      rowCount={rows.length}
-                      headCells={headCells}
-                    />
-                    <TableBody>
-                      {rows.length > 0 ? (
-                        stableSort(rows, getComparator(order, orderBy))
-                          .slice(
-                            page * rowsPerPage,
-                            page * rowsPerPage + rowsPerPage
-                          )
-                          .map((row, index) => {
-                            const labelId = `enhanced-table-checkbox-${index}`;
+                                {row.nombreModulo}
+                              </TableCell>
+                              <TableCell align="right">
+                                {row.nombreMenu}
+                              </TableCell>
+                              <TableCell align="right">
+                                {row.nombreSubmenu}
+                              </TableCell>
+                              <TableCell align="right">
+                                {row.cantidad}
+                              </TableCell>
+                              <TableCell
+                                align="right"
+                                onClick={() => {
+                                  setPage(0);
+                                  llenarTabla(
+                                    selectedIdModulo,
+                                    selectedIdMenu,
+                                    row.idSubmenu,
+                                    selectedIdUsuario,
+                                    2,
+                                    selectedPeriodo,
+                                    selectedEjercicio
+                                  );
+                                }}
+                              >
+                                {row.acciones}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6}>
+                          <Typography variant="subtitle1">
+                            <ErrorIcon
+                              style={{ color: "red", verticalAlign: "sub" }}
+                            />
+                            No hay documentos disponibles
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                labelRowsPerPage="Filas por página"
+                labelDisplayedRows={(e) => {
+                  return `${e.from}-${e.to} de ${e.count}`;
+                }}
+                count={rowsPrincipal.length}
+                rowsPerPage={rowsPerPagePrincipal}
+                page={
+                  rowsPrincipal.length > 0 &&
+                  rowsPrincipal.length >= rowsPerPagePrincipal
+                    ? pagePrincipal
+                    : 0
+                }
+                onChangePage={handleChangePagePrincipal}
+                onChangeRowsPerPage={handleChangeRowsPerPagePrincipal}
+              />
+            </Paper>
+            <Paper style={{ marginTop: "15px" }}>
+              <TableContainer>
+                <Table
+                  className={classes.table}
+                  aria-labelledby="tableTitle"
+                  size={"medium"}
+                  aria-label="enhanced table"
+                >
+                  <EnhancedTableHead
+                    classes={classes}
+                    order={order}
+                    orderBy={orderBy}
+                    onRequestSort={handleRequestSort}
+                    rowCount={rows.length}
+                    headCells={headCells}
+                  />
+                  <TableBody>
+                    {rows.length > 0 ? (
+                      stableSort(rows, getComparator(order, orderBy))
+                        .slice(
+                          page * rowsPerPage,
+                          page * rowsPerPage + rowsPerPage
+                        )
+                        .map((row, index) => {
+                          const labelId = `enhanced-table-checkbox-${index}`;
 
-                            return (
-                              <TableRow
-                                hover
-                                role="checkbox"
-                                tabIndex={-1}
-                                className={classes.rootRow}
-                                key={index}
-                              >
-                                <TableCell
-                                  padding="checkbox"
-                                  style={{
-                                    backgroundColor:
-                                      selectedIdDocumento === row.id
-                                        ? "green"
-                                        : "",
-                                  }}
-                                />
-                                <TableCell
-                                  component="th"
-                                  id={labelId}
-                                  scope="row"
-                                >
-                                  {row.fechaRegistro}
-                                </TableCell>
-                                <TableCell align="right">
-                                  {row.fechaDocumento}
-                                </TableCell>
-                                <TableCell align="right">
-                                  {row.nombreMenu}
-                                </TableCell>
-                                <TableCell align="right">
-                                  {row.nombreSubmenu}
-                                </TableCell>
-                                <TableCell align="right">
-                                  {row.nombreUsuario}
-                                </TableCell>
-                                <TableCell align="right">
-                                  {row.acciones}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={7}>
-                            <Typography variant="subtitle1">
-                              <ErrorIcon
-                                style={{ color: "red", verticalAlign: "sub" }}
+                          return (
+                            <TableRow
+                              hover
+                              role="checkbox"
+                              tabIndex={-1}
+                              className={classes.rootRow}
+                              key={index}
+                            >
+                              <TableCell
+                                padding="checkbox"
+                                style={{
+                                  backgroundColor:
+                                    selectedIdDocumento === row.id
+                                      ? "green"
+                                      : "",
+                                }}
                               />
-                              No hay documentos disponibles
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                <TablePagination
-                  rowsPerPageOptions={[10, 25, 50]}
-                  component="div"
-                  labelRowsPerPage="Filas por página"
-                  labelDisplayedRows={(e) => {
-                    return `${e.from}-${e.to} de ${e.count}`;
-                  }}
-                  count={rows.length}
-                  rowsPerPage={rowsPerPage}
-                  page={
-                    rows.length > 0 && rows.length >= rowsPerPage ? page : 0
-                  }
-                  onChangePage={handleChangePage}
-                  onChangeRowsPerPage={handleChangeRowsPerPage}
+                              <TableCell
+                                component="th"
+                                id={labelId}
+                                scope="row"
+                              >
+                                {row.fechaRegistro}
+                              </TableCell>
+                              <TableCell align="right">
+                                {row.fechaDocumento}
+                              </TableCell>
+                              <TableCell align="right">
+                                {row.nombreMenu}
+                              </TableCell>
+                              <TableCell align="right">
+                                {row.nombreSubmenu}
+                              </TableCell>
+                              <TableCell align="right">
+                                {row.nombreUsuario}
+                              </TableCell>
+                              <TableCell align="right">
+                                {row.acciones}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7}>
+                          <Typography variant="subtitle1">
+                            <ErrorIcon
+                              style={{ color: "red", verticalAlign: "sub" }}
+                            />
+                            No hay documentos disponibles
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                labelRowsPerPage="Filas por página"
+                labelDisplayedRows={(e) => {
+                  return `${e.from}-${e.to} de ${e.count}`;
+                }}
+                count={rows.length}
+                rowsPerPage={rowsPerPage}
+                page={rows.length > 0 && rows.length >= rowsPerPage ? page : 0}
+                onChangePage={handleChangePage}
+                onChangeRowsPerPage={handleChangeRowsPerPage}
+              />
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Chart
+                  options={optionsModulos}
+                  series={seriesModulos}
+                  type="pie"
                 />
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Chart
-                    options={optionsModulos}
-                    series={seriesModulos}
-                    type="pie"
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <Chart
-                    options={optionsMenus}
-                    series={seriesMenus}
-                    type="pie"
-                  />
-                </Grid>
+              </Grid>
+              <Grid item xs={12}>
+                <Chart options={optionsMenus} series={seriesMenus} type="pie" />
               </Grid>
             </Grid>
           </Grid>
         </Grid>
       </Grid>
-    </div>
+    </Grid>
   );
 }

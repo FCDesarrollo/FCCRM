@@ -44,6 +44,7 @@ import {
   /* SentimentVerySatisfied as SentimentVerySatisfiedIcon,
   SentimentVeryDissatisfied as SentimentVeryDissatisfiedIcon, */
   KeyboardReturn as KeyboardReturnIcon,
+  GetApp as GetAppIcon,
 } from "@material-ui/icons";
 import {
   makeStyles,
@@ -289,24 +290,22 @@ export default function AlmacenDigitalOperaciones(props) {
   const [selectedAlmacen, setSelectedAlmacen] = useState(0);
   const [archivosAlmacen, setArchivosAlmacen] = useState([]);
   //const [dataTable, setDataTable] = useState([]);
-  const [
-    { data: ADOData, loading: ADOLoading, error: ADOError },
-    executeADO,
-  ] = useAxios(
-    {
-      url: API_BASE_URL + `/listaAlmacenDigital`,
-      method: "GET",
-      params: {
-        usuario: userEmail,
-        pwd: userPassword,
-        rfc: empresaRFC,
-        idsubmenu: idSubmenu,
+  const [{ data: ADOData, loading: ADOLoading, error: ADOError }, executeADO] =
+    useAxios(
+      {
+        url: API_BASE_URL + `/listaAlmacenDigital`,
+        method: "GET",
+        params: {
+          usuario: userEmail,
+          pwd: userPassword,
+          rfc: empresaRFC,
+          idsubmenu: idSubmenu,
+        },
       },
-    },
-    {
-      useCache: false,
-    }
-  );
+      {
+        useCache: false,
+      }
+    );
 
   useEffect(() => {
     for (let x = 0; x < submenuContent.length; x++) {
@@ -436,7 +435,13 @@ export default function AlmacenDigitalOperaciones(props) {
           </Grid>
           {submenuContent.map((content, index) => {
             return content.submenu.orden !== 0 ? (
-              <Grid item xs={12} md={5} key={index} style={{ marginBottom: "15px" }}>
+              <Grid
+                item
+                xs={12}
+                md={5}
+                key={index}
+                style={{ marginBottom: "15px" }}
+              >
                 <Button
                   variant="outlined"
                   color="primary"
@@ -1264,6 +1269,23 @@ function VerDocumentos(props) {
     }
   );
 
+  const [
+    {
+      data: descargarArchivosAlmacenDigitalData,
+      loading: descargarArchivosAlmacenDigitalLoading,
+      error: descargarArchivosAlmacenDigitalError,
+    },
+    executeDescargarArchivosAlmacenDigital,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/descargarArchivosAlmacenDigital`,
+      method: "POST",
+    },
+    {
+      manual: true,
+    }
+  );
+
   useEffect(() => {
     setNumSelected(selected.length);
   }, [selected]);
@@ -1298,17 +1320,54 @@ function VerDocumentos(props) {
   }, [eliminarArchivosADOData, executeArchivosADO]);
 
   useEffect(() => {
+    function eliminarArchivos() {
+      if (descargarArchivosAlmacenDigitalData) {
+        if (descargarArchivosAlmacenDigitalData.error !== 0) {
+          return (
+            <Typography variant="h5">
+              {dataBaseErrores(descargarArchivosAlmacenDigitalData.error)}
+            </Typography>
+          );
+        } else {
+          if (descargarArchivosAlmacenDigitalData.link !== "") {
+            var link = document.createElement("a");
+            link.setAttribute("href", descargarArchivosAlmacenDigitalData.link + "/download");
+            link.setAttribute("download", true);
+            link.click();
+            /* window.open(descargarArchivosAlmacenDigitalData.link + "/download"); */
+          } else {
+            swal(
+              "Error en la descarga",
+              "No fue posible descargar el/los archivo(s)",
+              "warning"
+            );
+          }
+        }
+      }
+    }
+    eliminarArchivos();
+  }, [descargarArchivosAlmacenDigitalData]);
+
+  useEffect(() => {
     executeArchivosADO();
   }, [executeArchivosADO]);
 
-  if (archivosADOLoading || eliminarArchivosADOLoading) {
+  if (
+    archivosADOLoading ||
+    eliminarArchivosADOLoading ||
+    descargarArchivosAlmacenDigitalLoading
+  ) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
 
-  if (archivosADOError || eliminarArchivosADOError) {
+  if (
+    archivosADOError ||
+    eliminarArchivosADOError ||
+    descargarArchivosAlmacenDigitalError
+  ) {
     return <ErrorQueryDB />;
   }
 
@@ -1474,14 +1533,53 @@ function VerDocumentos(props) {
           >
             {numSelected} seleccionados
           </Typography>
-          <div
-            style={{ float: "right", marginLeft: "auto" }}
-            onClick={() => {
-              eliminarArchivos();
-            }}
-          >
+          <div style={{ float: "right", marginLeft: "auto" }}>
+            <Tooltip title="Descargar seleccionado(s)">
+              <IconButton
+                onClick={() => {
+                  if (selected.length > 1) {
+                    let extencionesArchivos = [];
+                    for (let x = 0; x < selected.length; x++) {
+                      let archivo = archivosADOData.archivos.filter(
+                        (archivo) => archivo.id === selected[x]
+                      );
+                      let archivosDesglosado = archivo[0].documento.split(".");
+                      extencionesArchivos.push(
+                        archivosDesglosado[archivosDesglosado.length - 1]
+                      );
+                    }
+                    executeDescargarArchivosAlmacenDigital({
+                      data: {
+                        usuario: userEmail,
+                        pwd: userPassword,
+                        rfc: empresaRFC,
+                        idmodulo: idModulo,
+                        idmenu: idMenu,
+                        idsubmenu: idSubmenu,
+                        usuario_storage: empresaDatos.usuario_storage,
+                        password_storage: empresaDatos.password_storage,
+                        fechaActual: moment().format("YYYYMMDDHmmss"),
+                        archivos: selectedRutaArchivo,
+                        extencionesArchivos: extencionesArchivos,
+                      },
+                    });
+                  } else {
+                    var link = document.createElement("a");
+                    link.setAttribute("href", selectedRutaArchivo[0]);
+                    link.setAttribute("download", true);
+                    link.click();
+                  }
+                }}
+              >
+                <GetAppIcon color="primary" />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Eliminar seleccionado(s)">
-              <IconButton>
+              <IconButton
+                onClick={() => {
+                  eliminarArchivos();
+                }}
+              >
                 <DeleteIcon />
               </IconButton>
             </Tooltip>
@@ -1571,10 +1669,16 @@ function VerDocumentos(props) {
         <MenuItem
           onClick={() => {
             handleCloseMenu();
-            window.open(`${rutaArchivo}/download`);
+            /* window.open(`${rutaArchivo}/download`); */
           }}
         >
-          <ListItemText primary="Descargar" />
+          <a
+            href={`${rutaArchivo}/download`}
+            download
+            style={{ textDecoration: "none", color: "#000000" }}
+          >
+            <ListItemText primary="Descargar" />
+          </a>
         </MenuItem>
       </StyledMenu>
     </div>
@@ -1587,7 +1691,11 @@ function ResumenDetalladoDeCarga(props) {
   const setShowComponent = props.setShowComponent;
   return (
     <Grid container>
-      <Grid item xs={12} style={{ alignSelf: "flex-end", marginBottom: "15px", padding: "15px" }}>
+      <Grid
+        item
+        xs={12}
+        style={{ alignSelf: "flex-end", marginBottom: "15px", padding: "15px" }}
+      >
         <Typography className={classes.titleTable} variant="h6" id="tableTitle">
           <Tooltip title="Regresar">
             <IconButton
@@ -1603,7 +1711,7 @@ function ResumenDetalladoDeCarga(props) {
         </Typography>
       </Grid>
       <Grid item xs={12}>
-        <TableContainer component={Paper} style={{padding: "15px"}}>
+        <TableContainer component={Paper} style={{ padding: "15px" }}>
           <Table className={classes.table} aria-label="simple table">
             <TableHead>
               <TableRow

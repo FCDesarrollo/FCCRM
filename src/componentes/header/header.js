@@ -293,6 +293,7 @@ export default function Header(props) {
   const empresaDatos = props.empresaDatos;
   const idEmpresa = empresaDatos.idempresa;
   const statusEmpresa = empresaDatos.statusempresa;
+  const carpetasEmpresa = empresaDatos.carpetas;
   const setEmpresaDatos = props.setEmpresaDatos;
   const loading = props.loading;
   const setLoading = props.setLoading;
@@ -657,6 +658,7 @@ export default function Header(props) {
 
   window.onhashchange = function () {
     localStorage.removeItem("menuTemporal");
+    localStorage.removeItem("dataTemporal");
     if (window.location.hash.substr(2) !== "configuracionesPermisos") {
       localStorage.removeItem("idMenuTemporal");
     }
@@ -671,7 +673,7 @@ export default function Header(props) {
     notificacionesLoading ||
     eliminaNotificacionLoading
   ) {
-    return <LoadingComponent />;
+    return <LoadingComponent mensaje={carpetasEmpresa === 0 ? "Creando carpetas (esto puede tardar varios minutos)." : ""} />;
   }
   if (
     getEmpresaError ||
@@ -912,6 +914,8 @@ export default function Header(props) {
                   if (currentPath !== submenu.ref) {
                     localStorage.removeItem("menuTemporal");
                     localStorage.removeItem("notificacionData");
+                    localStorage.removeItem("dataTemporal");
+                    localStorage.removeItem("dataNotificacionHome");
                   }
                 }}
                 to={`/${submenu.ref}`}
@@ -1061,6 +1065,8 @@ export default function Header(props) {
         localStorage.removeItem("emToken");
         localStorage.removeItem("notificacionData");
         localStorage.removeItem("home");
+        localStorage.removeItem("dataTemporal");
+        localStorage.removeItem("dataNotificacionHome");
         setUserAuth(false);
       }
     });
@@ -1146,6 +1152,8 @@ export default function Header(props) {
                     "mysecretpassword"
                   );
                   localStorage.removeItem("menuTemporal");
+                  localStorage.removeItem("dataTemporal");
+                  localStorage.removeItem("dataNotificacionHome");
                   localStorage.setItem("notificacionData", token);
                   if (currentPath === "autorizacionesGastos") {
                     window.location.reload();
@@ -1396,6 +1404,8 @@ export default function Header(props) {
                 setOpenDrawer(false);
                 localStorage.removeItem("menuTemporal");
                 localStorage.removeItem("notificacionData");
+                localStorage.removeItem("dataTemporal");
+                localStorage.removeItem("dataNotificacionHome");
               }}
             >
               <ListItemIcon>

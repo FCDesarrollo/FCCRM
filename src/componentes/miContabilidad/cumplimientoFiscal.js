@@ -235,6 +235,7 @@ export default function CumplimientoFiscal(props) {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [titulo, setTitulo] = useState("");
   const [selectedEstado, setSelectedEstado] = useState(0);
+  const [idDocumentoNotificacionHome, setIdDocumentoNotificacionHome] = useState(0);
 
   const [
     {
@@ -255,7 +256,20 @@ export default function CumplimientoFiscal(props) {
   );
 
   useEffect(() => {
-    if (localStorage.getItem("menuTemporal")) {
+    if (localStorage.getItem("dataNotificacionHome")) {
+      try {
+        const decodedToken = jwt.verify(
+          localStorage.getItem("dataNotificacionHome"),
+          "mysecretpassword"
+        );
+        setShowComponent(1);
+        setTitulo(decodedToken.data.titulo);
+        setIdsubmenu(decodedToken.data.idSubmenu);
+        setBusquedaFiltro(decodedToken.data.busquedaFiltro);
+      } catch (err) {
+        localStorage.removeItem("dataNotificacionHome");
+      }
+    } else if (localStorage.getItem("menuTemporal")) {
       try {
         const decodedToken = jwt.verify(
           localStorage.getItem("menuTemporal"),
@@ -400,7 +414,31 @@ export default function CumplimientoFiscal(props) {
     }
 
     setRows(busquedaFiltro.trim() !== "" ? getFilterRows() : filterRows);
-    if (localStorage.getItem("notificacionData")) {
+    if (localStorage.getItem("dataNotificacionHome")) {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("dataNotificacionHome"),
+        "mysecretpassword"
+      );
+      setIdDocumentoNotificacionHome(decodedToken.data.idDocumento);
+      const token = jwt.sign(
+        {
+          menuTemporal: {
+            showComponent: 1,
+            titulo: titulo,
+            idSubmenu: decodedToken.data.idSubmenu,
+            page:
+              rows.length < rowsPerPage && rows.length !== 0
+                ? 0
+                : decodedToken.data.page
+                ? decodedToken.data.page
+                : 0,
+            busquedaFiltro: busquedaFiltro,
+          },
+        },
+        "mysecretpassword"
+      );
+      localStorage.setItem("menuTemporal", token);
+    } else if (localStorage.getItem("notificacionData")) {
       const decodedToken = jwt.verify(
         localStorage.getItem("notificacionData"),
         "mysecretpassword"
@@ -536,7 +574,9 @@ export default function CumplimientoFiscal(props) {
                     setTitulo(content.submenu.nombre_submenu);
                     setShowComponent(1);
                     setIdsubmenu(content.submenu.idsubmenu);
+                    setBusquedaFiltro("");
                     setSelectedEstado(0);
+                    setIdDocumentoNotificacionHome(0);
                     const token = jwt.sign(
                       {
                         menuTemporal: {
@@ -551,6 +591,7 @@ export default function CumplimientoFiscal(props) {
                     );
                     localStorage.setItem("menuTemporal", token);
                     localStorage.removeItem("notificacionData");
+                    localStorage.removeItem("dataNotificacionHome");
                   }}
                 >
                   {content.submenu.nombre_submenu}
@@ -577,7 +618,9 @@ export default function CumplimientoFiscal(props) {
                         aria-label="cerrar"
                         onClick={() => {
                           setShowComponent(0);
+                          setBusquedaFiltro("");
                           setSelectedEstado(0);
+                          setIdDocumentoNotificacionHome(0);
                           const token = jwt.sign(
                             {
                               menuTemporal: {
@@ -592,6 +635,7 @@ export default function CumplimientoFiscal(props) {
                           );
                           localStorage.setItem("menuTemporal", token);
                           localStorage.removeItem("notificacionData");
+                          localStorage.removeItem("dataNotificacionHome");
                         }}
                       >
                         <CloseIcon color="secondary" />
@@ -672,16 +716,19 @@ export default function CumplimientoFiscal(props) {
                               padding="checkbox"
                               style={{
                                 background:
-                                  selectedEstado === row.id ? "green" : "",
+                                  selectedEstado === row.id || idDocumentoNotificacionHome === row.id ? "green" : "",
                               }}
                             >
-                              {selectedEstado === row.id ? (
+                              {selectedEstado === row.id || idDocumentoNotificacionHome === row.id ? (
                                 <Link to="/">
                                   <Tooltip title="Regresar a Home">
                                     <IconButton
                                       onClick={() => {
                                         localStorage.removeItem(
                                           "notificacionData"
+                                        );
+                                        localStorage.removeItem(
+                                          "dataNotificacionHome"
                                         );
                                       }}
                                     >

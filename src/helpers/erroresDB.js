@@ -88,6 +88,10 @@ export const dataBaseErrores = error => {
       return "No se pueden eliminar ninguno de los cuatro perfiles principales.";
     case 57:
       return "No se pudo subir la imagen.";
+    case 58:
+      return "Se intenta pagar un documento con pendiente 0.";
+    case 59:
+      return "El agente o la persona esta activo/a en un proyecto";
     case -1:
       return "El teléfono ya existe.";
     case -2:

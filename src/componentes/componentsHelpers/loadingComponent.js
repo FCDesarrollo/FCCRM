@@ -7,9 +7,12 @@ export default function LoadingComponent(props) {
   return (
     <Grid container>
       <Grid item xs={12}>
-      <Typography variant="h6" style={{ textAlign: "center", background: "#FFFFFF" }}>
-              {mensaje}
-            </Typography>
+        <Typography
+          variant="h6"
+          style={{ textAlign: "center", background: "#FFFFFF" }}
+        >
+          {mensaje}
+        </Typography>
         <div
           style={{
             backgroundColor: "#fff",
@@ -23,7 +26,7 @@ export default function LoadingComponent(props) {
             /* opacity: "0.8" */
           }}
         >
-            <img src={LoadingLogo} alt="loading..." />
+          <img src={LoadingLogo} alt="loading..." />
         </div>
       </Grid>
     </Grid>

@@ -28,6 +28,7 @@ import AutorizacionesGastos from "./componentes/miAdministracion/autorizacionesG
 import ConfiguracionesPermisos from "./componentes/miAdministracion/configuracionesPermisos";
 import FinanzasTesoreria from "./componentes/miAdministracion/finanzasTesoreria";
 import GestionEmpresarial from "./componentes/miAdministracion/gestionEmpresarial";
+import ReportesPDF from "./componentes/miAdministracion/reportesPDF";
 import ExpedientesDigitales from "./componentes/miAdministracion/expedientesDigitales";
 import Publicaciones from "./componentes/miAdministracion/publicaciones";
 import EstadosFinancieros from "./componentes/miContabilidad/estadosFinancieros";
@@ -39,6 +40,10 @@ import AlmacenDigitalExpedientes from "./componentes/miBandejaDeEntrada/almacenD
 import CartasTecnicas from "./componentes/miPortalDeConocimiento/cartasTecnicas";
 import Videos from "./componentes/miPortalDeConocimiento/videos";
 import NoticiasFiscales from "./componentes/miPortalDeConocimiento/noticiasFiscales";
+import NuevaContabilidad from "./componentes/nuevaContabilidad/nuevaContabilidad";
+import HeaderContabilidad from "./componentes/nuevaContabilidad/headerNuevaContabilidad";
+import SolucionesNuevaContabilidad from "./componentes/nuevaContabilidad/solucionesNuevaContabilidad";
+import ModulosNuevaContabilidad from "./componentes/nuevaContabilidad/modulosNuevaContabilidad";
 import NotFound from "./componentes/componentsHelpers/notFound";
 
 function App() {
@@ -47,11 +52,83 @@ function App() {
   const [empresaDatos, setEmpresaDatos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [executeQueriesHeader, setExecuteQueriesHeader] = useState(false);
+  const [solucionesNuevaContabilidad, setSolucionesNuevaContabilidad] =
+    useState([]);
+  const [modulosNuevaContabilidad, setModulosNuevaContabilidad] = useState([]);
+  const [
+    documentosGeneralesNuevaContabilidad,
+    setDocumentosGeneralesNuevaContabilidad,
+  ] = useState([]);
+  const [estadosNuevaContabilidad, setEstadosNuevaContabilidad] = useState([]);
+
   return (
     <HashRouter>
       <Switch>
         <Route exact path="/login">
           <Login />
+        </Route>
+        <Route exact path="/laNuevaContabilidad">
+          <HeaderContabilidad
+            solucionesNuevaContabilidad={solucionesNuevaContabilidad}
+            setSolucionesNuevaContabilidad={setSolucionesNuevaContabilidad}
+            modulosNuevaContabilidad={modulosNuevaContabilidad}
+            setModulosNuevaContabilidad={setModulosNuevaContabilidad}
+            documentosGeneralesNuevaContabilidad={
+              documentosGeneralesNuevaContabilidad
+            }
+            setDocumentosGeneralesNuevaContabilidad={
+              setDocumentosGeneralesNuevaContabilidad
+            }
+            estadosNuevaContabilidad={estadosNuevaContabilidad}
+            setEstadosNuevaContabilidad={setEstadosNuevaContabilidad}
+            component={
+              <NuevaContabilidad
+                solucionesNuevaContabilidad={solucionesNuevaContabilidad}
+                documentosGeneralesNuevaContabilidad={
+                  documentosGeneralesNuevaContabilidad
+                }
+                estadosNuevaContabilidad={estadosNuevaContabilidad}
+              />
+            }
+          />
+        </Route>
+        <Route exact path="/laNuevaContabilidad/soluciones">
+          <HeaderContabilidad
+            solucionesNuevaContabilidad={solucionesNuevaContabilidad}
+            setSolucionesNuevaContabilidad={setSolucionesNuevaContabilidad}
+            modulosNuevaContabilidad={modulosNuevaContabilidad}
+            setModulosNuevaContabilidad={setModulosNuevaContabilidad}
+            documentosGeneralesNuevaContabilidad={
+              documentosGeneralesNuevaContabilidad
+            }
+            setDocumentosGeneralesNuevaContabilidad={
+              setDocumentosGeneralesNuevaContabilidad
+            }
+            estadosNuevaContabilidad={estadosNuevaContabilidad}
+            setEstadosNuevaContabilidad={setEstadosNuevaContabilidad}
+            component={<SolucionesNuevaContabilidad />}
+          />
+        </Route>
+        <Route exact path="/laNuevaContabilidad/modulos">
+          <HeaderContabilidad
+            solucionesNuevaContabilidad={solucionesNuevaContabilidad}
+            setSolucionesNuevaContabilidad={setSolucionesNuevaContabilidad}
+            modulosNuevaContabilidad={modulosNuevaContabilidad}
+            setModulosNuevaContabilidad={setModulosNuevaContabilidad}
+            documentosGeneralesNuevaContabilidad={
+              documentosGeneralesNuevaContabilidad
+            }
+            setDocumentosGeneralesNuevaContabilidad={
+              setDocumentosGeneralesNuevaContabilidad
+            }
+            estadosNuevaContabilidad={estadosNuevaContabilidad}
+            setEstadosNuevaContabilidad={setEstadosNuevaContabilidad}
+            component={
+              <ModulosNuevaContabilidad
+                modulosNuevaContabilidad={modulosNuevaContabilidad}
+              />
+            }
+          />
         </Route>
         <Route exact path="/olvidoContra">
           <OlvidoContra />
@@ -364,6 +441,18 @@ function App() {
                 setLoading={setLoading}
               />
             }
+          />
+        </Route>
+        <Route exact path="/reportesPDF">
+          <ReportesPDF
+            submenuContent={submenuContent}
+            setSubmenuContent={setSubmenuContent}
+            usuarioDatos={usuarioDatos}
+            setUsuarioDatos={setUsuarioDatos}
+            empresaDatos={empresaDatos}
+            setEmpresaDatos={setEmpresaDatos}
+            loading={loading}
+            setLoading={setLoading}
           />
         </Route>
         <Route exact path="/expedientesDigitales">

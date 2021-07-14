@@ -37,13 +37,15 @@ import {
   Radio,
   TableSortLabel,
   TablePagination,
-  CardActionArea,
+  /* CardActionArea, */
   Collapse,
   Box,
   Chip,
   Avatar,
+  /* ListSubheader, */
 } from "@material-ui/core";
 import Autocomplete from "@material-ui/lab/Autocomplete";
+import { FixedSizeList } from "react-window";
 import {
   Close as CloseIcon,
   ArrowBack as ArrowBackIcon,
@@ -58,9 +60,11 @@ import {
   Email as EmailIcon,
   Drafts as DraftsIcon,
   Send as SendIcon,
-  FileCopy as FileCopyIcon,
+  /* FileCopy as FileCopyIcon, */
   KeyboardArrowUp as KeyboardArrowUpIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
+  PersonAdd as PersonAddIcon,
+  /* ListAlt as ListAltIcon, */
   //AddCircle as AddCircleIcon,
 } from "@material-ui/icons";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
@@ -293,6 +297,7 @@ function createDataTablaPorDocumento(
   id,
   serieFolio,
   proveedor,
+  sucursal,
   fechaDoc,
   fechaVen,
   tipo,
@@ -309,6 +314,7 @@ function createDataTablaPorDocumento(
     id,
     serieFolio,
     proveedor,
+    sucursal,
     fechaDoc,
     fechaVen,
     tipo,
@@ -367,6 +373,14 @@ const headCellsTablaPorDocumento = [
     sortHeadCell: true,
     disablePadding: false,
     label: "Proveedor",
+    width: "auto",
+  },
+  {
+    id: "sucursal",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Sucursal",
     width: "auto",
   },
   {
@@ -602,10 +616,13 @@ function FlujosEfectivo(props) {
     idsBancosOrigen: [],
     cuentasOrigen: [],
     valoresCuentasOrigen: [],
+    bancosOrigen: [],
+    sucursalesOrigen: [],
     idsCuentasDestino: [],
     idsBancosDestino: [],
     cuentasDestino: [],
     valoresCuentasDestino: [],
+    sucursalesDestino: [],
     fechas: [],
     llavesMatch: [],
     pagos: [],
@@ -622,13 +639,17 @@ function FlujosEfectivo(props) {
     idsBancosOrigen: [],
     cuentasOrigen: [],
     valoresCuentasOrigen: [],
+    bancosOrigen: [],
+    sucursalesOrigen: [],
     idsCuentasDestino: [],
     idsBancosDestino: [],
     cuentasDestino: [],
     valoresCuentasDestino: [],
+    sucursalesDestino: [],
     fechas: [],
     llavesMatch: [],
     pagos: [],
+    correos: [],
   });
   const [instruccionesCombinadas, setInstruccionesCombinadas] = useState({
     ids: [],
@@ -639,12 +660,16 @@ function FlujosEfectivo(props) {
     idsCuentasOrigen: [],
     idsBancosOrigen: [],
     cuentasOrigen: [],
+    bancosOrigen: [],
+    sucursalesOrigen: [],
     idsCuentasDestino: [],
     idsBancosDestino: [],
     cuentasDestino: [],
+    sucursalesDestino: [],
     fechas: [],
     llavesMatch: [],
     pagos: [],
+    correos: [],
   });
   const [informacionBancos, setInformacionBancos] = useState({
     ids: [],
@@ -655,15 +680,22 @@ function FlujosEfectivo(props) {
     idsCuentasOrigen: [],
     idsBancosOrigen: [],
     cuentasOrigen: [],
+    bancosOrigen: [],
+    sucursalesOrigen: [],
     idsCuentasDestino: [],
     idsBancosDestino: [],
     cuentasDestino: [],
+    sucursalesDestino: [],
     fechas: [],
     llavesMatch: [],
     tiposLayouts: [],
     pagos: [],
     importesPorPagos: [],
     idsFlwPorPago: [],
+    combinacionesBancos: [],
+    idsLayouts: [],
+    nombresLayouts: [],
+    linksLayouts: [],
   });
   const [correosProveedores, setCorreosProveedores] = useState({
     correo: [],
@@ -688,10 +720,17 @@ function FlujosEfectivo(props) {
     setFiltroApiTraerFlujosEfectivo,
   ] = useState(1);
   const [pagosPendientes, setPagosPendientes] = useState([]);
+  const [pagosAdicionalesPendientes, setPagosAdicionalesPendientes] = useState(
+    []
+  );
   const [pagosHechos, setPagosHechos] = useState([]);
   const [totalPendientes, setTotalPendientes] = useState(0.0);
   const [idsPagosPendientesFlw, setIdsPagosPendientesFlw] = useState([]);
   const [idsPagosPendientesDet, setIdsPagosPendientesDet] = useState([]);
+  const [
+    idsPagosAdicionalesPendientes,
+    setIdsPagosAdicionalesPendientes,
+  ] = useState([]);
   const [
     validacionEjecucionGetPagosApi,
     setValidacionEjecucionGetPagosApi,
@@ -704,15 +743,26 @@ function FlujosEfectivo(props) {
     pagosPendientesSeleccionados,
     setPagosPendientesSeleccionados,
   ] = useState([]);
+  const [
+    pagosAdicionalesPendientesSeleccionados,
+    setPagosAdicionalesPendientesSeleccionados,
+  ] = useState([]);
 
   const [openPagosHechosLayouts, setOpenPagosHechosLayous] = useState(-1);
-  const [openPagosHechosDocumentos, setOpenPagosHechosDocumentos] = useState(-1);
+  const [openPagosHechosDocumentos, setOpenPagosHechosDocumentos] = useState(
+    -1
+  );
   const [openPagosHechosCorreos, setOpenPagosHechosCorreos] = useState(-1);
   //const [validacionOpenPagos, setValidacionOpenPagos] = useState(-1);
   /* const [validacionOpenDocumentos, setValidacionOpenDocumentos] = useState(-1);
   const [validacionOpenCorreos, setValidacionOpenCorreos] = useState(-1);
   const [validacionOpenNuevoDestinatario, setValidacionOpenNuevoDestinatario] = useState(-1); */
   const [linkDescargaLayouts, setLinkDescargaLayouts] = useState("");
+  /* const [layoutsExistentes, setLayoutsExistentes] = useState([]); */
+  const [
+    idPagosAdicionalesExistentes,
+    setIdPagosAdicionalesExistentes,
+  ] = useState([]);
   const tiposPago = {
     valores: [1, 2, 3, 4],
     tipos: [
@@ -997,6 +1047,7 @@ function FlujosEfectivo(props) {
           swal("Error", dataBaseErrores(getFlwPagosData.error), "warning");
         } else {
           let nuevosPagosPendientes = [];
+          let nuevosPagosAdicionalesPendientes = [];
           let nuevosPagosHechos = [];
           let nuevoTotalPendientes = 0.0;
           /* nuevosPagosPendientes = getFlwPagosData.pagospendientes.filter(
@@ -1008,27 +1059,52 @@ function FlujosEfectivo(props) {
               nuevoTotalPendientes =
                 nuevoTotalPendientes +
                 parseFloat(getFlwPagosData.pagospendientes[x].Importe);
-              for (
-                let y = 0;
-                y < getFlwPagosData.pagospendientes[x].Detalles.length;
-                y++
-              ) {
-                getFlwPagosData.pagospendientes[x].Detalles[y].idCuentaOrigen =
-                  getFlwPagosData.pagospendientes[x].IdCuentaOrigen;
-                getFlwPagosData.pagospendientes[x].Detalles[y].idBancoOrigen =
-                  getFlwPagosData.pagospendientes[x].idBancoOrigen;
-                getFlwPagosData.pagospendientes[x].Detalles[y].cuentaOrigen =
-                  getFlwPagosData.pagospendientes[x].cuentaOrigen;
-                getFlwPagosData.pagospendientes[x].Detalles[y].idCuentaDestino =
-                  getFlwPagosData.pagospendientes[x].IdCuentaDestino;
-                getFlwPagosData.pagospendientes[x].Detalles[y].idBancoDestino =
-                  getFlwPagosData.pagospendientes[x].idBancoDestino;
-                getFlwPagosData.pagospendientes[x].Detalles[y].cuentaDestino =
-                  getFlwPagosData.pagospendientes[x].cuentaDestino;
-                getFlwPagosData.pagospendientes[x].Detalles[y].fechapagodet =
-                  getFlwPagosData.pagospendientes[x].Fecha;
-                nuevosPagosPendientes.push(
-                  getFlwPagosData.pagospendientes[x].Detalles[y]
+              if (getFlwPagosData.pagospendientes[x].Detalles) {
+                for (
+                  let y = 0;
+                  y < getFlwPagosData.pagospendientes[x].Detalles.length;
+                  y++
+                ) {
+                  getFlwPagosData.pagospendientes[x].Detalles[
+                    y
+                  ].idCuentaOrigen =
+                    getFlwPagosData.pagospendientes[x].IdCuentaOrigen;
+                  getFlwPagosData.pagospendientes[x].Detalles[y].idBancoOrigen =
+                    getFlwPagosData.pagospendientes[x].idBancoOrigen;
+                  getFlwPagosData.pagospendientes[x].Detalles[y].cuentaOrigen =
+                    getFlwPagosData.pagospendientes[x].cuentaOrigen;
+                  getFlwPagosData.pagospendientes[x].Detalles[y].bancoOrigen =
+                    getFlwPagosData.pagospendientes[x].bancoOrigen;
+                  getFlwPagosData.pagospendientes[x].Detalles[
+                    y
+                  ].sucursalOrigen =
+                    getFlwPagosData.pagospendientes[x].sucursalOrigen;
+                  getFlwPagosData.pagospendientes[x].Detalles[
+                    y
+                  ].idCuentaDestino =
+                    getFlwPagosData.pagospendientes[x].IdCuentaDestino;
+                  getFlwPagosData.pagospendientes[x].Detalles[
+                    y
+                  ].idBancoDestino =
+                    getFlwPagosData.pagospendientes[x].idBancoDestino;
+                  getFlwPagosData.pagospendientes[x].Detalles[y].cuentaDestino =
+                    getFlwPagosData.pagospendientes[x].cuentaDestino;
+                  getFlwPagosData.pagospendientes[x].Detalles[
+                    y
+                  ].sucursalDestino =
+                    getFlwPagosData.pagospendientes[x].sucursalDestino;
+                  getFlwPagosData.pagospendientes[x].Detalles[y].fechapagodet =
+                    getFlwPagosData.pagospendientes[x].Fecha;
+                  getFlwPagosData.pagospendientes[x].Detalles[
+                    y
+                  ].tipoDocumento = 1;
+                  nuevosPagosPendientes.push(
+                    getFlwPagosData.pagospendientes[x].Detalles[y]
+                  );
+                }
+              } else {
+                nuevosPagosAdicionalesPendientes.push(
+                  getFlwPagosData.pagospendientes[x]
                 );
               }
             } else {
@@ -1036,8 +1112,9 @@ function FlujosEfectivo(props) {
             }
           }
           setPagosPendientes(nuevosPagosPendientes);
+          setPagosAdicionalesPendientes(nuevosPagosAdicionalesPendientes);
           //setPagosHechos(nuevosPagosHechos);
-          if(getFlwPagosData.layouts.length === 0) {
+          if (getFlwPagosData.layouts.length === 0) {
             setOpenDialogPagosHechos(false);
             setValidacionMensajeFinalizado(false);
             setOpenPagosHechosLayous(-1);
@@ -1046,6 +1123,7 @@ function FlujosEfectivo(props) {
           }
           setPagosHechos(getFlwPagosData.layouts);
           setTotalPendientes(nuevoTotalPendientes);
+          /* setLayoutsExistentes(getFlwPagosData.layoutsexistentes); */
 
           /* filterRowsPagosHechos = [];
           for (let x = 0; x < nuevosPagosHechos.length; x++) {
@@ -1104,7 +1182,14 @@ function FlujosEfectivo(props) {
         } else {
           /* console.log(cambiarEstatusLayoutFlwPagosData.link);
           console.log(linkDescargaLayouts); */
-          if (validacionMensajeFinalizado && cambiarEstatusLayoutFlwPagosData.link !== linkDescargaLayouts) {
+          if (
+            validacionMensajeFinalizado &&
+            cambiarEstatusLayoutFlwPagosData.link !== linkDescargaLayouts
+          ) {
+            setActiveStep(0);
+            setShowTable(3);
+            setTipoTabla(1);
+
             setInstruccionesPagoProveedores({
               ids: [],
               proveedores: [],
@@ -1129,10 +1214,13 @@ function FlujosEfectivo(props) {
               idsBancosOrigen: [],
               cuentasOrigen: [],
               valoresCuentasOrigen: [],
+              bancosOrigen: [],
+              sucursalesOrigen: [],
               idsCuentasDestino: [],
               idsBancosDestino: [],
               cuentasDestino: [],
               valoresCuentasDestino: [],
+              sucursalesDestino: [],
               fechas: [],
               llavesMatch: [],
               pagos: [],
@@ -1149,13 +1237,17 @@ function FlujosEfectivo(props) {
               idsBancosOrigen: [],
               cuentasOrigen: [],
               valoresCuentasOrigen: [],
+              bancosOrigen: [],
+              sucursalesOrigen: [],
               idsCuentasDestino: [],
               idsBancosDestino: [],
               cuentasDestino: [],
               valoresCuentasDestino: [],
+              sucursalesDestino: [],
               fechas: [],
               llavesMatch: [],
               pagos: [],
+              correos: [],
             });
             setInstruccionesCombinadas({
               ids: [],
@@ -1166,12 +1258,16 @@ function FlujosEfectivo(props) {
               idsCuentasOrigen: [],
               idsBancosOrigen: [],
               cuentasOrigen: [],
+              bancosOrigen: [],
+              sucursalesOrigen: [],
               idsCuentasDestino: [],
               idsBancosDestino: [],
               cuentasDestino: [],
+              sucursalesDestino: [],
               fechas: [],
               llavesMatch: [],
               pagos: [],
+              correos: [],
             });
             setInformacionBancos({
               ids: [],
@@ -1182,15 +1278,22 @@ function FlujosEfectivo(props) {
               idsCuentasOrigen: [],
               idsBancosOrigen: [],
               cuentasOrigen: [],
+              bancosOrigen: [],
+              sucursalesOrigen: [],
               idsCuentasDestino: [],
               idsBancosDestino: [],
               cuentasDestino: [],
+              sucursalesDestino: [],
               fechas: [],
               llavesMatch: [],
               tiposLayouts: [],
               pagos: [],
               importesPorPagos: [],
               idsFlwPorPago: [],
+              combinacionesBancos: [],
+              idsLayouts: [],
+              nombresLayouts: [],
+              linksLayouts: [],
             });
             setDisponible(0.0);
             setAplicado(0.0);
@@ -1241,6 +1344,9 @@ function FlujosEfectivo(props) {
           swal("Error", dataBaseErrores(guardarFlwPagosData.error), "warning");
         } else {
           executeGetFlwPagos();
+          if (guardarFlwPagosData.idPago) {
+            setIdPagosAdicionalesExistentes(guardarFlwPagosData.idPago);
+          }
         }
       }
     }
@@ -1257,7 +1363,9 @@ function FlujosEfectivo(props) {
           executeGetFlwPagos();
           setIdsPagosPendientesDet([]);
           setIdsPagosPendientesFlw([]);
+          setIdsPagosAdicionalesPendientes([]);
           setPagosPendientesSeleccionados([]);
+          setPagosAdicionalesPendientesSeleccionados([]);
         }
       }
     }
@@ -1266,11 +1374,18 @@ function FlujosEfectivo(props) {
   }, [eliminarFlwPagosData, executeGetFlwPagos]);
 
   useEffect(() => {
-    if (pagosPendientes.length > 0 && validacionEjecucionGetPagosApi) {
+    if (
+      (pagosPendientes.length > 0 || pagosAdicionalesPendientes.length > 0) &&
+      validacionEjecucionGetPagosApi
+    ) {
       setOpenDialogPagosPendientes(true);
       setValidacionEjecucionGetPagosApi(false);
     }
-  }, [pagosPendientes, validacionEjecucionGetPagosApi]);
+  }, [
+    pagosPendientes,
+    pagosAdicionalesPendientes,
+    validacionEjecucionGetPagosApi,
+  ]);
 
   useEffect(() => {
     async function checkData() {
@@ -1344,7 +1459,9 @@ function FlujosEfectivo(props) {
       let proveedores = instrucciones.proveedores.concat(
         instruccionesAdicionales.proveedores
       );
-      let rfcProveedores = instrucciones.rfcProveedores.concat(instruccionesAdicionales.rfcProveedores);
+      let rfcProveedores = instrucciones.rfcProveedores.concat(
+        instruccionesAdicionales.rfcProveedores
+      );
       let importes = instrucciones.importes.concat(
         instruccionesAdicionales.importes
       );
@@ -1357,6 +1474,12 @@ function FlujosEfectivo(props) {
       let cuentasOrigen = instrucciones.cuentasOrigen.concat(
         instruccionesAdicionales.cuentasOrigen
       );
+      let bancosOrigen = instrucciones.bancosOrigen.concat(
+        instruccionesAdicionales.bancosOrigen
+      );
+      let sucursalesOrigen = instrucciones.sucursalesOrigen.concat(
+        instruccionesAdicionales.sucursalesOrigen
+      );
       let idsCuentasDestino = instrucciones.idsCuentasDestino.concat(
         instruccionesAdicionales.idsCuentasDestino
       ); // se modificara esta parte cuando se agregue la funcionalidad del paso 3
@@ -1365,6 +1488,9 @@ function FlujosEfectivo(props) {
       );
       let cuentasDestino = instrucciones.cuentasDestino.concat(
         instruccionesAdicionales.cuentasDestino
+      );
+      let sucursalesDestino = instrucciones.sucursalesDestino.concat(
+        instruccionesAdicionales.sucursalesDestino
       );
       let fechas = instrucciones.fechas.concat(instruccionesAdicionales.fechas);
       let llavesMatch = instrucciones.llavesMatch.concat(
@@ -1380,9 +1506,12 @@ function FlujosEfectivo(props) {
         idsCuentasOrigen: idsCuentasOrigen,
         idsBancosOrigen: idsBancosOrigen,
         cuentasOrigen: cuentasOrigen,
+        bancosOrigen: bancosOrigen,
+        sucursalesOrigen: sucursalesOrigen,
         idsCuentasDestino: idsCuentasDestino,
         idsBancosDestino: idsBancosDestino,
         cuentasDestino: cuentasDestino,
+        sucursalesDestino: sucursalesDestino,
         fechas: fechas,
         llavesMatch: llavesMatch,
         pagos: pagos,
@@ -1432,10 +1561,12 @@ function FlujosEfectivo(props) {
         dangerMode: true,
       }).then((value) => {
         if (value) {
-
           let idsFlwsBancos = [];
           let idsFlwsBancosExtraidos = [];
-          for(let x=0 ; x<informacionBancos.ids.length ; x++) {
+          let tiposDocumentosBancos = [];
+          let tiposDocumentosBancosExtraidos = [];
+          //let existenciaLayout = [];
+          for (let x = 0; x < informacionBancos.ids.length; x++) {
             let idsExtraidos = informacionBancos.ids[x].toString().split(",");
             idsFlwsBancosExtraidos = [];
             for (let y = 0; y < idsExtraidos.length; y++) {
@@ -1443,7 +1574,44 @@ function FlujosEfectivo(props) {
             }
             idsFlwsBancos.push(idsFlwsBancosExtraidos);
           }
-          
+
+          for (let x = 0; x < informacionBancos.tipos.length; x++) {
+            let tiposDocumentosExtraidos = informacionBancos.tipos[x]
+              .toString()
+              .split("-$-");
+            tiposDocumentosBancosExtraidos = [];
+            for (let y = 0; y < tiposDocumentosExtraidos.length; y++) {
+              tiposDocumentosBancosExtraidos.push(
+                parseInt(tiposDocumentosExtraidos[y])
+              );
+            }
+            tiposDocumentosBancos.push(tiposDocumentosBancosExtraidos);
+          }
+
+          /* console.log(instruccionesPagoProveedores);
+          console.log(informacionBancos);
+          console.log(layoutsExistentes);
+          console.log(existenciaLayout);
+          const posNoLayout = existenciaLayout.indexOf(false);
+          console.log(posNoLayout); */
+
+          /* if (existenciaLayout.indexOf(false) !== -1) {
+            swal({
+              text: `El banco de la cuenta ${
+                informacionBancos.cuentasOrigen[posNoLayout]
+              } no tiene un layout asignado para ${
+                informacionBancos.combinacionesBancos[posNoLayout] === 1
+                  ? "mismo banco"
+                  : "otros bancos"
+              }. Si continua se le asignara un layout genérico. ¿Desea continuar?`,
+              buttons: ["No", "Sí"],
+              dangerMode: true,
+            }).then((value) => {});
+          } */
+
+          const fechaHoraLayout = moment();
+          const tiempoSumado = "01:30:00";
+          fechaHoraLayout.add(moment.duration(tiempoSumado));
           setValidacionMensajeFinalizado(true);
           executeCambiarEstatusLayoutFlwPagos({
             data: {
@@ -1457,6 +1625,7 @@ function FlujosEfectivo(props) {
               PagosOriginales: instruccionesPagoProveedores.pagosOriginales,
               TiposCambio: instruccionesPagoProveedores.tiposCambio,
               Correos: instruccionesPagoProveedores.correos,
+              CorreosPagosAdicionales: instruccionesAdicionales.correos,
               CuentasOrigen: instruccionesPagoProveedores.cuentasOrigen,
               CuentasDestino: instruccionesPagoProveedores.cuentasDestino,
               IdUsuario: idUsuario,
@@ -1472,12 +1641,14 @@ function FlujosEfectivo(props) {
               ImportesPorPagos: informacionBancos.importesPorPagos,
               idsFlwPorPago: informacionBancos.idsFlwPorPago,
               rfcProveedores: informacionBancos.rfcProveedores,
+              combinacionesBancos: informacionBancos.combinacionesBancos,
+              sucursalesOrigen: informacionBancos.sucursalesOrigen,
+              sucursalesDestino: informacionBancos.sucursalesDestino,
+              TiposDocumentos: informacionBancos.tipos,
+              TiposDocumentosBancos: tiposDocumentosBancos,
+              FechaHoraLayout: fechaHoraLayout.format("DDMMYYHHmm"),
             },
           });
-
-          setActiveStep(0);
-          setShowTable(3);
-          setTipoTabla(1);
         }
       });
     } else {
@@ -1507,7 +1678,7 @@ function FlujosEfectivo(props) {
         let idsCuentasOrigen = [];
         let idsCuentasDestino = [];
         let fechas = [];
-        let tipos = [];
+        /* let tipos = []; */
         for (let x = 0; x < instrucciones.ids.length; x++) {
           let idsExtraidos = instrucciones.ids[x].toString().split(",");
           for (let y = 0; y < idsExtraidos.length; y++) {
@@ -1515,7 +1686,7 @@ function FlujosEfectivo(props) {
             idsCuentasOrigen.push(instrucciones.idsCuentasOrigen[x]);
             idsCuentasDestino.push(instrucciones.idsCuentasDestino[x]);
             fechas.push(instrucciones.fechas[x]);
-            tipos.push(instrucciones.tipos[x]);
+            /* tipos.push(instrucciones.tipos[x]); */
           }
         }
         executeGuardarFlwPagos({
@@ -1531,7 +1702,18 @@ function FlujosEfectivo(props) {
             idscuentasorigen: idsCuentasOrigen,
             idscuentasdestino: idsCuentasDestino,
             fechas: fechas,
-            tipos: tipos,
+            /* tipos: tipos, */
+            fechasInstruccionesAdicionales: instruccionesAdicionales.fechas,
+            importesInstruccionesAdicionales: instruccionesAdicionales.pagos,
+            tiposInstruccionesAdicionales: instruccionesAdicionales.tipos,
+            rfcsInstruccionesAdicionales:
+              instruccionesAdicionales.rfcProveedores,
+            proveedoresInstruccionesAdicionales:
+              instruccionesAdicionales.proveedores,
+            idsCuentasOrigenInstruccionesAdicionales:
+              instruccionesAdicionales.idsCuentasOrigen,
+            idsCuentasDestinoInstruccionesAdicionales:
+              instruccionesAdicionales.idsCuentasDestino,
           },
         });
       }
@@ -1626,11 +1808,14 @@ function FlujosEfectivo(props) {
             setLoading={setLoading}
             rfc={rfcEmpresa}
             proveedores={proveedores}
+            setProveedores={setProveedores}
             cuentasOrigen={cuentasOrigen}
             cuentasDestino={cuentasDestino}
+            setCuentasDestino={setCuentasDestino}
             disponible={disponible}
             aplicado={aplicado}
             setAplicado={setAplicado}
+            /* restante={restante} */
             setRestante={setRestante}
             proveedorAutocomplete={proveedorAutocomplete}
             setProveedorAutocomplete={setProveedorAutocomplete}
@@ -1644,6 +1829,7 @@ function FlujosEfectivo(props) {
           <Paso4
             instruccionesPagoProveedores={instruccionesPagoProveedores}
             instruccionesCombinadas={instruccionesCombinadas}
+            setInstruccionesCombinadas={setInstruccionesCombinadas}
             informacionBancos={informacionBancos}
             setInformacionBancos={setInformacionBancos}
             correoUsuario={correoUsuario}
@@ -1655,6 +1841,9 @@ function FlujosEfectivo(props) {
             executeGenerarLayouts={executeGenerarLayouts}
             setLoading={setLoading}
             tiposPago={tiposPago}
+            idPagosAdicionalesExistentes={idPagosAdicionalesExistentes}
+            instrucciones={instrucciones}
+            instruccionesAdicionales={instruccionesAdicionales}
           />
         );
       default:
@@ -1670,6 +1859,7 @@ function FlujosEfectivo(props) {
     setOpenDialogPagosPendientes(false);
     setIdsPagosPendientesFlw([]);
     setPagosPendientesSeleccionados([]);
+    setPagosAdicionalesPendientesSeleccionados([]);
   };
 
   const handleCloseDialogPagosHechos = () => {
@@ -1681,7 +1871,6 @@ function FlujosEfectivo(props) {
   };
 
   const handleSelectAllClick = (event) => {
-    //console.log(pagosPendientes);
     if (event.target.checked) {
       const newIdsSelecteds = pagosPendientes.map(
         (pagoPendiente) => pagoPendiente.IdPagoDet
@@ -1689,76 +1878,136 @@ function FlujosEfectivo(props) {
       const newIdsFlwSelecteds = pagosPendientes.map(
         (pagoPendiente) => pagoPendiente.id
       );
+      const newIdsPagosAdicionalesSelecteds = pagosAdicionalesPendientes.map(
+        (pagoAdicionalPendiente) => pagoAdicionalPendiente.id
+      );
       setIdsPagosPendientesDet(newIdsSelecteds);
       setIdsPagosPendientesFlw(newIdsFlwSelecteds);
+      setIdsPagosAdicionalesPendientes(newIdsPagosAdicionalesSelecteds);
       setPagosPendientesSeleccionados(pagosPendientes);
+      setPagosAdicionalesPendientesSeleccionados(pagosAdicionalesPendientes);
       return;
     }
     setIdsPagosPendientesDet([]); //ids detalle
     setIdsPagosPendientesFlw([]); //ids flw
+    setIdsPagosAdicionalesPendientes([]);
     setPagosPendientesSeleccionados([]); //todos los detalles de pago pendiente
+    setPagosAdicionalesPendientesSeleccionados([]);
   };
 
-  const handleClick = (event, pagoPendiente) => {
-    //console.log(pagoPendiente);
-    const selectedIndex = idsPagosPendientesFlw.indexOf(pagoPendiente.id);
-    let newIdsSelected = [];
-    let newIdsFlwSelected = [];
-    let newPagosPendientes = [];
-
-    if (selectedIndex === -1) {
-      newIdsSelected = newIdsSelected.concat(
-        idsPagosPendientesDet,
-        pagoPendiente.IdPagoDet
-      );
-      newIdsFlwSelected = newIdsFlwSelected.concat(
-        idsPagosPendientesFlw,
+  const handleClick = (event, pagoPendiente, tipo) => {
+    if (tipo === 1) {
+      const selectedIndex = idsPagosPendientesFlw.indexOf(pagoPendiente.id);
+      let newIdsSelected = [];
+      let newIdsFlwSelected = [];
+      let newPagosPendientes = [];
+      if (selectedIndex === -1) {
+        newIdsSelected = newIdsSelected.concat(
+          idsPagosPendientesDet,
+          pagoPendiente.IdPagoDet
+        );
+        newIdsFlwSelected = newIdsFlwSelected.concat(
+          idsPagosPendientesFlw,
+          pagoPendiente.id
+        );
+        newPagosPendientes = newPagosPendientes.concat(
+          pagosPendientesSeleccionados,
+          pagoPendiente
+        );
+      } else if (selectedIndex === 0) {
+        newIdsSelected = newIdsSelected.concat(idsPagosPendientesDet.slice(1));
+        newIdsFlwSelected = newIdsFlwSelected.concat(
+          idsPagosPendientesFlw.slice(1)
+        );
+        newPagosPendientes = newPagosPendientes.concat(
+          pagosPendientesSeleccionados.slice(1)
+        );
+      } else if (selectedIndex === idsPagosPendientesFlw.length - 1) {
+        newIdsSelected = newIdsSelected.concat(
+          idsPagosPendientesDet.slice(0, -1)
+        );
+        newIdsFlwSelected = newIdsFlwSelected.concat(
+          idsPagosPendientesFlw.slice(0, -1)
+        );
+        newPagosPendientes = newPagosPendientes.concat(
+          pagosPendientesSeleccionados.slice(0, -1)
+        );
+      } else if (selectedIndex > 0) {
+        newIdsSelected = newIdsSelected.concat(
+          idsPagosPendientesDet.slice(0, selectedIndex),
+          idsPagosPendientesDet.slice(selectedIndex + 1)
+        );
+        newIdsFlwSelected = newIdsFlwSelected.concat(
+          idsPagosPendientesFlw.slice(0, selectedIndex),
+          idsPagosPendientesFlw.slice(selectedIndex + 1)
+        );
+        newPagosPendientes = newPagosPendientes.concat(
+          pagosPendientesSeleccionados.slice(0, selectedIndex),
+          pagosPendientesSeleccionados.slice(selectedIndex + 1)
+        );
+      }
+      setIdsPagosPendientesDet(newIdsSelected);
+      setIdsPagosPendientesFlw(newIdsFlwSelected);
+      setPagosPendientesSeleccionados(newPagosPendientes);
+    } else {
+      const selectedPagoAdicionalIndex = idsPagosAdicionalesPendientes.indexOf(
         pagoPendiente.id
       );
-      newPagosPendientes = newPagosPendientes.concat(
-        pagosPendientesSeleccionados,
-        pagoPendiente
-      );
-    } else if (selectedIndex === 0) {
-      newIdsSelected = newIdsSelected.concat(idsPagosPendientesDet.slice(1));
-      newIdsFlwSelected = newIdsFlwSelected.concat(
-        idsPagosPendientesFlw.slice(1)
-      );
-      newPagosPendientes = newPagosPendientes.concat(
-        pagosPendientesSeleccionados.slice(1)
-      );
-    } else if (selectedIndex === idsPagosPendientesFlw.length - 1) {
-      newIdsSelected = newIdsSelected.concat(
-        idsPagosPendientesDet.slice(0, -1)
-      );
-      newIdsFlwSelected = newIdsFlwSelected.concat(
-        idsPagosPendientesFlw.slice(0, -1)
-      );
-      newPagosPendientes = newPagosPendientes.concat(
-        pagosPendientesSeleccionados.slice(0, -1)
-      );
-    } else if (selectedIndex > 0) {
-      newIdsSelected = newIdsSelected.concat(
-        idsPagosPendientesDet.slice(0, selectedIndex),
-        idsPagosPendientesDet.slice(selectedIndex + 1)
-      );
-      newIdsFlwSelected = newIdsFlwSelected.concat(
-        idsPagosPendientesFlw.slice(0, selectedIndex),
-        idsPagosPendientesFlw.slice(selectedIndex + 1)
-      );
-      newPagosPendientes = newPagosPendientes.concat(
-        pagosPendientesSeleccionados.slice(0, selectedIndex),
-        pagosPendientesSeleccionados.slice(selectedIndex + 1)
-      );
+      let newIdsPagosAdicionalesSelected = [];
+      let newPagosAdiconalesPendientes = [];
+      if (selectedPagoAdicionalIndex === -1) {
+        newIdsPagosAdicionalesSelected = newIdsPagosAdicionalesSelected.concat(
+          idsPagosAdicionalesPendientes,
+          pagoPendiente.id
+        );
+        newPagosAdiconalesPendientes = newPagosAdiconalesPendientes.concat(
+          pagosAdicionalesPendientesSeleccionados,
+          pagoPendiente
+        );
+      } else if (selectedPagoAdicionalIndex === 0) {
+        newIdsPagosAdicionalesSelected = newIdsPagosAdicionalesSelected.concat(
+          idsPagosAdicionalesPendientes.slice(1)
+        );
+        newPagosAdiconalesPendientes = newPagosAdiconalesPendientes.concat(
+          pagosAdicionalesPendientesSeleccionados.slice(1)
+        );
+      } else if (
+        selectedPagoAdicionalIndex ===
+        idsPagosAdicionalesPendientes.length - 1
+      ) {
+        newIdsPagosAdicionalesSelected = newIdsPagosAdicionalesSelected.concat(
+          idsPagosAdicionalesPendientes.slice(0, -1)
+        );
+        newPagosAdiconalesPendientes = newPagosAdiconalesPendientes.concat(
+          pagosAdicionalesPendientesSeleccionados.slice(0, -1)
+        );
+      } else if (selectedPagoAdicionalIndex > 0) {
+        newIdsPagosAdicionalesSelected = newIdsPagosAdicionalesSelected.concat(
+          idsPagosAdicionalesPendientes.slice(0, selectedPagoAdicionalIndex),
+          idsPagosAdicionalesPendientes.slice(selectedPagoAdicionalIndex + 1)
+        );
+        newPagosAdiconalesPendientes = newPagosAdiconalesPendientes.concat(
+          pagosAdicionalesPendientesSeleccionados.slice(
+            0,
+            selectedPagoAdicionalIndex
+          ),
+          pagosAdicionalesPendientesSeleccionados.slice(
+            selectedPagoAdicionalIndex + 1
+          )
+        );
+      }
+      setIdsPagosAdicionalesPendientes(newIdsPagosAdicionalesSelected);
+      setPagosAdicionalesPendientesSeleccionados(newPagosAdiconalesPendientes);
     }
-
-    setIdsPagosPendientesDet(newIdsSelected);
-    setIdsPagosPendientesFlw(newIdsFlwSelected);
-    setPagosPendientesSeleccionados(newPagosPendientes);
   };
 
   const PagosHechosLayouts = (props) => {
-    const { layout, indexLayout, openPagosHechosLayouts, setOpenPagosHechosLayous } = props;
+    const {
+      layout,
+      indexLayout,
+      openPagosHechosLayouts,
+      setOpenPagosHechosLayous,
+    } = props;
     /* const [openPagos, setOpenPagos] = useState(false); */
     /* const [openDocumentos, setOpenDocumentos] = useState(false);
     const [openCorreos, setOpenCorreos] = useState(false);
@@ -1779,7 +2028,9 @@ function FlujosEfectivo(props) {
               aria-label="expand row"
               size="small"
               onClick={() => {
-                setOpenPagosHechosLayous(indexLayout === openPagosHechosLayouts ? -1 : indexLayout);
+                setOpenPagosHechosLayous(
+                  indexLayout === openPagosHechosLayouts ? -1 : indexLayout
+                );
                 /* setOpenPagos(!openPagos); */
                 /* clickOpenPagos(
                   indexLayout === validacionOpenPagos ? -1 : indexLayout
@@ -1820,7 +2071,11 @@ function FlujosEfectivo(props) {
         </TableRow>
         <TableRow>
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-            <Collapse in={openPagosHechosLayouts === indexLayout /* openPagos */} timeout="auto" unmountOnExit>
+            <Collapse
+              in={openPagosHechosLayouts === indexLayout /* openPagos */}
+              timeout="auto"
+              unmountOnExit
+            >
               <Box margin={1}>
                 <Typography variant="h6" gutterBottom component="div">
                   <strong>Pagos</strong>
@@ -1854,7 +2109,9 @@ function FlujosEfectivo(props) {
                         indexPago={indexPago}
                         layout={layout}
                         openPagosHechosDocumentos={openPagosHechosDocumentos}
-                        setOpenPagosHechosDocumentos={setOpenPagosHechosDocumentos}
+                        setOpenPagosHechosDocumentos={
+                          setOpenPagosHechosDocumentos
+                        }
                         openPagosHechosCorreos={openPagosHechosCorreos}
                         setOpenPagosHechosCorreos={setOpenPagosHechosCorreos}
                       />
@@ -1870,7 +2127,15 @@ function FlujosEfectivo(props) {
   };
 
   const PagosHechosPagos = (props) => {
-    const { pago, indexPago, openPagosHechosDocumentos, setOpenPagosHechosDocumentos, openPagosHechosCorreos, setOpenPagosHechosCorreos/* , layout */ } = props;
+    const {
+      pago,
+      indexPago,
+      openPagosHechosDocumentos,
+      setOpenPagosHechosDocumentos,
+      openPagosHechosCorreos,
+      setOpenPagosHechosCorreos,
+      layout,
+    } = props;
     //const [openDocumentos, setOpenDocumentos] = useState(false);
     //const [openCorreos, setOpenCorreos] = useState(false);
     const [openNuevoDestinatario, setOpenNuevoDestinatario] = useState(false);
@@ -1886,14 +2151,18 @@ function FlujosEfectivo(props) {
               size="small"
               onClick={() => {
                 /* setOpenDocumentos(!openDocumentos) */
-                setOpenPagosHechosDocumentos(openPagosHechosDocumentos === indexPago ? -1 : indexPago);
+                setOpenPagosHechosDocumentos(
+                  openPagosHechosDocumentos === indexPago ? -1 : indexPago
+                );
               }}
             >
-              {/* openDocumentos */openPagosHechosDocumentos === indexPago ? (
-                <KeyboardArrowUpIcon />
-              ) : (
-                <KeyboardArrowDownIcon />
-              )}
+              {
+                /* openDocumentos */ openPagosHechosDocumentos === indexPago ? (
+                  <KeyboardArrowUpIcon />
+                ) : (
+                  <KeyboardArrowDownIcon />
+                )
+              }
             </IconButton>
           </TableCell>
           <TableCell component="th" scope="row">
@@ -1913,10 +2182,12 @@ function FlujosEfectivo(props) {
                 <IconButton
                   onClick={() => {
                     //setOpenCorreos(!openCorreos);
-                    setOpenPagosHechosCorreos(openPagosHechosCorreos === indexPago ? -1 : indexPago);
+                    setOpenPagosHechosCorreos(
+                      openPagosHechosCorreos === indexPago ? -1 : indexPago
+                    );
                   }}
                 >
-                  {openPagosHechosCorreos === indexPago/* openCorreos */ ? (
+                  {openPagosHechosCorreos === indexPago /* openCorreos */ ? (
                     <DraftsIcon color="primary" />
                   ) : (
                     <EmailIcon color="primary" />
@@ -1928,41 +2199,110 @@ function FlujosEfectivo(props) {
         </TableRow>
         <TableRow>
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-            <Collapse in={/* openDocumentos */openPagosHechosDocumentos === indexPago} timeout="auto" unmountOnExit>
+            <Collapse
+              in={/* openDocumentos */ openPagosHechosDocumentos === indexPago}
+              timeout="auto"
+              unmountOnExit
+            >
               <Box margin={1}>
                 <Typography variant="h6" gutterBottom component="div">
-                  <strong>Documentos</strong>
+                  <strong>
+                    {pago.Tipo === 1 ? "Documentos" : "Pagos Sin CxP"}
+                  </strong>
                 </Typography>
-                <Table size="small" aria-label="purchases">
-                  <TableHead style={{ background: "#FAFAFA" }}>
-                    <TableRow>
-                      <TableCell>
-                        <strong>Serie-Folio</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Total</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Pagado</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Pendiente</strong>
-                      </TableCell>
-                      <TableCell align="center">
-                        <SettingsIcon />
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {pago.documentos.map((documento, indexDocumento) => (
-                      <PagosHechosDocumentos
-                        key={indexDocumento}
-                        documento={documento}
-                        indexDocumento={indexDocumento}
-                      />
-                    ))}
-                  </TableBody>
-                </Table>
+                {pago.Tipo === 1 ? (
+                  <Table size="small" aria-label="purchases">
+                    <TableHead style={{ background: "#FAFAFA" }}>
+                      <TableRow>
+                        <TableCell>
+                          <strong>Serie-Folio</strong>
+                        </TableCell>
+                        <TableCell>
+                          <strong>Total</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Pagado</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Pendiente</strong>
+                        </TableCell>
+                        <TableCell align="center">
+                          <SettingsIcon />
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {pago.documentos.map((documento, indexDocumento) => (
+                        <PagosHechosDocumentos
+                          key={indexDocumento}
+                          documento={documento}
+                          indexDocumento={indexDocumento}
+                          layout={layout}
+                        />
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <Table size="small" aria-label="purchases">
+                    <TableHead style={{ background: "#FAFAFA" }}>
+                      <TableRow>
+                        <TableCell>
+                          <strong>Tipo</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Importe</strong>
+                        </TableCell>
+                        <TableCell align="center">
+                          <SettingsIcon />
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell component="th" scope="row">
+                          {tiposPago.tipos[pago.Tipo - 1]}
+                        </TableCell>
+                        <TableCell align="right">
+                          {`$${number_format(pago.Importe, 2, ".", ",")}`}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title="Cancelar pago">
+                            <IconButton
+                              onClick={() => {
+                                swal({
+                                  text: "¿Está seguro de cancelar este pago?",
+                                  buttons: ["No", "Sí"],
+                                  dangerMode: true,
+                                }).then((value) => {
+                                  if (value) {
+                                    setShowTable(
+                                      showTable === 1 || showTable === 2 ? 1 : 3
+                                    );
+                                    executeGuardarFlwPagos({
+                                      data: {
+                                        usuario: correoUsuario,
+                                        pwd: passwordUsuario,
+                                        rfc: rfcEmpresa,
+                                        idsubmenu: 46,
+                                        forma: 2,
+                                        IdUsuario: idUsuario,
+                                        IdPago: pago.id,
+                                        Tipo: pago.Tipo,
+                                        IdEmpresa: idEmpresa,
+                                      },
+                                    });
+                                  }
+                                });
+                              }}
+                            >
+                              <CancelIcon color="secondary" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                )}
               </Box>
             </Collapse>
           </TableCell>
@@ -1970,7 +2310,7 @@ function FlujosEfectivo(props) {
         <TableRow>
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
             <Collapse
-              in={openPagosHechosCorreos === indexPago/* openCorreos */}
+              in={openPagosHechosCorreos === indexPago /* openCorreos */}
               timeout="auto"
               unmountOnExit
               exit={false}
@@ -2059,8 +2399,10 @@ function FlujosEfectivo(props) {
                               }).then((value) => {
                                 if (value) {
                                   const titulo = "Pago de " + nombreEmpresa;
-                                  const codigoMensaje = pago.correos.length > 0 ?
-                                    pago.correos[0].CodigoMensaje : 0;
+                                  const codigoMensaje =
+                                    pago.correos.length > 0
+                                      ? pago.correos[0].CodigoMensaje
+                                      : 0;
                                   const cuentaOrigen = pago.cuentaOrigen;
                                   const cuentaDestino = pago.cuentaDestino;
                                   const proveedor = pago.Proveedor;
@@ -2082,6 +2424,7 @@ function FlujosEfectivo(props) {
                                       importePagado: importePagado,
                                       correo: nuevoDestinatario.trim(),
                                       forma: 2,
+                                      tipoPago: pago.Tipo
                                     },
                                   });
                                 }
@@ -2131,66 +2474,100 @@ function FlujosEfectivo(props) {
                     </TableRow>
                   </TableHead>
                 </Table>
-                <Table
-                  size="small"
-                  aria-label="purchases"
-                  style={{ marginTop: "15px" }}
-                >
-                  <TableHead style={{ background: "#FAFAFA" }}>
-                    <TableRow>
-                      <TableCell>
-                        <strong>Fecha</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Serie-Folio</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Total</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Pagado</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Pendiente</strong>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {pago.documentos.map((documento, indexDocumento) => (
-                      <TableRow key={indexDocumento}>
-                        <TableCell>{pago.Fecha}</TableCell>
-                        <TableCell align="right">{`${
-                          documento.Serie !== null
-                            ? documento.Serie
-                            : "Sin Serie"
-                        }-${
-                          documento.Folio !== null
-                            ? documento.Folio
-                            : "Sin Folio"
-                        }`}</TableCell>
+                {pago.Tipo === 1 ? (
+                  <Table
+                    size="small"
+                    aria-label="purchases"
+                    style={{ marginTop: "15px" }}
+                  >
+                    <TableHead style={{ background: "#FAFAFA" }}>
+                      <TableRow>
+                        <TableCell>
+                          <strong>Fecha</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Serie-Folio</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Total</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Pagado</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Pendiente</strong>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {pago.documentos.map((documento, indexDocumento) => (
+                        <TableRow key={indexDocumento}>
+                          <TableCell>{pago.Fecha}</TableCell>
+                          <TableCell align="right">{`${
+                            documento.Serie !== null
+                              ? documento.Serie
+                              : "Sin Serie"
+                          }-${
+                            documento.Folio !== null
+                              ? documento.Folio
+                              : "Sin Folio"
+                          }`}</TableCell>
+                          <TableCell align="right">{`$${number_format(
+                            parseFloat(documento.ImporteOriginalPago) +
+                              parseFloat(documento.Pendiente),
+                            2,
+                            ".",
+                            ","
+                          )}`}</TableCell>
+                          <TableCell align="right">{`$${number_format(
+                            documento.ImporteOriginalPago,
+                            2,
+                            ".",
+                            ","
+                          )}`}</TableCell>
+                          <TableCell align="right">{`$${number_format(
+                            documento.Pendiente,
+                            2,
+                            ".",
+                            ","
+                          )}`}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <Table
+                    size="small"
+                    aria-label="purchases"
+                    style={{ marginTop: "15px" }}
+                  >
+                    <TableHead style={{ background: "#FAFAFA" }}>
+                      <TableRow>
+                        <TableCell>
+                          <strong>Tipo Pago</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Fecha</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Importe</strong>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>{tiposPago.tipos[pago.Tipo - 1]}</TableCell>
+                        <TableCell align="right">{pago.Fecha}</TableCell>
                         <TableCell align="right">{`$${number_format(
-                          parseFloat(documento.ImporteOriginalPago) +
-                            parseFloat(documento.Pendiente),
-                          2,
-                          ".",
-                          ","
-                        )}`}</TableCell>
-                        <TableCell align="right">{`$${number_format(
-                          documento.ImporteOriginalPago,
-                          2,
-                          ".",
-                          ","
-                        )}`}</TableCell>
-                        <TableCell align="right">{`$${number_format(
-                          documento.Pendiente,
+                          pago.Importe,
                           2,
                           ".",
                           ","
                         )}`}</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableBody>
+                  </Table>
+                )}
               </Box>
             </Collapse>
           </TableCell>
@@ -2200,7 +2577,7 @@ function FlujosEfectivo(props) {
   };
 
   const PagosHechosDocumentos = (props) => {
-    const { documento/* , indexDocumento */ } = props;
+    const { documento /* , layout */ /* , indexDocumento */ } = props;
 
     return (
       <TableRow>
@@ -2245,6 +2622,7 @@ function FlujosEfectivo(props) {
                         IdFlw: documento.id,
                         IdUsuario: idUsuario,
                         IdPago: documento.IdPago,
+                        Tipo: 1,
                         IdEmpresa: idEmpresa,
                       },
                     });
@@ -2261,7 +2639,7 @@ function FlujosEfectivo(props) {
   };
 
   const PagosHechosCorreos = (props) => {
-    const { correo/* , indexCorreo */, pago } = props;
+    const { correo /* , indexCorreo */, pago } = props;
 
     return (
       <Chip
@@ -2300,6 +2678,7 @@ function FlujosEfectivo(props) {
                   importePagado: importePagado,
                   correo: correo.Correo,
                   forma: 1,
+                  tipoPago: pago.Tipo
                 },
               });
             }
@@ -2623,7 +3002,10 @@ function FlujosEfectivo(props) {
               <Button
                 variant="contained"
                 color="primary"
-                disabled={idsPagosPendientesFlw.length === 0}
+                disabled={
+                  idsPagosPendientesFlw.length === 0 &&
+                  idsPagosAdicionalesPendientes.length === 0
+                }
                 style={{
                   float: "right" /* , width: xsDialog ? "100%" : ""  */,
                 }}
@@ -2646,6 +3028,9 @@ function FlujosEfectivo(props) {
                       let nuevasCuentasOrigen = instrucciones.cuentasOrigen;
                       let nuevosValoresCuentasOrigen =
                         instrucciones.valoresCuentasOrigen;
+                      let nuevosBancosOrigen = instrucciones.bancosOrigen;
+                      let nuevasSucursalesOrigen =
+                        instrucciones.sucursalesOrigen;
                       let nuevosIdsCuentasDestino =
                         instrucciones.idsCuentasDestino;
                       let nuevosIdsBancosDestino =
@@ -2653,6 +3038,8 @@ function FlujosEfectivo(props) {
                       let nuevasCuentasDestino = instrucciones.cuentasDestino;
                       let nuevosValoresCuentasDestino =
                         instrucciones.valoresCuentasDestino;
+                      let nuevasSucursalesDestino =
+                        instrucciones.sucursalesDestino;
                       let nuevasFechas = instrucciones.fechas;
                       let nuevasLlavesMatch = instrucciones.llavesMatch;
                       let nuevosPagos = instrucciones.pagos;
@@ -2677,6 +3064,49 @@ function FlujosEfectivo(props) {
                       let cuentasDestinoNombre =
                         instruccionesPagoProveedores.cuentasDestino;
 
+                      let nuevosIdsPagosAdicional =
+                        instruccionesAdicionales.ids;
+                      let nuevosTiposPagosAdicional =
+                        instruccionesAdicionales.tipos;
+                      let nuevosProveedoresPagosAdicional =
+                        instruccionesAdicionales.proveedores;
+                      let nuevosRfcProveedoresPagosAdicional =
+                        instruccionesAdicionales.rfcProveedores;
+                      let nuevosValoresProveedoresPagosAdicional =
+                        instruccionesAdicionales.valoresProveedores;
+                      let nuevosImportesPagosAdicional =
+                        instruccionesAdicionales.importes;
+                      let nuevosIdsCuentasOrigenPagosAdicional =
+                        instruccionesAdicionales.idsCuentasOrigen;
+                      let nuevosIdsBancosOrigenPagosAdicional =
+                        instruccionesAdicionales.idsBancosOrigen;
+                      let nuevasCuentasOrigenPagosAdicional =
+                        instruccionesAdicionales.cuentasOrigen;
+                      let nuevosValoresCuentasOrigenPagosAdicional =
+                        instruccionesAdicionales.valoresCuentasOrigen;
+                      let nuevosBancosOrigenPagosAdicional =
+                        instruccionesAdicionales.bancosOrigen;
+                      let nuevasSucursalesOrigenPagosAdicional =
+                        instruccionesAdicionales.sucursalesOrigen;
+                      let nuevosIdsCuentasDestinoPagosAdicional =
+                        instruccionesAdicionales.idsCuentasDestino;
+                      let nuevosIdsBancosDestinoPagosAdicional =
+                        instruccionesAdicionales.idsBancosDestino;
+                      let nuevasCuentasDestinoPagosAdicional =
+                        instruccionesAdicionales.cuentasDestino;
+                      let nuevosValoresCuentasDestinoPagosAdicional =
+                        instruccionesAdicionales.valoresCuentasDestino;
+                      let nuevasSucursalesDestinoPagosAdicional =
+                        instruccionesAdicionales.sucursalesDestino;
+                      let nuevasFechasPagosAdicional =
+                        instruccionesAdicionales.fechas;
+                      let nuevasLlavesMatchPagosAdicional =
+                        instruccionesAdicionales.llavesMatch;
+                      let nuevosPagosPagosAdicional =
+                        instruccionesAdicionales.pagos;
+                      let nuevosCorreosPagosAdicional =
+                        instruccionesAdicionales.correos;
+
                       let nuevoAplicado = aplicado;
                       let nuevoRestante = 0;
                       let nuevosPagosPendientes = pagosPendientesSeleccionados.filter(
@@ -2689,12 +3119,21 @@ function FlujosEfectivo(props) {
                         (pagoPendiente) =>
                           idsPagosPendientesFlw.indexOf(pagoPendiente.id) === -1
                       );
+                      let pagosAdicionalesEliminar = pagosAdicionalesPendientes.filter(
+                        (pagoAdicionalPendiente) =>
+                          idsPagosAdicionalesPendientes.indexOf(
+                            pagoAdicionalPendiente.id
+                          ) === -1
+                      );
                       /* console.log(pagosEliminar); */
                       let idsPagosDetEliminar = pagosEliminar.map(
                         (pagoEliminar) => pagoEliminar.IdPagoDet
                       );
                       let idsPagosEliminar = pagosEliminar.map(
                         (pagoEliminar) => pagoEliminar.IdPago
+                      );
+                      let idsPagosAdicionalesEliminar = pagosAdicionalesEliminar.map(
+                        (pagoAdicionalEliminar) => pagoAdicionalEliminar.id
                       );
                       /* console.log(idsPagosDetEliminar);
                       console.log(idsPagosEliminar);
@@ -2777,6 +3216,16 @@ function FlujosEfectivo(props) {
                                   )
                               : "-1"
                           );
+                          nuevosBancosOrigen.push(
+                            nuevosPagosPendientes[x].bancoOrigen !== null
+                              ? nuevosPagosPendientes[x].bancoOrigen
+                              : ""
+                          );
+                          nuevasSucursalesOrigen.push(
+                            nuevosPagosPendientes[x].sucursalOrigen !== null
+                              ? nuevosPagosPendientes[x].sucursalOrigen
+                              : ""
+                          );
                           /* console.log(cuentasDestinosProveedor);
                           console.log(cuentasDestinosProveedor.length);
                           console.log(nuevosPagosPendientes[x]); */
@@ -2812,6 +3261,15 @@ function FlujosEfectivo(props) {
                               ? 0
                               : "-1"
                           );
+                          nuevasSucursalesDestino.push(
+                            nuevosPagosPendientes[x].sucursalDestino !== null
+                              ? nuevosPagosPendientes[x].sucursalDestino
+                              : cuentasDestinosProveedor.length === 1
+                              ? cuentasDestinosProveedor[0].Sucursal !== null
+                                ? cuentasDestinosProveedor[0].Sucursal
+                                : ""
+                              : ""
+                          );
                           nuevasFechas.push(
                             nuevosPagosPendientes[x].fechapagodet !== null
                               ? nuevosPagosPendientes[x].fechapagodet
@@ -2827,6 +3285,7 @@ function FlujosEfectivo(props) {
                             nuevosIds[posicion] +
                             "," +
                             nuevosPagosPendientes[x].id;
+                          nuevosTipos[posicion] = nuevosTipos[posicion] + "-$-1";
                           nuevosImportes[posicion] =
                             parseFloat(nuevosImportes[posicion]) +
                             parseFloat(nuevosPagosPendientes[x].Importe);
@@ -2854,6 +3313,14 @@ function FlujosEfectivo(props) {
                                       nuevosPagosPendientes[x].cuentaOrigen
                                     )
                                 : "-1";
+                            nuevosBancosOrigen[posicion] =
+                              nuevosPagosPendientes[x].bancoOrigen !== null
+                                ? nuevosPagosPendientes[x].bancoOrigen
+                                : "";
+                            nuevasSucursalesOrigen[posicion] =
+                              nuevosPagosPendientes[x].sucursalOrigen !== null
+                                ? nuevosPagosPendientes[x].sucursalOrigen
+                                : "";
                             nuevosIdsCuentasDestino[posicion] =
                               nuevosPagosPendientes[x].idCuentaDestino !== null
                                 ? nuevosPagosPendientes[x].idCuentaDestino
@@ -2882,6 +3349,14 @@ function FlujosEfectivo(props) {
                                 : cuentasDestinosProveedor.length === 1
                                 ? 0
                                 : "-1";
+                            nuevasSucursalesDestino[posicion] =
+                              nuevosPagosPendientes[x].sucursalDestino !== null
+                                ? nuevosPagosPendientes[x].sucursalDestino
+                                : cuentasDestinosProveedor.length === 1
+                                ? cuentasDestinosProveedor[0].Sucursal !== null
+                                  ? cuentasDestinosProveedor[0].Sucursal
+                                  : ""
+                                : "";
                             nuevasFechas[posicion] =
                               nuevosPagosPendientes[x].fechapagodet !== null
                                 ? nuevosPagosPendientes[x].fechapagodet
@@ -2931,8 +3406,128 @@ function FlujosEfectivo(props) {
                         );
                       }
 
-                      nuevoRestante = nuevoRestante - nuevoAplicado;
+                      for (
+                        let x = 0;
+                        x < pagosAdicionalesPendientesSeleccionados.length;
+                        x++
+                      ) {
+                        nuevoAplicado =
+                          nuevoAplicado +
+                          parseFloat(
+                            pagosAdicionalesPendientesSeleccionados[x].Importe
+                          );
+                        const valorCuentaOrigen = cuentasOrigen
+                          .map((cuentaOrigen) => cuentaOrigen.IdCuenta)
+                          .indexOf(
+                            pagosAdicionalesPendientesSeleccionados[x]
+                              .IdCuentaOrigen
+                          );
+                        nuevosIdsPagosAdicional.push((x + 1) * -1);
+                        nuevosTiposPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x].Tipo
+                        );
+                        nuevosProveedoresPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x].Proveedor
+                        );
+                        nuevosRfcProveedoresPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x].RFC
+                        );
+                        nuevosValoresProveedoresPagosAdicional.push(0);
+                        nuevosImportesPagosAdicional.push(
+                          parseFloat(
+                            pagosAdicionalesPendientesSeleccionados[x].Importe
+                          )
+                        );
+                        nuevosIdsCuentasOrigenPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x]
+                            .IdCuentaOrigen
+                        );
+                        nuevosIdsBancosOrigenPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x]
+                            .idBancoOrigen
+                        );
+                        nuevasCuentasOrigenPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x]
+                            .cuentaOrigen
+                        );
+                        nuevosValoresCuentasOrigenPagosAdicional.push(
+                          valorCuentaOrigen
+                        );
+                        nuevosBancosOrigenPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x].bancoOrigen
+                        );
+                        nuevasSucursalesOrigenPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x]
+                            .sucursalOrigen !== null
+                            ? pagosAdicionalesPendientesSeleccionados[x]
+                                .sucursalOrigen
+                            : ""
+                        );
+                        nuevosIdsCuentasDestinoPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x]
+                            .IdCuentaDestino
+                        );
+                        nuevosIdsBancosDestinoPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x]
+                            .idBancoDestino
+                        );
+                        nuevasCuentasDestinoPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x]
+                            .cuentaDestino
+                        );
+                        nuevosValoresCuentasDestinoPagosAdicional.push(0);
+                        nuevasSucursalesDestinoPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x]
+                            .sucursalDestino !== null
+                            ? pagosAdicionalesPendientesSeleccionados[x]
+                                .sucursalDestino
+                            : ""
+                        );
+                        nuevasFechasPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x].Fecha
+                        );
+                        nuevasLlavesMatchPagosAdicional.push(
+                          pagosAdicionalesPendientesSeleccionados[x].LlaveMatch
+                        );
+                        nuevosPagosPagosAdicional.push(
+                          parseFloat(
+                            pagosAdicionalesPendientesSeleccionados[x].Importe
+                          )
+                        );
+                        const datosProveedor = proveedores.filter(
+                          (proveedor) =>
+                            proveedor.razonsocial ===
+                              pagosAdicionalesPendientesSeleccionados[x]
+                                .Proveedor &&
+                            proveedor.rfc ===
+                              pagosAdicionalesPendientesSeleccionados[x].RFC
+                        );
+                        let correosProveedor = [];
+                        if (datosProveedor[0].Correo1 !== null) {
+                          correosProveedor.push({
+                            correo: datosProveedor[0].Correo1,
+                            enviar: true,
+                            obligatorio: true,
+                          });
+                        }
+                        if (datosProveedor[0].Correo2 !== null) {
+                          correosProveedor.push({
+                            correo: datosProveedor[0].Correo2,
+                            enviar: true,
+                            obligatorio: true,
+                          });
+                        }
+                        if (datosProveedor[0].Correo3 !== null) {
+                          correosProveedor.push({
+                            correo: datosProveedor[0].Correo3,
+                            enviar: true,
+                            obligatorio: true,
+                          });
+                        }
+                        nuevosCorreosPagosAdicional.push(correosProveedor);
+                      }
 
+                      nuevoRestante = nuevoRestante - nuevoAplicado;
                       setInstrucciones({
                         ids: nuevosIds,
                         tipos: nuevosTipos,
@@ -2943,10 +3538,13 @@ function FlujosEfectivo(props) {
                         idsBancosOrigen: nuevosIdsBancosOrigen,
                         cuentasOrigen: nuevasCuentasOrigen,
                         valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+                        bancosOrigen: nuevosBancosOrigen,
+                        sucursalesOrigen: nuevasSucursalesOrigen,
                         idsCuentasDestino: nuevosIdsCuentasDestino,
                         idsBancosDestino: nuevosIdsBancosDestino,
                         cuentasDestino: nuevasCuentasDestino,
                         valoresCuentasDestino: nuevosValoresCuentasDestino,
+                        sucursalesDestino: nuevasSucursalesDestino,
                         fechas: nuevasFechas,
                         llavesMatch: nuevasLlavesMatch,
                         pagos: nuevosPagos,
@@ -2966,6 +3564,30 @@ function FlujosEfectivo(props) {
                         correos: correos,
                         cuentasOrigen: cuentasOrigenNombre,
                         cuentasDestino: cuentasDestinoNombre,
+                      });
+
+                      setInstruccionesAdicionales({
+                        ids: nuevosIdsPagosAdicional,
+                        tipos: nuevosTiposPagosAdicional,
+                        proveedores: nuevosProveedoresPagosAdicional,
+                        rfcProveedores: nuevosRfcProveedoresPagosAdicional,
+                        valoresProveedores: nuevosValoresProveedoresPagosAdicional,
+                        importes: nuevosImportesPagosAdicional,
+                        idsCuentasOrigen: nuevosIdsCuentasOrigenPagosAdicional,
+                        idsBancosOrigen: nuevosIdsBancosOrigenPagosAdicional,
+                        cuentasOrigen: nuevasCuentasOrigenPagosAdicional,
+                        valoresCuentasOrigen: nuevosValoresCuentasOrigenPagosAdicional,
+                        bancosOrigen: nuevosBancosOrigenPagosAdicional,
+                        sucursalesOrigen: nuevasSucursalesOrigenPagosAdicional,
+                        idsCuentasDestino: nuevosIdsCuentasDestinoPagosAdicional,
+                        idsBancosDestino: nuevosIdsBancosDestinoPagosAdicional,
+                        cuentasDestino: nuevasCuentasDestinoPagosAdicional,
+                        valoresCuentasDestino: nuevosValoresCuentasDestinoPagosAdicional,
+                        sucursalesDestino: nuevasSucursalesDestinoPagosAdicional,
+                        fechas: nuevasFechasPagosAdicional,
+                        llavesMatch: nuevasLlavesMatchPagosAdicional,
+                        pagos: nuevosPagosPagosAdicional,
+                        correos: nuevosCorreosPagosAdicional,
                       });
 
                       setAplicado(nuevoAplicado);
@@ -2998,249 +3620,16 @@ function FlujosEfectivo(props) {
                           idusuario: idUsuario,
                           idspagodet: idsPagosDetEliminar,
                           idspago: idsPagosEliminar,
+                          idspagosadicionales: idsPagosAdicionalesEliminar,
                         },
                       });
                     }
                   });
-                  /* let nuevosIds = instrucciones.ids;
-                  let nuevosTipos = instrucciones.tipos;
-                  let nuevosProveedores = instrucciones.proveedores;
-                  let nuevosRfcProveedores = instrucciones.rfcProveedores;
-                  let nuevosImportes = instrucciones.importes;
-                  let nuevosIdsCuentasOrigen = instrucciones.idsCuentasOrigen;
-                  let nuevosIdsBancosOrigen = instrucciones.idsBancosOrigen;
-                  let nuevasCuentasOrigen = instrucciones.cuentasOrigen;
-                  let nuevosValoresCuentasOrigen =
-                    instrucciones.valoresCuentasOrigen;
-                  let nuevosIdsCuentasDestino = instrucciones.idsCuentasDestino;
-                  let nuevosIdsBancosDestino = instrucciones.idsBancosDestino;
-                  let nuevasCuentasDestino = instrucciones.cuentasDestino;
-                  let nuevosValoresCuentasDestino =
-                    instrucciones.valoresCuentasDestino;
-                  let nuevasFechas = instrucciones.fechas;
-                  let nuevasLlavesMatch = instrucciones.llavesMatch;
-
-                  let ids = instruccionesPagoProveedores.ids;
-                  let proveedores = instruccionesPagoProveedores.proveedores;
-                  let importes = instruccionesPagoProveedores.importes;
-
-                  let nuevoAplicado = aplicado;
-                  let nuevoRestante = 0;
-                  let nuevosPagosPendientes = pagosPendientesSeleccionados.filter(
-                    (pagoPendienteSeleccionado) =>
-                      documentosSeleccionados.indexOf(
-                        pagoPendienteSeleccionado.IdFlw
-                      ) === -1
-                  );
-                  for (let x = 0; x < nuevosPagosPendientes.length; x++) {
-                    nuevoAplicado =
-                      nuevoAplicado +
-                      parseFloat(nuevosPagosPendientes[x].Pendiente);
-
-                    let posicion = nuevosProveedores.indexOf(
-                      nuevosPagosPendientes[x].Razon
-                    );
-                    if (posicion === -1) {
-                      nuevosIds.push(nuevosPagosPendientes[x].IdFlw);
-                      nuevosTipos.push(1);
-                      nuevosProveedores.push(nuevosPagosPendientes[x].Razon);
-                      nuevosRfcProveedores.push(nuevosPagosPendientes[x].cRFC);
-                      nuevosImportes.push(nuevosPagosPendientes[x].Pendiente);
-                      nuevosIdsCuentasOrigen.push(
-                        nuevosPagosPendientes[x].idCuentaOrigen !== null
-                          ? nuevosPagosPendientes[x].idCuentaOrigen
-                          : 0
-                      );
-                      nuevosIdsBancosOrigen.push(
-                        nuevosPagosPendientes[x].idBancoOrigen !== null
-                          ? nuevosPagosPendientes[x].idBancoOrigen
-                          : 0
-                      );
-                      nuevasCuentasOrigen.push(
-                        nuevosPagosPendientes[x].cuentaOrigen !== null
-                          ? nuevosPagosPendientes[x].cuentaOrigen
-                          : ""
-                      );
-                      nuevosValoresCuentasOrigen.push(
-                        nuevosPagosPendientes[x].idCuentaOrigen !== null
-                          ? cuentasOrigen
-                              .map((cuentaOrigen) => cuentaOrigen.Nombre)
-                              .indexOf(nuevosPagosPendientes[x].cuentaOrigen)
-                          : "-1"
-                      );
-                      nuevosIdsCuentasDestino.push(
-                        nuevosPagosPendientes[x].idCuentaDestino !== null
-                          ? nuevosPagosPendientes[x].idCuentaDestino
-                          : 0
-                      );
-                      nuevosIdsBancosDestino.push(
-                        nuevosPagosPendientes[x].idBancoDestino !== null
-                          ? nuevosPagosPendientes[x].idBancoDestino
-                          : 0
-                      );
-                      nuevasCuentasDestino.push(
-                        nuevosPagosPendientes[x].cuentaDestino !== null
-                          ? nuevosPagosPendientes[x].cuentaDestino
-                          : ""
-                      );
-                      nuevosValoresCuentasDestino.push(
-                        nuevosPagosPendientes[x].idCuentaDestino !== null
-                          ? cuentasDestino
-                              .filter(
-                                (cuenta) =>
-                                  cuenta.RFC === nuevosPagosPendientes[x].cRFC
-                              )
-                              .map((cuenta) => cuenta.Layout)
-                              .indexOf(nuevosPagosPendientes[x].cuentaDestino)
-                          : "-1"
-                      );
-                      nuevasFechas.push(
-                        nuevosPagosPendientes[x].fechapagodet !== null
-                          ? nuevosPagosPendientes[x].fechapagodet
-                          : moment().format("YYYY-MM-DD")
-                      );
-                      nuevasLlavesMatch.push("");
-                    } else {
-                      nuevosIds[posicion] =
-                        nuevosIds[posicion] +
-                        "," +
-                        nuevosPagosPendientes[x].IdFlw;
-                      nuevosImportes[posicion] =
-                        parseFloat(nuevosImportes[posicion]) +
-                        parseFloat(nuevosPagosPendientes[x].Pendiente);
-                      if (nuevosIdsCuentasOrigen[posicion] === 0) {
-                        nuevosIdsCuentasOrigen[posicion] =
-                          nuevosPagosPendientes[x].idCuentaOrigen !== null
-                            ? nuevosPagosPendientes[x].idCuentaOrigen
-                            : 0;
-                        nuevosIdsBancosOrigen[posicion] =
-                          nuevosPagosPendientes[x].idBancoOrigen !== null
-                            ? nuevosPagosPendientes[x].idBancoOrigen
-                            : 0;
-                        nuevasCuentasOrigen[posicion] =
-                          nuevosPagosPendientes[x].cuentaOrigen !== null
-                            ? nuevosPagosPendientes[x].cuentaOrigen
-                            : "";
-                        nuevosValoresCuentasOrigen[posicion] =
-                          nuevosPagosPendientes[x].idCuentaOrigen !== null
-                            ? cuentasOrigen
-                                .map((cuentaOrigen) => cuentaOrigen.Nombre)
-                                .indexOf(nuevosPagosPendientes[x].cuentaOrigen)
-                            : "-1";
-                        nuevosIdsCuentasDestino[posicion] =
-                          nuevosPagosPendientes[x].idCuentaDestino !== null
-                            ? nuevosPagosPendientes[x].idCuentaDestino
-                            : 0;
-                        nuevosIdsBancosDestino[posicion] =
-                          nuevosPagosPendientes[x].idBancoDestino !== null
-                            ? nuevosPagosPendientes[x].idBancoDestino
-                            : 0;
-                        nuevasCuentasDestino[posicion] =
-                          nuevosPagosPendientes[x].cuentaDestino !== null
-                            ? nuevosPagosPendientes[x].cuentaDestino
-                            : "";
-                        nuevosValoresCuentasDestino[posicion] =
-                          nuevosPagosPendientes[x].idCuentaDestino !== null
-                            ? cuentasDestino
-                                .filter(
-                                  (cuenta) =>
-                                    cuenta.RFC === nuevosPagosPendientes[x].cRFC
-                                )
-                                .map((cuenta) => cuenta.Layout)
-                                .indexOf(nuevosPagosPendientes[x].cuentaDestino)
-                            : "-1";
-                        nuevasFechas[posicion] =
-                          nuevosPagosPendientes[x].fechapagodet !== null
-                            ? nuevosPagosPendientes[x].fechapagodet
-                            : moment().format("YYYY-MM-DD");
-                      }
-                    }
-
-                    ids.push(nuevosPagosPendientes[x].IdFlw);
-                    proveedores.push(nuevosPagosPendientes[x].Razon);
-                    importes.push(
-                      parseFloat(nuevosPagosPendientes[x].Pendiente)
-                    );
-                  }
-
-                  nuevoRestante = nuevoRestante - nuevoAplicado;
-
-                  setInstrucciones({
-                    ids: nuevosIds,
-                    tipos: nuevosTipos,
-                    proveedores: nuevosProveedores,
-                    rfcProveedores: nuevosRfcProveedores,
-                    importes: nuevosImportes,
-                    idsCuentasOrigen: nuevosIdsCuentasOrigen,
-                    idsBancosOrigen: nuevosIdsBancosOrigen,
-                    cuentasOrigen: nuevasCuentasOrigen,
-                    valoresCuentasOrigen: nuevosValoresCuentasOrigen,
-                    idsCuentasDestino: nuevosIdsCuentasDestino,
-                    idsBancosDestino: nuevosIdsBancosDestino,
-                    cuentasDestino: nuevasCuentasDestino,
-                    valoresCuentasDestino: nuevosValoresCuentasDestino,
-                    fechas: nuevasFechas,
-                    llavesMatch: nuevasLlavesMatch,
-                  });
-
-                  setInstruccionesPagoProveedores({
-                    ids: ids,
-                    proveedores: proveedores,
-                    importes: importes,
-                  });
-
-                  setAplicado(nuevoAplicado);
-                  setRestante(nuevoRestante);
-
-                  let nuevosDocumentosSeleccionados = documentosSeleccionados;
-                  for (let x = 0; x < idsPagosPendientesFlw.length; x++) {
-                    if (
-                      documentosSeleccionados.indexOf(idsPagosPendientesFlw[x]) ===
-                      -1
-                    ) {
-                      nuevosDocumentosSeleccionados.push(idsPagosPendientesFlw[x]);
-                    }
-                  }
-                  setActiveStep(nuevosIdsCuentasOrigen.includes(0) ? 1 : 2);
-                  setDocumentosSeleccionados(nuevosDocumentosSeleccionados);
-
-                  handleCloseDialogPagosPendientes();
-                  executeGetFlwPagos(); */
                 }}
               >
                 Agregar seleccionados
               </Button>
             </Grid>
-            {/* <Grid item xs={12} md={6}>
-              <Button
-                variant="contained"
-                color="secondary"
-                disabled={idsPagosPendientesFlw.length === 0}
-                style={{ width: xsDialog ? "100%" : "" }}
-                onClick={() => {
-                  swal({
-                    text:
-                      "¿Está seguro de descartar los pagos pendientes seleccionados?",
-                    buttons: ["No", "Sí"],
-                    dangerMode: true,
-                  }).then((value) => {
-                    if (value) {
-                      executeEliminarFlwPagos({
-                        data: {
-                          usuario: correoUsuario,
-                          pwd: passwordUsuario,
-                          rfc: rfcEmpresa,
-                          idsubmenu: 46,
-                          idspago: idsPagosPendientesDet,
-                        },
-                      });
-                    }
-                  });
-                }}
-              >
-                Descartar seleccionados
-              </Button>
-            </Grid> */}
             <Grid item xs={12}>
               <TableContainer component={Paper}>
                 <Table className={classes.table} aria-label="simple table">
@@ -3264,19 +3653,19 @@ function FlujosEfectivo(props) {
                         </Tooltip>
                       </TableCell>
                       <TableCell>
-                        <strong>#Doc</strong>
+                        <strong>Tipo Documento</strong>
                       </TableCell>
                       <TableCell align="right">
-                        <strong>Vencimiento</strong>
+                        <strong>Proveedor</strong>
                       </TableCell>
                       <TableCell align="right">
-                        <strong>Pendiente</strong>
+                        <strong>RFC</strong>
                       </TableCell>
                       <TableCell align="right">
                         <strong>Sucursal</strong>
                       </TableCell>
                       <TableCell align="right">
-                        <strong>Razon</strong>
+                        <strong>Pendiente</strong>
                       </TableCell>
                       {/* <TableCell align="right">
                     <strong>
@@ -3287,13 +3676,17 @@ function FlujosEfectivo(props) {
                   </TableHead>
                   <TableBody>
                     {pagosPendientes.map((pagoPendiente, index) => {
+                      /* console.log(pagosPendientes);
+                      console.log(pagosAdicionalesPendientes); */
                       const isItemSelected =
                         idsPagosPendientesFlw.indexOf(pagoPendiente.id) !== -1;
                       return (
                         <TableRow
                           key={index}
                           hover
-                          onClick={(event) => handleClick(event, pagoPendiente)}
+                          onClick={(event) =>
+                            handleClick(event, pagoPendiente, 1)
+                          }
                           role="checkbox"
                           aria-checked={isItemSelected}
                           selected={isItemSelected}
@@ -3302,10 +3695,16 @@ function FlujosEfectivo(props) {
                             <Checkbox checked={isItemSelected} />
                           </TableCell>
                           <TableCell component="th" scope="row">
-                            {pagoPendiente.IdDoc}
+                            Flujo de Efectivo
                           </TableCell>
                           <TableCell align="right">
-                            {pagoPendiente.Vence}
+                            {pagoPendiente.Razon}
+                          </TableCell>
+                          <TableCell align="right">
+                            {pagoPendiente.cRFC}
+                          </TableCell>
+                          <TableCell align="right">
+                            {pagoPendiente.Suc}
                           </TableCell>
                           <TableCell align="right">
                             {`$${number_format(
@@ -3315,15 +3714,57 @@ function FlujosEfectivo(props) {
                               ","
                             )}`}
                           </TableCell>
-                          <TableCell align="right">
-                            {pagoPendiente.Suc}
-                          </TableCell>
-                          <TableCell align="right">
-                            {pagoPendiente.Razon}
-                          </TableCell>
                         </TableRow>
                       );
                     })}
+                    {pagosAdicionalesPendientes.map(
+                      (pagoAdicionalPendiente, index) => {
+                        const isItemSelected =
+                          idsPagosAdicionalesPendientes.indexOf(
+                            pagoAdicionalPendiente.id
+                          ) !== -1;
+                        return (
+                          <TableRow
+                            key={index}
+                            hover
+                            onClick={(event) =>
+                              handleClick(event, pagoAdicionalPendiente, 2)
+                            }
+                            role="checkbox"
+                            aria-checked={isItemSelected}
+                            selected={isItemSelected}
+                          >
+                            <TableCell padding="checkbox">
+                              <Checkbox checked={isItemSelected} />
+                            </TableCell>
+                            <TableCell component="th" scope="row">
+                              {pagoAdicionalPendiente.Tipo === 2
+                                ? "Anticipo a proveedores"
+                                : pagoAdicionalPendiente.Tipo === 3
+                                ? "Pago a prestamos a acreedores"
+                                : pagoAdicionalPendiente.Tipo === 4
+                                ? "Entrega de prestamos a deudores"
+                                : ""}
+                            </TableCell>
+                            <TableCell align="right">
+                              {pagoAdicionalPendiente.Proveedor}
+                            </TableCell>
+                            <TableCell align="right">
+                              {pagoAdicionalPendiente.RFC}
+                            </TableCell>
+                            <TableCell align="right">{""}</TableCell>
+                            <TableCell align="right">
+                              {`$${number_format(
+                                pagoAdicionalPendiente.Importe,
+                                2,
+                                ".",
+                                ","
+                              )}`}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      }
+                    )}
                     <TableRow>
                       <TableCell colSpan="5" align="right">
                         <strong>Total Pendiente:</strong>
@@ -3359,6 +3800,9 @@ function FlujosEfectivo(props) {
                   let idsPagosEliminar = pagosPendientes.map(
                     (pagoPendiente) => pagoPendiente.IdPago
                   );
+                  let idsPagosAdicionalesEliminar = pagosAdicionalesPendientes.map(
+                    (pagoAdicionalPendiente) => pagoAdicionalPendiente.id
+                  );
                   executeEliminarFlwPagos({
                     data: {
                       usuario: correoUsuario,
@@ -3368,6 +3812,7 @@ function FlujosEfectivo(props) {
                       idusuario: idUsuario,
                       idspagodet: idsPagosDetEliminar,
                       idspago: idsPagosEliminar,
+                      idspagosadicionales: idsPagosAdicionalesEliminar,
                     },
                   });
                   setOpenDialogPagosPendientes(false);
@@ -3614,6 +4059,7 @@ function Paso1(props) {
                       : "Sin Serie"
                   } - ${flujoEfectivo.Folio}`,
                   flujoEfectivo.Razon,
+                  flujoEfectivo.Suc,
                   flujoEfectivo.Fecha,
                   flujoEfectivo.Vence,
                   flujoEfectivo.Tipo,
@@ -3790,6 +4236,9 @@ function Paso1(props) {
             .toLowerCase()
             .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
           filterRowsTablaPorDocumento[x].proveedor
+            .toLowerCase()
+            .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
+          filterRowsTablaPorDocumento[x].sucursal
             .toLowerCase()
             .indexOf(busquedaFiltro.toLowerCase()) !== -1 ||
           filterRowsTablaPorDocumento[x].fechaDoc
@@ -4196,11 +4645,14 @@ function Paso1(props) {
                   let nuevasCuentasOrigen = instrucciones.cuentasOrigen;
                   let nuevosValoresCuentasOrigen =
                     instrucciones.valoresCuentasOrigen;
+                  let nuevosBancosOrigen = instrucciones.bancosOrigen;
+                  let nuevasSucursalesOrigen = instrucciones.sucursalesOrigen;
                   let nuevosIdsCuentasDestino = instrucciones.idsCuentasDestino;
                   let nuevosIdsBancosDestino = instrucciones.idsBancosDestino;
                   let nuevasCuentasDestino = instrucciones.cuentasDestino;
                   let nuevosValoresCuentasDestino =
                     instrucciones.valoresCuentasDestino;
+                  let nuevasSucursalesDestino = instrucciones.sucursalesDestino;
                   let nuevasFechas = instrucciones.fechas;
                   let nuevasLlavesMatch = instrucciones.llavesMatch;
                   let nuevosPagos = instrucciones.pagos;
@@ -4308,6 +4760,8 @@ function Paso1(props) {
                       nuevosIdsBancosOrigen.push(0);
                       nuevasCuentasOrigen.push("");
                       nuevosValoresCuentasOrigen.push("-1");
+                      nuevosBancosOrigen.push("");
+                      nuevasSucursalesOrigen.push("");
                       /* const cuentasDestinosProveedor = cuentasDestino.filter(
                         (cuenta) => cuenta.RFC === flujoEfectivo.cRFC
                       ); */
@@ -4329,6 +4783,13 @@ function Paso1(props) {
                       nuevosValoresCuentasDestino.push(
                         cuentasDestinosProveedor.length === 1 ? 0 : "-1"
                       );
+                      nuevasSucursalesDestino.push(
+                        cuentasDestinosProveedor.length === 1
+                          ? cuentasDestinosProveedor[0].Sucursal !== null
+                            ? cuentasDestinosProveedor[0].Sucursal
+                            : ""
+                          : ""
+                      );
                       nuevasFechas.push(moment().format("YYYY-MM-DD"));
                       nuevasLlavesMatch.push("");
                       nuevosPagos.push(importeAplicado);
@@ -4336,6 +4797,7 @@ function Paso1(props) {
                     } else {
                       nuevosIds[posicion] =
                         nuevosIds[posicion] + "," + flujoEfectivo.id;
+                      nuevosTipos[posicion] = nuevosTipos[posicion] + "-$-1";
                       nuevosImportes[posicion] =
                         parseFloat(nuevosImportes[posicion]) +
                         parseFloat(flujoEfectivo.Pendiente);
@@ -4426,10 +4888,13 @@ function Paso1(props) {
                       nuevosIdsBancosOrigen.splice(posicionEliminar, 1);
                       nuevasCuentasOrigen.splice(posicionEliminar, 1);
                       nuevosValoresCuentasOrigen.splice(posicionEliminar, 1);
+                      nuevosBancosOrigen.splice(posicionEliminar, 1);
+                      nuevasSucursalesOrigen.splice(posicionEliminar, 1);
                       nuevosIdsCuentasDestino.splice(posicionEliminar, 1);
                       nuevosIdsBancosDestino.splice(posicionEliminar, 1);
                       nuevasCuentasDestino.splice(posicionEliminar, 1);
                       nuevosValoresCuentasDestino.splice(posicionEliminar, 1);
+                      nuevasSucursalesDestino.splice(posicionEliminar, 1);
                       nuevasFechas.splice(posicionEliminar, 1);
                       nuevasLlavesMatch.splice(posicionEliminar, 1);
                       nuevosPagos.splice(posicionEliminar, 1);
@@ -4492,10 +4957,13 @@ function Paso1(props) {
                     idsBancosOrigen: nuevosIdsBancosOrigen,
                     cuentasOrigen: nuevasCuentasOrigen,
                     valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+                    bancosOrigen: nuevosBancosOrigen,
+                    sucursalesOrigen: nuevasSucursalesOrigen,
                     idsCuentasDestino: nuevosIdsCuentasDestino,
                     idsBancosDestino: nuevosIdsBancosDestino,
                     cuentasDestino: nuevasCuentasDestino,
                     valoresCuentasDestino: nuevosValoresCuentasDestino,
+                    sucursalesDestino: nuevasSucursalesDestino,
                     fechas: nuevasFechas,
                     llavesMatch: nuevasLlavesMatch,
                     pagos: nuevosPagos,
@@ -5280,8 +5748,12 @@ function Paso1(props) {
                                           instrucciones.idsBancosOrigen;
                                         let nuevasCuentasOrigen =
                                           instrucciones.cuentasOrigen;
+                                        let nuevasSucursalesOrigen =
+                                          instrucciones.sucursalesOrigen;
                                         let nuevosValoresCuentasOrigen =
                                           instrucciones.valoresCuentasOrigen;
+                                        let nuevosBancosOrigen =
+                                          instrucciones.bancosOrigen;
                                         let nuevosIdsCuentasDestino =
                                           instrucciones.idsCuentasDestino;
                                         let nuevosIdsBancosDestino =
@@ -5290,6 +5762,8 @@ function Paso1(props) {
                                           instrucciones.cuentasDestino;
                                         let nuevosValoresCuentasDestino =
                                           instrucciones.valoresCuentasDestino;
+                                        let nuevasSucursalesDestino =
+                                          instrucciones.sucursalesDestino;
                                         let nuevasFechas = instrucciones.fechas;
                                         let nuevasLlavesMatch =
                                           instrucciones.llavesMatch;
@@ -5433,9 +5907,11 @@ function Paso1(props) {
                                             nuevosIdsCuentasOrigen.push(0);
                                             nuevosIdsBancosOrigen.push(0);
                                             nuevasCuentasOrigen.push("");
+                                            nuevasSucursalesOrigen.push("");
                                             nuevosValoresCuentasOrigen.push(
                                               "-1"
                                             );
+                                            nuevosBancosOrigen.push("");
                                             /* const cuentasDestinosProveedor = cuentasDestino.filter(
                                               (cuenta) => cuenta.RFC === row.rfc
                                             ); */
@@ -5465,6 +5941,16 @@ function Paso1(props) {
                                                 ? 0
                                                 : "-1"
                                             );
+                                            nuevasSucursalesDestino.push(
+                                              cuentasDestinosProveedor.length ===
+                                                1
+                                                ? cuentasDestinosProveedor[0]
+                                                    .Sucursal !== null
+                                                  ? cuentasDestinosProveedor[0]
+                                                      .Sucursal
+                                                  : ""
+                                                : ""
+                                            );
                                             nuevasFechas.push(
                                               moment().format("YYYY-MM-DD")
                                             );
@@ -5478,6 +5964,7 @@ function Paso1(props) {
                                               nuevosIds[posicion] +
                                               "," +
                                               row.id;
+                                            nuevosTipos[posicion] = nuevosTipos[posicion] + "-$-1";
                                             nuevosImportes[posicion] =
                                               parseFloat(
                                                 nuevosImportes[posicion]
@@ -5598,7 +6085,15 @@ function Paso1(props) {
                                               posicionEliminar,
                                               1
                                             );
+                                            nuevasSucursalesOrigen.splice(
+                                              posicionEliminar,
+                                              1
+                                            );
                                             nuevosValoresCuentasOrigen.splice(
+                                              posicionEliminar,
+                                              1
+                                            );
+                                            nuevosBancosOrigen.splice(
                                               posicionEliminar,
                                               1
                                             );
@@ -5615,6 +6110,10 @@ function Paso1(props) {
                                               1
                                             );
                                             nuevosValoresCuentasDestino.splice(
+                                              posicionEliminar,
+                                              1
+                                            );
+                                            nuevasSucursalesDestino.splice(
                                               posicionEliminar,
                                               1
                                             );
@@ -5701,11 +6200,14 @@ function Paso1(props) {
                                           idsCuentasOrigen: nuevosIdsCuentasOrigen,
                                           idsBancosOrigen: nuevosIdsBancosOrigen,
                                           cuentasOrigen: nuevasCuentasOrigen,
+                                          sucursalesOrigen: nuevasSucursalesOrigen,
                                           valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+                                          bancosOrigen: nuevosBancosOrigen,
                                           idsCuentasDestino: nuevosIdsCuentasDestino,
                                           idsBancosDestino: nuevosIdsBancosDestino,
                                           cuentasDestino: nuevasCuentasDestino,
                                           valoresCuentasDestino: nuevosValoresCuentasDestino,
+                                          sucursalesDestino: nuevasSucursalesDestino,
                                           fechas: nuevasFechas,
                                           llavesMatch: nuevasLlavesMatch,
                                           pagos: nuevosPagos,
@@ -5739,6 +6241,9 @@ function Paso1(props) {
                                   </TableCell>
                                   <TableCell align="right">
                                     {row.proveedor}
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    {row.sucursal}
                                   </TableCell>
                                   <TableCell align="right">
                                     {row.fechaDoc}
@@ -5927,7 +6432,7 @@ function Paso1(props) {
                             })
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={9}>
+                            <TableCell colSpan={10}>
                               <Typography variant="subtitle1">
                                 <ErrorIcon
                                   style={{ color: "red", verticalAlign: "sub" }}
@@ -5938,7 +6443,7 @@ function Paso1(props) {
                           </TableRow>
                         )}
                         <TableRow style={{ background: "#FAFAFA" }}>
-                          <TableCell colSpan={5} align="right">
+                          <TableCell colSpan={6} align="right">
                             <strong>
                               * Todos los pendientes y los totales están
                               presentados en moneda nacional.
@@ -6173,7 +6678,7 @@ function Paso2(props) {
       return (
         <TableBody>
           {instrucciones.proveedores.map((proveedor, index) => {
-            let pos = tiposPago.valores.indexOf(instrucciones.tipos[index]);
+            let pos = tiposPago.valores.indexOf(1/* instrucciones.tipos[index] */);
             const cuentasDestinosProveedor = cuentasDestino.filter(
               (cuenta) => cuenta.RFC === instrucciones.rfcProveedores[index]
             );
@@ -6236,12 +6741,28 @@ function Paso2(props) {
                         instrucciones.valoresCuentasOrigen;
                       nuevosValoresCuentasOrigen[index] =
                         e.target.value !== "-1" ? e.target.value : "-1";
+                      let nuevosBancosOrigen = instrucciones.bancosOrigen;
+                      nuevosBancosOrigen[index] =
+                        e.target.value !== "-1"
+                          ? cuentasOrigen[parseInt(e.target.value)].Banco
+                          : "";
+                      let nuevasSucursalesOrigen =
+                        instrucciones.sucursalesOrigen;
+                      nuevasSucursalesOrigen[index] =
+                        e.target.value !== "-1"
+                          ? cuentasOrigen[parseInt(e.target.value)].Sucursal !==
+                            null
+                            ? cuentasOrigen[parseInt(e.target.value)].Sucursal
+                            : ""
+                          : "";
                       setInstrucciones({
                         ...instrucciones,
                         idsCuentasOrigen: nuevosIdsCuentasOrigen,
                         idsBancosOrigen: nuevosIdsBancosOrigen,
                         cuentasOrigen: nuevasCuentasOrigen,
                         valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+                        bancosOrigen: nuevosBancosOrigen,
+                        sucursalesOrigen: nuevasSucursalesOrigen,
                       });
 
                       const proveedorBuscar = instrucciones.proveedores[index];
@@ -6372,12 +6893,23 @@ function Paso2(props) {
                         instrucciones.valoresCuentasDestino;
                       nuevosValoresCuentasDestino[index] =
                         e.target.value !== "-1" ? e.target.value : "-1";
+                      let nuevasSucursalesDestino =
+                        instrucciones.sucursalesDestino;
+                      nuevasSucursalesDestino[index] =
+                        e.target.value !== "-1"
+                          ? cuentasDestinosProveedor[parseInt(e.target.value)]
+                              .Sucursal !== null
+                            ? cuentasDestinosProveedor[parseInt(e.target.value)]
+                                .Sucursal
+                            : ""
+                          : "";
                       setInstrucciones({
                         ...instrucciones,
                         idsCuentasDestino: nuevosIdsCuentasDestino,
                         idsBancosDestino: nuevosIdsBancosDestino,
                         cuentasDestino: nuevasCuentasDestino,
                         valoresCuentasDestino: nuevosValoresCuentasDestino,
+                        sucursalesDestino: nuevasSucursalesDestino,
                       });
 
                       const proveedorBuscar = instrucciones.proveedores[index];
@@ -6525,27 +7057,88 @@ function Paso3(props) {
   const instruccionesAdicionales = props.instruccionesAdicionales;
   const setInstruccionesAdicionales = props.setInstruccionesAdicionales;
   const proveedores = props.proveedores;
+  const setProveedores = props.setProveedores;
   const cuentasOrigen = props.cuentasOrigen;
   const cuentasDestino = props.cuentasDestino;
+  const setCuentasDestino = props.setCuentasDestino;
   const disponible = props.disponible;
   const aplicado = props.aplicado;
   const setAplicado = props.setAplicado;
+  /* const restante = props.restante; */
   const setRestante = props.setRestante;
   const tiposPago = props.tiposPago;
   /* const correosProveedores = props.correosProveedores;
   const setCorreosProveedores = props.setCorreosProveedores; */
   const [tipoDocumento, setTipoDocumento] = useState(2);
   const [openDialogInstrucciones, setOpenDialogInstrucciones] = useState(false);
+  const [openDialogProveedores, setOpenDialogProveedores] = useState(false);
   const [
     openDialogConfiguracionCorreos,
     setOpenDialogConfiguracionCorreos,
   ] = useState(false);
+  const [
+    openDialogConfiguracionCorreosPagosAdicionales,
+    setOpenDialogConfiguracionCorreosPagosAdicionales,
+  ] = useState(false);
   const [proveedorElegido, setProveedorElegido] = useState("");
+  const [
+    proveedorElegidoPagosAdicionales,
+    setProveedorElegidoPagosAdicionales,
+  ] = useState("");
   const [flujosEfectivoFiltrados, setFlujosEfectivoFiltrados] = useState([]);
   const [totalEspecificos, setTotalEspecificos] = useState(0.0);
   const [importeAntiguo, setImporteAntiguo] = useState(0.0);
   const [correoSalidaSelected, setCorreoSalidaSelected] = useState(0);
   const [indexProveedorSelected, setIndexProveedorSelected] = useState(-1);
+  const [
+    indexProveedorSelectedPagosAdicionales,
+    setIndexProveedorSelectedPagosAdicionales,
+  ] = useState(-1);
+  const [nuevoProveedorSelected, setNuevoProveedorSelected] = useState(false);
+  const [proveedorSelected, setProveedorSelected] = useState(-1);
+  const [cuentasDestinoProveedor, setCuentasDestinoProveedor] = useState([]);
+  const [cuentaDestinoSelected, setCuentaDestinoSelected] = useState(-1);
+  const [nuevaCuentaDestino, setNuevaCuentaDestino] = useState(false);
+  const [
+    indexInstruccionAdicionalSelected,
+    setIndexInstruccionAdicionalSelected,
+  ] = useState(-1);
+  const [buscarProveedor, setBuscarProveedor] = useState("");
+  const [razonSocialProveedorNuevo, setRazonSocialProveedorNuevo] = useState(
+    ""
+  );
+  const [rfcProveedorNuevo, setRfcProveedorNuevo] = useState("");
+  const [codigoProveedorNuevo, setCodigoProveedorNuevo] = useState("");
+  const [sucursalProveedorNuevo, setSucursalProveedorNuevo] = useState("");
+  const [idMonedaProveedorNuevo, setIdMonedaProveedorNuevo] = useState("");
+  const [correo1ProveedorNuevo, setCorreo1ProveedorNuevo] = useState("");
+  const [correo2ProveedorNuevo, setCorreo2ProveedorNuevo] = useState("");
+  const [correo3ProveedorNuevo, setCorreo3ProveedorNuevo] = useState("");
+  const [cuentaProveedorNuevo, setCuentaProveedorNuevo] = useState("");
+  const [clabeProveedorNuevo, setClabeProveedorNuevo] = useState("");
+  const [bancoProveedorNuevo, setBancoProveedorNuevo] = useState("");
+  const [idBancoProveedorNuevo, setIdBancoProveedorNuevo] = useState("");
+  const [
+    sucursalCuentaProveedorNuevo,
+    setSucursalCuentaProveedorNuevo,
+  ] = useState("");
+  const [esClienteProveedorNuevo, setEsClienteProveedorNuevo] = useState(true);
+  const [infoNuevaCuenta, setInfoNuevaCuenta] = useState({
+    rfcNuevaCuenta: "",
+    cuentaNuevaCuenta: "",
+    clabeNuevaCuenta: "",
+    bancoNuevaCuenta: "",
+    idBancoNuevaCuenta: "",
+    sucursalNuevaCuenta: "",
+    esClienteNuevaCuenta: true,
+  });
+  /* const [rfcNuevaCuenta, setRfcNuevaCuenta] = useState("");
+  const [cuentaNuevaCuenta, setCuentaNuevaCuenta] = useState("");
+  const [clabeNuevaCuenta, setClabeNuevaCuenta] = useState("");
+  const [bancoNuevaCuenta, setBancoNuevaCuenta] = useState("");
+  const [idBancoNuevaCuenta, setIdBancoNuevaCuenta] = useState(0);
+  const [sucursalNuevaCuenta, setSucursalNuevaCuenta] = useState("");
+  const [esClienteNuevaCuenta, setEsClienteNuevaCuenta] = useState(true); */
   const [
     {
       data: traerFlujosEfectivoFiltradosData,
@@ -6556,6 +7149,42 @@ function Paso3(props) {
   ] = useAxios(
     {
       url: API_BASE_URL + `/traerFlujosEfectivoFiltrados`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  const [
+    {
+      data: agregarCuentaProveedorData,
+      loading: agregarCuentaProveedorLoading,
+      error: agregarCuentaProveedorError,
+    },
+    executeAgregarCuentaProveedor,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/agregarCuentaProveedor`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  const [
+    {
+      data: agregarNuevoProveedorData,
+      loading: agregarNuevoProveedorLoading,
+      error: agregarNuevoProveedorError,
+    },
+    executeAgregarNuevoProveedor,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/agregarNuevoProveedor`,
       method: "POST",
     },
     {
@@ -6597,13 +7226,72 @@ function Paso3(props) {
     checkData();
   }, [traerFlujosEfectivoFiltradosData]);
 
-  if (traerFlujosEfectivoFiltradosLoading) {
+  useEffect(() => {
+    function checkData() {
+      if (agregarCuentaProveedorData) {
+        if (agregarCuentaProveedorData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(agregarCuentaProveedorData.error),
+            "warning"
+          );
+        } else {
+          setCuentasDestino(agregarCuentaProveedorData.cuentas);
+        }
+      }
+    }
+
+    checkData();
+  }, [agregarCuentaProveedorData, setCuentasDestino]);
+
+  useEffect(() => {
+    function checkData() {
+      if (agregarNuevoProveedorData) {
+        if (agregarNuevoProveedorData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(agregarNuevoProveedorData.error),
+            "warning"
+          );
+        } else {
+          setCuentasDestino(agregarNuevoProveedorData.cuentas);
+          setProveedores(agregarNuevoProveedorData.proveedores);
+          setRazonSocialProveedorNuevo("");
+          setRfcProveedorNuevo("");
+          setCodigoProveedorNuevo("");
+          setSucursalProveedorNuevo("");
+          setIdMonedaProveedorNuevo("");
+          setCorreo1ProveedorNuevo("");
+          setCorreo2ProveedorNuevo("");
+          setCorreo3ProveedorNuevo("");
+          setCuentaProveedorNuevo("");
+          setClabeProveedorNuevo("");
+          setBancoProveedorNuevo("");
+          setIdBancoProveedorNuevo("");
+          setSucursalCuentaProveedorNuevo("");
+          setEsClienteProveedorNuevo(true);
+        }
+      }
+    }
+
+    checkData();
+  }, [agregarNuevoProveedorData, setCuentasDestino, setProveedores]);
+
+  if (
+    traerFlujosEfectivoFiltradosLoading ||
+    agregarCuentaProveedorLoading ||
+    agregarNuevoProveedorLoading
+  ) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (traerFlujosEfectivoFiltradosError) {
+  if (
+    traerFlujosEfectivoFiltradosError ||
+    agregarCuentaProveedorError ||
+    agregarNuevoProveedorError
+  ) {
     return <ErrorQueryDB />;
   }
 
@@ -6613,6 +7301,20 @@ function Paso3(props) {
 
   const handleCloseDialogInstrucciones = () => {
     setOpenDialogInstrucciones(false);
+  };
+
+  const handleClickOpenDialogProveedores = () => {
+    setOpenDialogProveedores(true);
+  };
+
+  const handleCloseDialogProveedores = () => {
+    setOpenDialogProveedores(false);
+    setProveedorSelected(-1);
+    setCuentaDestinoSelected(-1);
+    setCuentasDestinoProveedor([]);
+    setBuscarProveedor("");
+    setNuevoProveedorSelected(false);
+    setNuevaCuentaDestino(false);
   };
 
   const handleClickOpenDialogConfiguracionCorreos = () => {
@@ -6641,15 +7343,40 @@ function Paso3(props) {
     }
   };
 
+  const handleClickOpenDialogConfiguracionCorreosPagosAdicionales = () => {
+    setOpenDialogConfiguracionCorreosPagosAdicionales(true);
+  };
+
+  const handleCloseDialogConfiguracionCorreosPagosAdicionales = () => {
+    let contador = 0;
+    for (
+      let x = 0;
+      x <
+      instruccionesAdicionales.correos[indexProveedorSelectedPagosAdicionales]
+        .length;
+      x++
+    ) {
+      if (
+        !validarCorreo(
+          instruccionesAdicionales.correos[
+            indexProveedorSelectedPagosAdicionales
+          ][x].correo.trim()
+        )
+      ) {
+        contador++;
+      }
+    }
+    if (contador === 0) {
+      setOpenDialogConfiguracionCorreosPagosAdicionales(false);
+    } else {
+      swal("Error", "Ingrese correos validos", "warning");
+    }
+  };
+
   const getInstrucciones = () => {
     if (instrucciones.proveedores.length > 0) {
       return instrucciones.proveedores.map((proveedor, index) => {
-        let pos = tiposPago.valores.indexOf(instrucciones.tipos[index]);
-        /* const datosProveedor = proveedores.filter(
-          (proveedor) =>
-            proveedor.razonsocial === instrucciones.proveedores[index] &&
-            proveedor.rfc === instrucciones.rfcProveedores[index]
-        ); */
+        let pos = tiposPago.valores.indexOf(1/* instrucciones.tipos[index] */);
         return (
           <TableRow key={index}>
             <TableCell padding="checkbox" />
@@ -6665,7 +7392,7 @@ function Paso3(props) {
             <TableCell align="right">
               ${number_format(instrucciones.pagos[index], 2, ".", ",")}
             </TableCell>
-            <TableCell align="right">---</TableCell>
+            {/* <TableCell align="right">---</TableCell> */}
             <TableCell align="right">
               <Tooltip title="Ver Documentos">
                 <IconButton
@@ -6679,29 +7406,6 @@ function Paso3(props) {
               <Tooltip title="Configuración de correos">
                 <IconButton
                   onClick={() => {
-                    /* let nuevosCorreosProveedores = [];
-                    let nuevosEnviarProveedores = [];
-                    let nuevosObligatoriosProveedores = [];
-                    if (datosProveedor[0].Correo1 !== null) {
-                      nuevosCorreosProveedores.push(datosProveedor[0].Correo1);
-                      nuevosEnviarProveedores.push(true);
-                      nuevosObligatoriosProveedores.push(true);
-                    }
-                    if (datosProveedor[0].Correo2 !== null) {
-                      nuevosCorreosProveedores.push(datosProveedor[0].Correo2);
-                      nuevosEnviarProveedores.push(true);
-                      nuevosObligatoriosProveedores.push(true);
-                    }
-                    if (datosProveedor[0].Correo3 !== null) {
-                      nuevosCorreosProveedores.push(datosProveedor[0].Correo3);
-                      nuevosEnviarProveedores.push(true);
-                      nuevosObligatoriosProveedores.push(true);
-                    }
-                    setCorreosProveedores({
-                      correo: nuevosCorreosProveedores,
-                      enviar: nuevosEnviarProveedores,
-                      obligatorio: nuevosObligatoriosProveedores,
-                    }); */
                     setIndexProveedorSelected(index);
                     setProveedorElegido(proveedor);
                     handleClickOpenDialogConfiguracionCorreos();
@@ -6760,18 +7464,34 @@ function Paso3(props) {
   const getFlujosEfectivoFiltrados = () => {
     if (flujosEfectivoFiltrados.length > 0) {
       return flujosEfectivoFiltrados.map((flujoEfectivo, index) => {
+        const pos = instruccionesPagoProveedores.ids.indexOf(flujoEfectivo.id);
+        const importe = instruccionesPagoProveedores.pagos[pos];
         return (
           <TableRow key={index}>
             <TableCell padding="checkbox" />
             <TableCell component="th" scope="row">
-              {flujoEfectivo.IdDoc}
+              {flujoEfectivo.Razon}
             </TableCell>
-            <TableCell align="right">{flujoEfectivo.Vence}</TableCell>
+            <TableCell align="right">{`${
+              flujoEfectivo.Serie !== null ? flujoEfectivo.Serie : "Sin Serie"
+            }-${
+              flujoEfectivo.Folio !== null ? flujoEfectivo.Folio : "Sin Folio"
+            }`}</TableCell>
             <TableCell align="right">
-              ${number_format(flujoEfectivo.Importe, 2, ".", ",")}
+              ${number_format(flujoEfectivo.Pendiente, 2, ".", ",")}
             </TableCell>
-            <TableCell align="right">{flujoEfectivo.Suc}</TableCell>
-            <TableCell align="right">{flujoEfectivo.cRFC}</TableCell>
+            <TableCell align="right">
+              ${number_format(importe, 2, ".", ",")}
+            </TableCell>
+            <TableCell align="right">
+              $
+              {number_format(
+                parseFloat(flujoEfectivo.Pendiente) - parseFloat(importe),
+                2,
+                ".",
+                ","
+              )}
+            </TableCell>
           </TableRow>
         );
       });
@@ -6796,70 +7516,9 @@ function Paso3(props) {
             <TableCell padding="checkbox" />
             <TableCell align="right">{tiposPago.tipos[pos]}</TableCell>
             <TableCell align="right">
-              <TextField
-                className={classes.textFields}
-                style={{ minWidth: "250px" }}
-                select
-                SelectProps={{
-                  native: true,
-                }}
-                id={"paso3Proveedor" + index}
-                variant="outlined"
-                type="text"
-                value={instruccionesAdicionales.valoresProveedores[index]}
-                onChange={(e) => {
-                  let nuevosProveedores = instruccionesAdicionales.proveedores;
-                  nuevosProveedores[index] =
-                    e.target.value !== "-1"
-                      ? proveedores[parseInt(e.target.value)].razonsocial
-                      : "";
-                  let nuevosRfcProveedores =
-                    instruccionesAdicionales.rfcProveedores;
-                  nuevosRfcProveedores[index] =
-                    e.target.value !== "-1"
-                      ? proveedores[parseInt(e.target.value)].rfc
-                      : "";
-                  let nuevosValoresProveedores =
-                    instruccionesAdicionales.valoresProveedores;
-                  nuevosValoresProveedores[index] =
-                    e.target.value !== "-1" ? parseInt(e.target.value) : "-1";
-
-                  let nuevosIdsCuentasDestino =
-                    instruccionesAdicionales.idsCuentasDestino;
-                  nuevosIdsCuentasDestino[index] = 0;
-                  let nuevosIdsBancosDestino =
-                    instruccionesAdicionales.idsBancosDestino;
-                  nuevosIdsBancosDestino[index] = 0;
-                  let nuevasCuentasDestino =
-                    instruccionesAdicionales.cuentasDestino;
-                  nuevasCuentasDestino[index] = "";
-                  let nuevosValoresCuentasDestino =
-                    instruccionesAdicionales.valoresCuentasDestino;
-                  nuevosValoresCuentasDestino[index] = "-1";
-
-                  setInstruccionesAdicionales({
-                    ...instruccionesAdicionales,
-                    proveedores: nuevosProveedores,
-                    rfcProveedores: nuevosRfcProveedores,
-                    valoresProveedores: nuevosValoresProveedores,
-                    idsCuentasDestino: nuevosIdsCuentasDestino,
-                    idsBancosDestino: nuevosIdsBancosDestino,
-                    cuentasDestino: nuevasCuentasDestino,
-                    valoresCuentasDestino: nuevosValoresCuentasDestino,
-                  });
-                }}
-              >
-                <option value="-1">Seleccione un proveedor</option>
-                {proveedores.length > 0
-                  ? proveedores.map((proveedor, index) => {
-                      return (
-                        <option value={index} key={index}>
-                          {`${proveedor.razonsocial} (${proveedor.rfc})`}
-                        </option>
-                      );
-                    })
-                  : null}
-              </TextField>
+              {instruccionesAdicionales.proveedores[index] !== "-1"
+                ? instruccionesAdicionales.proveedores[index]
+                : "Pendiente"}
             </TableCell>
             <TableCell align="right">
               <TextField
@@ -6899,13 +7558,29 @@ function Paso3(props) {
                     instruccionesAdicionales.valoresCuentasOrigen;
                   nuevosValoresCuentasOrigen[index] =
                     e.target.value !== "-1" ? e.target.value : "-1";
-
+                  let nuevosBancosOrigen =
+                    instruccionesAdicionales.bancosOrigen;
+                  nuevosBancosOrigen[index] =
+                    e.target.value !== "-1"
+                      ? cuentasOrigen[parseInt(e.target.value)].Banco
+                      : "";
+                  let nuevasSucursalesOrigen =
+                    instruccionesAdicionales.sucursalesOrigen;
+                  nuevasSucursalesOrigen[index] =
+                    e.target.value !== "-1"
+                      ? cuentasOrigen[parseInt(e.target.value)].Sucursal !==
+                        null
+                        ? cuentasOrigen[parseInt(e.target.value)].Sucursal
+                        : ""
+                      : "";
                   setInstruccionesAdicionales({
                     ...instruccionesAdicionales,
                     idsCuentasOrigen: nuevosIdsCuentasOrigen,
                     idsBancosOrigen: nuevosIdsBancosOrigen,
                     cuentasOrigen: nuevasCuentasOrigen,
                     valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+                    bancosOrigen: nuevosBancosOrigen,
+                    sucursalesOrigen: nuevasSucursalesOrigen,
                   });
                 }}
               >
@@ -6920,80 +7595,9 @@ function Paso3(props) {
               </TextField>
             </TableCell>
             <TableCell align="right">
-              <TextField
-                className={classes.textFields}
-                style={{ minWidth: "250px" }}
-                id={"paso3CuentaDestino" + index}
-                variant="outlined"
-                type="text"
-                select
-                SelectProps={{
-                  native: true,
-                }}
-                inputProps={{
-                  maxLength: 20,
-                }}
-                value={instruccionesAdicionales.valoresCuentasDestino[index]}
-                onChange={(e) => {
-                  let nuevosIdsCuentasDestino =
-                    instruccionesAdicionales.idsCuentasDestino;
-                  nuevosIdsCuentasDestino[index] =
-                    e.target.value !== "-1"
-                      ? cuentasDestino.filter(
-                          (cuenta) =>
-                            cuenta.RFC ===
-                            instruccionesAdicionales.rfcProveedores[index]
-                        )[parseInt(e.target.value)].Id
-                      : 0;
-                  let nuevosIdsBancosDestino =
-                    instruccionesAdicionales.idsBancosDestino;
-                  nuevosIdsBancosDestino[index] =
-                    e.target.value !== "-1"
-                      ? cuentasDestino.filter(
-                          (cuenta) =>
-                            cuenta.RFC ===
-                            instruccionesAdicionales.rfcProveedores[index]
-                        )[parseInt(e.target.value)].IdBanco
-                      : 0;
-                  let nuevasCuentasDestino =
-                    instruccionesAdicionales.cuentasDestino;
-                  nuevasCuentasDestino[index] =
-                    e.target.value !== "-1"
-                      ? cuentasDestino.filter(
-                          (cuenta) =>
-                            cuenta.RFC ===
-                            instruccionesAdicionales.rfcProveedores[index]
-                        )[parseInt(e.target.value)].Layout
-                      : "";
-                  let nuevosValoresCuentasDestino =
-                    instruccionesAdicionales.valoresCuentasDestino;
-                  nuevosValoresCuentasDestino[index] =
-                    e.target.value !== "-1" ? e.target.value : "-1";
-
-                  setInstruccionesAdicionales({
-                    ...instruccionesAdicionales,
-                    idsCuentasDestino: nuevosIdsCuentasDestino,
-                    idsBancosDestino: nuevosIdsBancosDestino,
-                    cuentasDestino: nuevasCuentasDestino,
-                    valoresCuentasDestino: nuevosValoresCuentasDestino,
-                  });
-                }}
-              >
-                <option value="-1">Seleccione una cuenta de destino</option>
-                {cuentasDestino.length > 0
-                  ? cuentasDestino
-                      .filter(
-                        (cuenta) =>
-                          cuenta.RFC ===
-                          instruccionesAdicionales.rfcProveedores[index]
-                      )
-                      .map((cuenta, index) => (
-                        <option value={index} key={index}>
-                          {cuenta.Layout}
-                        </option>
-                      ))
-                  : null}
-              </TextField>
+              {instruccionesAdicionales.cuentasDestino[index] !== "0"
+                ? instruccionesAdicionales.cuentasDestino[index]
+                : "Pendiente"}
             </TableCell>
             <TableCell align="right">
               <TextField
@@ -7043,9 +7647,13 @@ function Paso3(props) {
                   let nuevosImportes = instruccionesAdicionales.importes;
                   nuevosImportes[index] =
                     typeof e.target.value !== "undefined" ? e.target.value : 0;
+                  let nuevosPagos = instruccionesAdicionales.pagos;
+                  nuevosPagos[index] =
+                    typeof e.target.value !== "undefined" ? e.target.value : 0;
                   setInstruccionesAdicionales({
                     ...instruccionesAdicionales,
                     importes: nuevosImportes,
+                    pagos: nuevosPagos,
                   });
 
                   if (typeof e.target.value !== "undefined") {
@@ -7074,16 +7682,27 @@ function Paso3(props) {
               />
             </TableCell>
             <TableCell align="right">
-              <TextField
-                className={classes.textFields}
-                style={{ minWidth: "150px" }}
-                id={"paso3LlavesMatch" + index}
-                variant="outlined"
-                type="text"
-                disabled
-              />
-            </TableCell>
-            <TableCell align="right">
+              <Tooltip title="Configuración de correos">
+                <IconButton
+                  onClick={() => {
+                    setIndexProveedorSelectedPagosAdicionales(index);
+                    setProveedorElegidoPagosAdicionales(proveedor);
+                    handleClickOpenDialogConfiguracionCorreosPagosAdicionales();
+                  }}
+                >
+                  <EmailIcon color="primary" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Proveedores">
+                <IconButton
+                  onClick={() => {
+                    handleClickOpenDialogProveedores();
+                    setIndexInstruccionAdicionalSelected(index);
+                  }}
+                >
+                  <PersonAddIcon color="primary" />
+                </IconButton>
+              </Tooltip>
               <Tooltip title="Quitar">
                 <IconButton
                   onClick={() => {
@@ -7100,6 +7719,913 @@ function Paso3(props) {
     }
   };
 
+  function renderRowProveedores(props) {
+    const { index, style, data } = props;
+    return (
+      <ListItem
+        button
+        style={style}
+        key={index}
+        selected={proveedorSelected === index}
+        onClick={() => {
+          setProveedorSelected(proveedorSelected !== index ? index : -1);
+          setCuentaDestinoSelected(-1);
+          setCuentasDestinoProveedor(
+            proveedorSelected !== index
+              ? cuentasDestino.filter(
+                  (cuentaDestino) => cuentaDestino.RFC === data[index].rfc
+                )
+              : []
+          );
+          setNuevaCuentaDestino(false);
+          setInfoNuevaCuenta({
+            ...infoNuevaCuenta,
+            rfcNuevaCuenta: data[index].rfc,
+          });
+        }}
+      >
+        <ListItemText
+          primary={
+            <span style={{ fontSize: "16px" }}>{data[index].razonsocial}</span>
+          }
+          secondary={`${data[index].rfc} - ${data[index].sucursal}`}
+        />
+      </ListItem>
+    );
+  }
+
+  function renderRowCuentasDestino(props) {
+    const { index, style, data } = props;
+    return (
+      <ListItem
+        button
+        style={style}
+        key={index}
+        selected={cuentaDestinoSelected === index}
+        onClick={() => {
+          setCuentaDestinoSelected(
+            cuentaDestinoSelected !== index ? index : -1
+          );
+        }}
+      >
+        <ListItemText
+          primary={
+            <span style={{ fontSize: "16px" }}>{data[index].Layout}</span>
+          }
+          secondary={data[index].RFC}
+        />
+      </ListItem>
+    );
+  }
+
+  const getDatosProveedor = () => {
+    return (
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={3} style={{ alignSelf: "flex-end" }}>
+          {/* <FormControlLabel
+            control={
+              <Checkbox
+                checked={nuevoProveedorSelected}
+                onChange={(e) => {
+                  setNuevoProveedorSelected(!nuevoProveedorSelected);
+                  setProveedorSelected(-1);
+                  setCuentaDestinoSelected(-1);
+                  setNuevaCuentaDestino(false);
+                  setCuentasDestinoProveedor([]);
+                }}
+                name="checkedNuevoProveedor"
+                color="primary"
+              />
+            }
+            label="Nuevo Proveedor"
+          /> */}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              setNuevoProveedorSelected(!nuevoProveedorSelected);
+              setProveedorSelected(-1);
+              setCuentaDestinoSelected(-1);
+              setNuevaCuentaDestino(false);
+              setCuentasDestinoProveedor([]);
+            }}
+          >
+            {!nuevoProveedorSelected ? "Nuevo Proveedor" : "Regresar"}
+          </Button>
+        </Grid>
+        {!nuevoProveedorSelected ? (
+          <Grid item xs={12} md={3}>
+            <TextField
+              className={classes.textFields}
+              id="buscarProveedor"
+              label="Buscar"
+              type="text"
+              inputProps={{
+                maxLength: 20,
+              }}
+              value={buscarProveedor}
+              onKeyPress={(e) => {
+                keyValidation(e, 3);
+              }}
+              onChange={(e) => {
+                pasteValidation(e, 3);
+                setBuscarProveedor(e.target.value);
+                setProveedorSelected(-1);
+                setCuentaDestinoSelected(-1);
+                setCuentasDestinoProveedor([]);
+              }}
+            />
+          </Grid>
+        ) : null}
+        {!nuevoProveedorSelected ? (
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} /* md={6} */>
+                  <Typography variant="subtitle1">Proveedores</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <FixedSizeList
+                    height={350}
+                    width="100%"
+                    itemSize={80}
+                    itemCount={
+                      proveedores.filter(
+                        (proveedor) =>
+                          proveedor.razonsocial
+                            .toLowerCase()
+                            .indexOf(buscarProveedor.trim().toLowerCase()) !==
+                            -1 ||
+                          proveedor.rfc
+                            .toLowerCase()
+                            .indexOf(buscarProveedor.trim().toLowerCase()) !==
+                            -1
+                      ).length
+                    }
+                    itemData={proveedores.filter(
+                      (proveedor) =>
+                        proveedor.razonsocial
+                          .toLowerCase()
+                          .indexOf(buscarProveedor.trim().toLowerCase()) !==
+                          -1 ||
+                        proveedor.rfc
+                          .toLowerCase()
+                          .indexOf(buscarProveedor.trim().toLowerCase()) !== -1
+                    )}
+                  >
+                    {renderRowProveedores}
+                  </FixedSizeList>
+                </Grid>
+              </Grid>
+            </Grid>
+            {cuentasDestinoProveedor.length > 0 && !nuevaCuentaDestino ? (
+              <Grid item xs={12} md={6}>
+                <Grid container spacing={3}>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle1">Cuentas Destino</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      style={{ float: "right" }}
+                      onClick={() => {
+                        setNuevaCuentaDestino(true);
+                      }}
+                    >
+                      Nueva Cuenta
+                    </Button>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <FixedSizeList
+                      height={350}
+                      width="100%"
+                      itemSize={80}
+                      itemCount={cuentasDestinoProveedor.length}
+                      itemData={cuentasDestinoProveedor}
+                    >
+                      {renderRowCuentasDestino}
+                    </FixedSizeList>
+                  </Grid>
+                </Grid>
+              </Grid>
+            ) : nuevaCuentaDestino ? (
+              <Grid item xs={12} md={6}>
+                <Grid container spacing={3}>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle1">
+                      Nueva Cuenta Destino
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      style={{ float: "right" }}
+                      onClick={() => {
+                        setNuevaCuentaDestino(false);
+                        setCuentaDestinoSelected(-1);
+                        const proveedoresExistentes = proveedores.filter(
+                          (proveedor) =>
+                            proveedor.razonsocial
+                              .toLowerCase()
+                              .indexOf(buscarProveedor.trim().toLowerCase()) !==
+                              -1 ||
+                            proveedor.rfc
+                              .toLowerCase()
+                              .indexOf(buscarProveedor.trim().toLowerCase()) !==
+                              -1
+                        );
+                        setCuentasDestinoProveedor(
+                          cuentasDestino.filter(
+                            (cuentaDestino) =>
+                              cuentaDestino.RFC ===
+                              proveedoresExistentes[proveedorSelected].rfc
+                          )
+                        );
+                      }}
+                    >
+                      Regresar
+                    </Button>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      className={classes.textFields}
+                      id="rfcNuevaCuenta"
+                      label="RFC"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      variant="outlined"
+                      type="text"
+                      required
+                      disabled
+                      value={infoNuevaCuenta.rfcNuevaCuenta}
+                      /* inputProps={{
+                        maxLength: 20,
+                      }}
+                      onKeyPress={(e) => {
+                        keyValidation(e, 5);
+                      }}
+                      onChange={(e) => {
+                        pasteValidation(e, 5);
+                      }} */
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      className={classes.textFields}
+                      id="cuentaNuevaCuenta"
+                      label="Cuenta"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      variant="outlined"
+                      type="text"
+                      required
+                      value={infoNuevaCuenta.cuentaNuevaCuenta}
+                      inputProps={{
+                        maxLength: 100,
+                      }}
+                      onKeyPress={(e) => {
+                        keyValidation(e, 3);
+                      }}
+                      onChange={(e) => {
+                        pasteValidation(e, 3);
+                        setInfoNuevaCuenta({
+                          ...infoNuevaCuenta,
+                          cuentaNuevaCuenta: e.target.value,
+                        });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      className={classes.textFields}
+                      id="clabeNuevaCuenta"
+                      label="Clabe"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      variant="outlined"
+                      type="text"
+                      required
+                      value={infoNuevaCuenta.clabeNuevaCuenta}
+                      inputProps={{
+                        maxLength: 30,
+                      }}
+                      onKeyPress={(e) => {
+                        keyValidation(e, 5);
+                      }}
+                      onChange={(e) => {
+                        pasteValidation(e, 5);
+                        setInfoNuevaCuenta({
+                          ...infoNuevaCuenta,
+                          clabeNuevaCuenta: e.target.value,
+                        });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      className={classes.textFields}
+                      id="bancoNuevaCuenta"
+                      label="Banco"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      variant="outlined"
+                      type="text"
+                      required
+                      value={infoNuevaCuenta.bancoNuevaCuenta}
+                      inputProps={{
+                        maxLength: 100,
+                      }}
+                      onKeyPress={(e) => {
+                        keyValidation(e, 3);
+                      }}
+                      onChange={(e) => {
+                        pasteValidation(e, 3);
+                        setInfoNuevaCuenta({
+                          ...infoNuevaCuenta,
+                          bancoNuevaCuenta: e.target.value,
+                        });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      className={classes.textFields}
+                      id="idBancoNuevaCuenta"
+                      label="Id Banco"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      variant="outlined"
+                      type="text"
+                      required
+                      value={infoNuevaCuenta.idBancoNuevaCuenta}
+                      inputProps={{
+                        maxLength: 4,
+                      }}
+                      onKeyPress={(e) => {
+                        keyValidation(e, 2);
+                      }}
+                      onChange={(e) => {
+                        pasteValidation(e, 2);
+                        setInfoNuevaCuenta({
+                          ...infoNuevaCuenta,
+                          idBancoNuevaCuenta: e.target.value,
+                        });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      className={classes.textFields}
+                      id="sucursalNuevaCuenta"
+                      label="Sucursal"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      variant="outlined"
+                      type="text"
+                      required
+                      value={infoNuevaCuenta.sucursalNuevaCuenta}
+                      inputProps={{
+                        maxLength: 5,
+                      }}
+                      onKeyPress={(e) => {
+                        keyValidation(e, 2);
+                      }}
+                      onChange={(e) => {
+                        pasteValidation(e, 2);
+                        setInfoNuevaCuenta({
+                          ...infoNuevaCuenta,
+                          sucursalNuevaCuenta: e.target.value,
+                        });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          name="esClienteNuevaCuenta"
+                          color="primary"
+                          checked={infoNuevaCuenta.esClienteNuevaCuenta}
+                          onChange={(e) => {
+                            setInfoNuevaCuenta({
+                              ...infoNuevaCuenta,
+                              esClienteNuevaCuenta: e.target.checked,
+                            });
+                          }}
+                        />
+                      }
+                      label="Cliente"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => {
+                        const {
+                          rfcNuevaCuenta,
+                          cuentaNuevaCuenta,
+                          clabeNuevaCuenta,
+                          bancoNuevaCuenta,
+                          idBancoNuevaCuenta,
+                          sucursalNuevaCuenta,
+                          esClienteNuevaCuenta,
+                        } = infoNuevaCuenta;
+                        if (cuentaNuevaCuenta.trim() === "") {
+                          swal("Error", "Ingrese una cuenta", "warning");
+                        } else if (clabeNuevaCuenta.trim() === "") {
+                          swal("Error", "Ingrese un clabe", "warning");
+                        } else if (bancoNuevaCuenta.trim() === "") {
+                          swal("Error", "Ingrese un banco", "warning");
+                        } else if (idBancoNuevaCuenta.trim() === "") {
+                          swal("Error", "Ingrese un id banco", "warning");
+                        } else if (sucursalNuevaCuenta.trim() === "") {
+                          swal("Error", "Ingrese una sucursal", "warning");
+                        } else {
+                          executeAgregarCuentaProveedor({
+                            data: {
+                              usuario: correoUsuario,
+                              pwd: passwordUsuario,
+                              rfc: rfcEmpresa,
+                              idsubmenu: 46,
+                              rfcProveedor: rfcNuevaCuenta.trim(),
+                              cuenta: cuentaNuevaCuenta.trim(),
+                              clabe: clabeNuevaCuenta.trim(),
+                              banco: bancoNuevaCuenta.trim(),
+                              idBanco: idBancoNuevaCuenta.trim(),
+                              sucursal: sucursalNuevaCuenta.trim(),
+                              esCliente: esClienteNuevaCuenta ? 1 : 2,
+                            },
+                          });
+                          setInfoNuevaCuenta({
+                            rfcNuevaCuenta: rfcNuevaCuenta,
+                            cuentaNuevaCuenta: "",
+                            clabeNuevaCuenta: "",
+                            bancoNuevaCuenta: "",
+                            idBancoNuevaCuenta: "",
+                            sucursalNuevaCuenta: "",
+                            esClienteNuevaCuenta: true,
+                          });
+                        }
+                      }}
+                    >
+                      Guardar
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Grid>
+            ) : proveedorSelected !== -1 ? (
+              <Grid item xs={12} md={6}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      style={{ float: "right" }}
+                      onClick={() => {
+                        setNuevaCuentaDestino(true);
+                      }}
+                    >
+                      Nueva Cuenta
+                    </Button>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography
+                      variant="subtitle1"
+                      style={{ textAlign: "center" }}
+                    >
+                      Sin Cuentas
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Grid>
+            ) : null}
+          </Grid>
+        ) : (
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Divider />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1">Datos Proveedor</Typography>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="razonSocialProveedor"
+                label="Razon Social"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                required
+                inputProps={{
+                  maxLength: 200,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 3);
+                }}
+                value={razonSocialProveedorNuevo}
+                onChange={(e) => {
+                  pasteValidation(e, 3);
+                  setRazonSocialProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="rfcProveedor"
+                label="RFC"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                required
+                inputProps={{
+                  maxLength: 13,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 5);
+                }}
+                value={rfcProveedorNuevo}
+                onChange={(e) => {
+                  pasteValidation(e, 5);
+                  setRfcProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="codigoProveedor"
+                label="Código"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                required
+                inputProps={{
+                  maxLength: 20,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 5);
+                }}
+                value={codigoProveedorNuevo}
+                onChange={(e) => {
+                  pasteValidation(e, 5);
+                  setCodigoProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="sucursalProveedor"
+                label="Sucursal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                required
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 3);
+                }}
+                value={sucursalProveedorNuevo}
+                onChange={(e) => {
+                  pasteValidation(e, 3);
+                  setSucursalProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="idMonedaNuevaCuenta"
+                label="Id Moneda"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                required
+                value={idMonedaProveedorNuevo}
+                inputProps={{
+                  maxLength: 4,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 2);
+                }}
+                onChange={(e) => {
+                  pasteValidation(e, 2);
+                  setIdMonedaProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="correo1Proveedor"
+                label="Correo 1"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 4);
+                }}
+                value={correo1ProveedorNuevo}
+                onChange={(e) => {
+                  pasteValidation(e, 4);
+                  setCorreo1ProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="correo2Proveedor"
+                label="Correo 2"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 4);
+                }}
+                value={correo2ProveedorNuevo}
+                onChange={(e) => {
+                  pasteValidation(e, 4);
+                  setCorreo2ProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="correo3Proveedor"
+                label="Correo 3"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 4);
+                }}
+                value={correo3ProveedorNuevo}
+                onChange={(e) => {
+                  pasteValidation(e, 4);
+                  setCorreo3ProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Divider />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1">
+                Datos Cuenta Proveedor
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="cuentaProveedor"
+                label="Cuenta"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                required
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 3);
+                }}
+                value={cuentaProveedorNuevo}
+                onChange={(e) => {
+                  pasteValidation(e, 3);
+                  setCuentaProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="clabeProveedor"
+                label="Clabe"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                required
+                inputProps={{
+                  maxLength: 30,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 5);
+                }}
+                value={clabeProveedorNuevo}
+                onChange={(e) => {
+                  pasteValidation(e, 5);
+                  setClabeProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="bancoProveedor"
+                label="Banco"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                required
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 3);
+                }}
+                value={bancoProveedorNuevo}
+                onChange={(e) => {
+                  pasteValidation(e, 3);
+                  setBancoProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="idBancoNuevaCuenta"
+                label="Id Banco"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                required
+                value={idBancoProveedorNuevo}
+                inputProps={{
+                  maxLength: 4,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 2);
+                }}
+                onChange={(e) => {
+                  pasteValidation(e, 2);
+                  setIdBancoProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                className={classes.textFields}
+                id="sucursalNuevaCuenta"
+                label="Sucursal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                type="text"
+                required
+                value={sucursalCuentaProveedorNuevo}
+                inputProps={{
+                  maxLength: 5,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 2);
+                }}
+                onChange={(e) => {
+                  pasteValidation(e, 2);
+                  setSucursalCuentaProveedorNuevo(e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="esClienteProveedorNuevo"
+                    color="primary"
+                    checked={esClienteProveedorNuevo}
+                    onChange={(e) => {
+                      setEsClienteProveedorNuevo(e.target.checked);
+                    }}
+                  />
+                }
+                label="Cliente"
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  if (razonSocialProveedorNuevo.trim() === "") {
+                    swal("Error", "Ingrese una razón social", "warning");
+                  } else if (rfcProveedorNuevo.trim() === "") {
+                    swal("Error", "Ingrese un RFC", "warning");
+                  } else if (rfcProveedorNuevo.trim().length !== 13) {
+                    swal("Error", "El RFC debe tener 13 caracteres", "warning");
+                  } else if (codigoProveedorNuevo.trim() === "") {
+                    swal("Error", "Ingrese un código", "warning");
+                  } else if (sucursalProveedorNuevo.trim() === "") {
+                    swal("Error", "Ingrese una sucursal", "warning");
+                  } else if (idMonedaProveedorNuevo.trim() === "") {
+                    swal("Error", "Ingrese un id moneda", "warning");
+                  } else if (
+                    correo1ProveedorNuevo.trim() !== "" &&
+                    !validarCorreo(correo1ProveedorNuevo.trim())
+                  ) {
+                    swal("Error", "Ingrese un correo 1 valido", "warning");
+                  } else if (
+                    correo2ProveedorNuevo.trim() !== "" &&
+                    !validarCorreo(correo2ProveedorNuevo.trim())
+                  ) {
+                    swal("Error", "Ingrese un correo 2 valido", "warning");
+                  } else if (
+                    correo3ProveedorNuevo.trim() !== "" &&
+                    !validarCorreo(correo3ProveedorNuevo.trim())
+                  ) {
+                    swal("Error", "Ingrese un correo 3 valido", "warning");
+                  } else if (cuentaProveedorNuevo.trim() === "") {
+                    swal("Error", "Ingrese una cuenta", "warning");
+                  } else if (clabeProveedorNuevo.trim() === "") {
+                    swal("Error", "Ingrese una clabe", "warning");
+                  } else if (bancoProveedorNuevo.trim() === "") {
+                    swal("Error", "Ingrese un banco", "warning");
+                  } else if (idBancoProveedorNuevo.trim() === "") {
+                    swal("Error", "Ingrese un id banco", "warning");
+                  } else if (sucursalCuentaProveedorNuevo.trim() === "") {
+                    swal("Error", "Ingrese una sucursal de banco", "warning");
+                  } else {
+                    executeAgregarNuevoProveedor({
+                      data: {
+                        usuario: correoUsuario,
+                        pwd: passwordUsuario,
+                        rfc: rfcEmpresa,
+                        idsubmenu: 46,
+                        razonSocial: razonSocialProveedorNuevo.trim(),
+                        rfcProveedor: rfcProveedorNuevo.trim(),
+                        codigo: codigoProveedorNuevo.trim(),
+                        sucursal: sucursalProveedorNuevo.trim(),
+                        idMoneda: idMonedaProveedorNuevo.trim(),
+                        correo1: correo1ProveedorNuevo.trim(),
+                        correo2: correo2ProveedorNuevo.trim(),
+                        correo3: correo3ProveedorNuevo.trim(),
+                        cuenta: cuentaProveedorNuevo.trim(),
+                        clabe: clabeProveedorNuevo.trim(),
+                        banco: bancoProveedorNuevo.trim(),
+                        idBanco: idBancoProveedorNuevo.trim(),
+                        sucursalBanco: sucursalCuentaProveedorNuevo.trim(),
+                        esCliente: esClienteProveedorNuevo ? 1 : 2,
+                      },
+                    });
+                  }
+                }}
+              >
+                Guardar
+              </Button>
+            </Grid>
+          </Grid>
+        )}
+      </Grid>
+    );
+  };
+
   const agregarInstruccionesPago = () => {
     let nuevosIds = instruccionesAdicionales.ids;
     let nuevosTipos = instruccionesAdicionales.tipos;
@@ -7112,14 +8638,18 @@ function Paso3(props) {
     let nuevasCuentasOrigen = instruccionesAdicionales.cuentasOrigen;
     let nuevosValoresCuentasOrigen =
       instruccionesAdicionales.valoresCuentasOrigen;
+    let nuevosBancosOrigen = instruccionesAdicionales.bancosOrigen;
+    let nuevasSucursalesOrigen = instruccionesAdicionales.sucursalesOrigen;
     let nuevosIdsCuentasDestino = instruccionesAdicionales.idsCuentasDestino;
     let nuevosIdsBancosDestino = instruccionesAdicionales.idsBancosDestino;
     let nuevasCuentasDestino = instruccionesAdicionales.cuentasDestino;
     let nuevosValoresCuentasDestino =
       instruccionesAdicionales.valoresCuentasDestino;
+    let nuevasSucursalesDestino = instruccionesAdicionales.sucursalesDestino;
     let nuevasFechas = instruccionesAdicionales.fechas;
     let nuevasLlavesMatch = instruccionesAdicionales.llavesMatch;
     let nuevosPagos = instruccionesAdicionales.pagos;
+    let nuevosCorreos = instruccionesAdicionales.correos;
 
     nuevosIds.push((nuevosIds.length + 1) * -1);
     nuevosTipos.push(tipoDocumento);
@@ -7131,13 +8661,17 @@ function Paso3(props) {
     nuevosIdsBancosOrigen.push(0);
     nuevasCuentasOrigen.push("0");
     nuevosValoresCuentasOrigen.push("-1");
+    nuevosBancosOrigen.push("0");
+    nuevasSucursalesOrigen.push("");
     nuevosIdsCuentasDestino.push(0);
     nuevosIdsBancosDestino.push(0);
     nuevasCuentasDestino.push("0");
     nuevosValoresCuentasDestino.push("-1");
+    nuevasSucursalesDestino.push("");
     nuevasFechas.push(moment().format("YYYY-MM-DD"));
     nuevasLlavesMatch.push("");
     nuevosPagos.push(0.0);
+    nuevosCorreos.push([]);
 
     setInstruccionesAdicionales({
       ids: nuevosIds,
@@ -7150,17 +8684,22 @@ function Paso3(props) {
       idsBancosOrigen: nuevosIdsBancosOrigen,
       cuentasOrigen: nuevasCuentasOrigen,
       valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+      bancosOrigen: nuevosBancosOrigen,
+      sucursalesOrigen: nuevasSucursalesOrigen,
       idsCuentasDestino: nuevosIdsCuentasDestino,
       idsBancosDestino: nuevosIdsBancosDestino,
       cuentasDestino: nuevasCuentasDestino,
       valoresCuentasDestino: nuevosValoresCuentasDestino,
+      sucursalesDestino: nuevasSucursalesDestino,
       fechas: nuevasFechas,
       llavesMatch: nuevasLlavesMatch,
       pagos: nuevosPagos,
+      correos: nuevosCorreos,
     });
   };
 
   const quitarInstruccionesPago = (pos) => {
+    let importeTotal = 0;
     let nuevosIds = instruccionesAdicionales.ids;
     let nuevosTipos = instruccionesAdicionales.tipos;
     let nuevosProveedores = instruccionesAdicionales.proveedores;
@@ -7172,14 +8711,18 @@ function Paso3(props) {
     let nuevasCuentasOrigen = instruccionesAdicionales.cuentasOrigen;
     let nuevosValoresCuentasOrigen =
       instruccionesAdicionales.valoresCuentasOrigen;
+    let nuevosBancosOrigen = instruccionesAdicionales.bancosOrigen;
+    let nuevasSucursalesOrigen = instruccionesAdicionales.sucursalesOrigen;
     let nuevosIdsCuentasDestino = instruccionesAdicionales.idsCuentasDestino;
     let nuevosIdsBancosDestino = instruccionesAdicionales.idsBancosDestino;
     let nuevasCuentasDestino = instruccionesAdicionales.cuentasDestino;
     let nuevosValoresCuentasDestino =
       instruccionesAdicionales.valoresCuentasDestino;
+    let nuevasSucursalesDestino = instruccionesAdicionales.sucursalesDestino;
     let nuevasFechas = instruccionesAdicionales.fechas;
     let nuevasLlavesMatch = instruccionesAdicionales.llavesMatch;
     let nuevosPagos = instruccionesAdicionales.pagos;
+    let nuevosCorreos = instruccionesAdicionales.correos;
 
     nuevosIds.splice(pos, 1);
     nuevosTipos.splice(pos, 1);
@@ -7191,13 +8734,28 @@ function Paso3(props) {
     nuevosIdsBancosOrigen.splice(pos, 1);
     nuevasCuentasOrigen.splice(pos, 1);
     nuevosValoresCuentasOrigen.splice(pos, 1);
+    nuevosBancosOrigen.splice(pos, 1);
+    nuevasSucursalesOrigen.splice(pos, 1);
     nuevosIdsCuentasDestino.splice(pos, 1);
     nuevosIdsBancosDestino.splice(pos, 1);
     nuevasCuentasDestino.splice(pos, 1);
     nuevosValoresCuentasDestino.splice(pos, 1);
+    nuevasSucursalesDestino.splice(pos, 1);
     nuevasFechas.splice(pos, 1);
     nuevasLlavesMatch.splice(pos, 1);
     nuevosPagos.splice(pos, 1);
+    nuevosCorreos.splice(pos, 1);
+
+    for (let x = 0; x < instrucciones.importes.length; x++) {
+      importeTotal = importeTotal + instrucciones.importes[x];
+    }
+
+    for (let x = 0; x < nuevosImportes.length; x++) {
+      importeTotal = importeTotal + parseFloat(nuevosImportes);
+    }
+
+    setAplicado(importeTotal);
+    setRestante(disponible - importeTotal);
 
     setInstruccionesAdicionales({
       ids: nuevosIds,
@@ -7210,13 +8768,17 @@ function Paso3(props) {
       idsBancosOrigen: nuevosIdsBancosOrigen,
       cuentasOrigen: nuevasCuentasOrigen,
       valoresCuentasOrigen: nuevosValoresCuentasOrigen,
+      bancosOrigen: nuevosBancosOrigen,
+      sucursalesOrigen: nuevasSucursalesOrigen,
       idsCuentasDestino: nuevosIdsCuentasDestino,
       idsBancosDestino: nuevosIdsBancosDestino,
       cuentasDestino: nuevasCuentasDestino,
       valoresCuentasDestino: nuevosValoresCuentasDestino,
+      sucursalesDestino: nuevasSucursalesDestino,
       fechas: nuevasFechas,
       llavesMatch: nuevasLlavesMatch,
       pagos: nuevosPagos,
+      correos: nuevosCorreos,
     });
   };
 
@@ -7231,17 +8793,6 @@ function Paso3(props) {
       ...instrucciones,
       correos: nuevosCorreosProveedores,
     });
-    /* let nuevosCorreosProveedores = correosProveedores.correo;
-    let nuevosEnviarProveedores = correosProveedores.enviar;
-    let nuevosObligatoriosProveedores = correosProveedores.obligatorio;
-    nuevosCorreosProveedores.push("");
-    nuevosEnviarProveedores.push(true);
-    nuevosObligatoriosProveedores.push(false);
-    setCorreosProveedores({
-      correo: nuevosCorreosProveedores,
-      enviar: nuevosEnviarProveedores,
-      obligatorio: nuevosObligatoriosProveedores,
-    }); */
   };
 
   const quitarCorreoProveedor = (pos) => {
@@ -7251,17 +8802,31 @@ function Paso3(props) {
       ...instrucciones,
       correos: nuevosCorreosProveedores,
     });
-    /* let nuevosCorreosProveedores = correosProveedores.correo;
-    let nuevosEnviarProveedores = correosProveedores.enviar;
-    let nuevosObligatoriosProveedores = correosProveedores.obligatorio;
-    nuevosCorreosProveedores.splice(pos, 1);
-    nuevosEnviarProveedores.splice(pos, 1);
-    nuevosObligatoriosProveedores.splice(pos, 1);
-    setCorreosProveedores({
-      correo: nuevosCorreosProveedores,
-      enviar: nuevosEnviarProveedores,
-      obligatorio: nuevosObligatoriosProveedores,
-    }); */
+  };
+
+  const agregarCorreoProveedorPagosAdicionales = () => {
+    let nuevosCorreosProveedores = instruccionesAdicionales.correos;
+    nuevosCorreosProveedores[indexProveedorSelectedPagosAdicionales].push({
+      correo: "",
+      enviar: true,
+      obligatorio: false,
+    });
+    setInstruccionesAdicionales({
+      ...instruccionesAdicionales,
+      correos: nuevosCorreosProveedores,
+    });
+  };
+
+  const quitarCorreoProveedorPagosAdicionales = (pos) => {
+    let nuevosCorreosProveedores = instruccionesAdicionales.correos;
+    nuevosCorreosProveedores[indexProveedorSelectedPagosAdicionales].splice(
+      pos,
+      1
+    );
+    setInstruccionesAdicionales({
+      ...instruccionesAdicionales,
+      correos: nuevosCorreosProveedores,
+    });
   };
 
   return (
@@ -7276,7 +8841,7 @@ function Paso3(props) {
                 SelectProps={{
                   native: true,
                 }}
-                disabled
+                /* disabled */
                 variant="outlined"
                 label="Tipo de pago"
                 type="text"
@@ -7299,7 +8864,7 @@ function Paso3(props) {
                 style={{ width: "100%" }}
                 variant="contained"
                 color="primary"
-                disabled
+                /* disabled */
                 onClick={() => {
                   agregarInstruccionesPago();
                 }}
@@ -7333,9 +8898,9 @@ function Paso3(props) {
                   <TableCell align="center">
                     <strong>Importe</strong>
                   </TableCell>
-                  <TableCell align="center">
+                  {/* <TableCell align="center">
                     <strong>Llave Match</strong>
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell align="center">
                     <SettingsIcon />
                   </TableCell>
@@ -7364,7 +8929,7 @@ function Paso3(props) {
         <DialogContent>
           <TableContainer component={Paper}>
             <Table className={classes.table} aria-label="simple table">
-              <TableHead style={{ background: "#FAFAFA" }}>
+              {/* <TableHead style={{ background: "#FAFAFA" }}>
                 <TableRow>
                   <TableCell padding="checkbox" />
                   <TableCell>
@@ -7381,6 +8946,26 @@ function Paso3(props) {
                   </TableCell>
                   <TableCell align="right">
                     <strong>RFC</strong>
+                  </TableCell>
+                </TableRow>
+              </TableHead> */}
+              <TableHead style={{ background: "#FAFAFA" }}>
+                <TableRow>
+                  <TableCell padding="checkbox" />
+                  <TableCell>
+                    <strong>Proveedor</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Serie-Folio</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Total</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Pagado</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Pendiente</strong>
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -7411,6 +8996,104 @@ function Paso3(props) {
       </Dialog>
       <Dialog
         fullScreen={fullScreenDialog}
+        open={openDialogProveedores}
+        onClose={handleCloseDialogProveedores}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+        maxWidth="lg"
+        fullWidth={true}
+      >
+        <DialogTitle id="alert-dialog-title">
+          Información Proveedores
+        </DialogTitle>
+        <DialogContent>{getDatosProveedor()}</DialogContent>
+        <DialogActions>
+          <Button
+            disabled={nuevoProveedorSelected}
+            onClick={() => {
+              if (proveedorSelected === -1) {
+                swal("Error", "Seleccione un proveedor", "warning");
+              } else if (cuentaDestinoSelected === -1) {
+                swal("Error", "Seleccione una cuenta destino", "warning");
+              } else {
+                const proveedoresFilter = proveedores.filter(
+                  (proveedor) =>
+                    proveedor.razonsocial
+                      .toLowerCase()
+                      .indexOf(buscarProveedor.trim().toLowerCase()) !== -1 ||
+                    proveedor.rfc
+                      .toLowerCase()
+                      .indexOf(buscarProveedor.trim().toLowerCase()) !== -1
+                )[proveedorSelected];
+
+                let nuevosProveedores = instruccionesAdicionales.proveedores;
+                nuevosProveedores[indexInstruccionAdicionalSelected] =
+                  proveedoresFilter.razonsocial;
+                let nuevosRfcProveedores =
+                  instruccionesAdicionales.rfcProveedores;
+                nuevosRfcProveedores[indexInstruccionAdicionalSelected] =
+                  proveedoresFilter.rfc;
+                let nuevosValoresProveedores =
+                  instruccionesAdicionales.valoresProveedores;
+                nuevosValoresProveedores[
+                  indexInstruccionAdicionalSelected
+                ] = proveedorSelected;
+
+                let nuevosIdsCuentasDestino =
+                  instruccionesAdicionales.idsCuentasDestino;
+                nuevosIdsCuentasDestino[indexInstruccionAdicionalSelected] =
+                  cuentasDestinoProveedor[cuentaDestinoSelected].Id;
+                let nuevosIdsBancosDestino =
+                  instruccionesAdicionales.idsBancosDestino;
+                nuevosIdsBancosDestino[indexInstruccionAdicionalSelected] =
+                  cuentasDestinoProveedor[cuentaDestinoSelected].IdBanco;
+                let nuevasCuentasDestino =
+                  instruccionesAdicionales.cuentasDestino;
+                nuevasCuentasDestino[indexInstruccionAdicionalSelected] =
+                  cuentasDestinoProveedor[cuentaDestinoSelected].Layout;
+                let nuevosValoresCuentasDestino =
+                  instruccionesAdicionales.valoresCuentasDestino;
+                nuevosValoresCuentasDestino[
+                  indexInstruccionAdicionalSelected
+                ] = cuentaDestinoSelected;
+                let nuevasSucursalesDestino =
+                  instruccionesAdicionales.sucursalesDestino;
+                nuevasSucursalesDestino[indexInstruccionAdicionalSelected] =
+                  cuentasDestinoProveedor[cuentaDestinoSelected].Sucursal !==
+                  null
+                    ? cuentasDestinoProveedor[cuentaDestinoSelected].Sucursal
+                    : "";
+
+                setInstruccionesAdicionales({
+                  ...instruccionesAdicionales,
+                  proveedores: nuevosProveedores,
+                  rfcProveedores: nuevosRfcProveedores,
+                  valoresProveedores: nuevosValoresProveedores,
+                  idsCuentasDestino: nuevosIdsCuentasDestino,
+                  idsBancosDestino: nuevosIdsBancosDestino,
+                  cuentasDestino: nuevasCuentasDestino,
+                  valoresCuentasDestino: nuevosValoresCuentasDestino,
+                  sucursalesDestino: nuevasSucursalesDestino,
+                });
+                handleCloseDialogProveedores();
+              }
+            }}
+            variant="contained"
+            color="primary"
+          >
+            Guardar
+          </Button>
+          <Button
+            onClick={handleCloseDialogProveedores}
+            variant="contained"
+            color="secondary"
+          >
+            Salir
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        fullScreen={fullScreenDialog}
         open={openDialogConfiguracionCorreos}
         onClose={handleCloseDialogConfiguracionCorreos}
         disableEscapeKeyDown={true}
@@ -7424,91 +9107,96 @@ function Paso3(props) {
         </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Typography variant="subtitle1">Correo de salida</Typography>
-            </Grid>
-            <Grid
-              item
-              xs={3}
-              md={1}
-              style={{ alignSelf: "center", textAlign: "center" }}
-            >
-              <Radio
-                color="primary"
-                checked={correoSalidaSelected === 0}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setCorreoSalidaSelected(0);
-                  }
-                }}
-              />
-            </Grid>
-            <Grid item xs={9} md={5}>
-              <TextField
-                className={classes.textFields}
-                id="correodesalidapredeterminado"
-                label="Correo Predeterminado"
-                disabled
-                type="text"
-                margin="normal"
-                value={`miconsultor2020@gmail.com`}
-                inputProps={{
-                  maxLength: 70,
-                }}
-                onKeyPress={(e) => {
-                  keyValidation(e, 4);
-                }}
-                onChange={(e) => {
-                  pasteValidation(e, 4);
-                }}
-                onClick={(e) => {
-                  setCorreoSalidaSelected(0);
-                }}
-              />
-            </Grid>
-            <Grid
-              item
-              xs={3}
-              md={1}
-              style={{ alignSelf: "center", textAlign: "center" }}
-            >
-              <Radio
-                color="primary"
-                checked={correoSalidaSelected === 1}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setCorreoSalidaSelected(1);
-                  }
-                }}
-              />
-            </Grid>
-            <Grid item xs={9} md={5}>
-              <TextField
-                className={classes.textFields}
-                id="correodesalida"
-                label="Correo Del Proveedor"
-                type="text"
-                margin="normal"
-                disabled={correoSalidaSelected !== 1}
-                inputProps={{
-                  maxLength: 100,
-                }}
-                onKeyPress={(e) => {
-                  keyValidation(e, 4);
-                }}
-                onChange={(e) => {
-                  pasteValidation(e, 4);
-                }}
-                onClick={(e) => {
-                  setCorreoSalidaSelected(1);
-                }}
-              />
-            </Grid>
+            {false ? (
+              <Fragment>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1">Correo de salida</Typography>
+                </Grid>
+                <Grid
+                  item
+                  xs={3}
+                  md={1}
+                  style={{ alignSelf: "center", textAlign: "center" }}
+                >
+                  <Radio
+                    color="primary"
+                    checked={correoSalidaSelected === 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setCorreoSalidaSelected(0);
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={9} md={5}>
+                  <TextField
+                    className={classes.textFields}
+                    id="correodesalidapredeterminado"
+                    label="Correo Predeterminado"
+                    disabled
+                    type="text"
+                    margin="normal"
+                    value={`miconsultor2020@gmail.com`}
+                    inputProps={{
+                      maxLength: 70,
+                    }}
+                    onKeyPress={(e) => {
+                      keyValidation(e, 4);
+                    }}
+                    onChange={(e) => {
+                      pasteValidation(e, 4);
+                    }}
+                    onClick={(e) => {
+                      setCorreoSalidaSelected(0);
+                    }}
+                  />
+                </Grid>
+                <Grid
+                  item
+                  xs={3}
+                  md={1}
+                  style={{ alignSelf: "center", textAlign: "center" }}
+                >
+                  <Radio
+                    color="primary"
+                    checked={correoSalidaSelected === 1}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setCorreoSalidaSelected(1);
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={9} md={5}>
+                  <TextField
+                    className={classes.textFields}
+                    id="correodesalida"
+                    label="Correo Del Proveedor"
+                    type="text"
+                    margin="normal"
+                    disabled={correoSalidaSelected !== 1}
+                    inputProps={{
+                      maxLength: 100,
+                    }}
+                    onKeyPress={(e) => {
+                      keyValidation(e, 4);
+                    }}
+                    onChange={(e) => {
+                      pasteValidation(e, 4);
+                    }}
+                    onClick={(e) => {
+                      setCorreoSalidaSelected(1);
+                    }}
+                  />
+                </Grid>
+              </Fragment>
+            ) : null}
             <Grid item xs={12}>
               <Typography variant="subtitle1">Correos a enviar</Typography>
             </Grid>
-            {indexProveedorSelected !== -1
-              ? instrucciones.correos[indexProveedorSelected].map(
+            {indexProveedorSelected !== -1 ? (
+              instrucciones.correos[indexProveedorSelected].length > 0 ? (
+                instrucciones.correos[indexProveedorSelected].map(
                   (infoCorreo, index) => {
                     return (
                       <Fragment key={index}>
@@ -7585,7 +9273,17 @@ function Paso3(props) {
                     );
                   }
                 )
-              : null}
+              ) : (
+                <Grid item xs={12}>
+                  <Typography
+                    variant="subtitle1"
+                    style={{ textAlign: "center" }}
+                  >
+                    Este proveedor no tiene correos configurados
+                  </Typography>
+                </Grid>
+              )
+            ) : null}
             {/* {correosProveedores.correo.map((correo, index) => {
               return (
                 <Fragment key={index}>
@@ -7674,6 +9372,217 @@ function Paso3(props) {
           </Button>
         </DialogActions>
       </Dialog>
+      <Dialog
+        fullScreen={fullScreenDialog}
+        open={openDialogConfiguracionCorreosPagosAdicionales}
+        onClose={handleCloseDialogConfiguracionCorreosPagosAdicionales}
+        disableEscapeKeyDown={true}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+        maxWidth="lg"
+        fullWidth={true}
+      >
+        <DialogTitle id="alert-dialog-title">
+          {`Configuración de correos a ${proveedorElegidoPagosAdicionales}`}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Grid container spacing={3}>
+            {false ? (
+              <Fragment>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1">Correo de salida</Typography>
+                </Grid>
+                <Grid
+                  item
+                  xs={3}
+                  md={1}
+                  style={{ alignSelf: "center", textAlign: "center" }}
+                >
+                  <Radio
+                    color="primary"
+                    checked={correoSalidaSelected === 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setCorreoSalidaSelected(0);
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={9} md={5}>
+                  <TextField
+                    className={classes.textFields}
+                    id="correodesalidapredeterminadopagoadicional"
+                    label="Correo Predeterminado"
+                    disabled
+                    type="text"
+                    margin="normal"
+                    value={`miconsultor2020@gmail.com`}
+                    inputProps={{
+                      maxLength: 70,
+                    }}
+                    onKeyPress={(e) => {
+                      keyValidation(e, 4);
+                    }}
+                    onChange={(e) => {
+                      pasteValidation(e, 4);
+                    }}
+                    onClick={(e) => {
+                      setCorreoSalidaSelected(0);
+                    }}
+                  />
+                </Grid>
+                <Grid
+                  item
+                  xs={3}
+                  md={1}
+                  style={{ alignSelf: "center", textAlign: "center" }}
+                >
+                  <Radio
+                    color="primary"
+                    checked={correoSalidaSelected === 1}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setCorreoSalidaSelected(1);
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={9} md={5}>
+                  <TextField
+                    className={classes.textFields}
+                    id="correodesalida"
+                    label="Correo Del Proveedor"
+                    type="text"
+                    margin="normal"
+                    disabled={correoSalidaSelected !== 1}
+                    inputProps={{
+                      maxLength: 100,
+                    }}
+                    onKeyPress={(e) => {
+                      keyValidation(e, 4);
+                    }}
+                    onChange={(e) => {
+                      pasteValidation(e, 4);
+                    }}
+                    onClick={(e) => {
+                      setCorreoSalidaSelected(1);
+                    }}
+                  />
+                </Grid>
+              </Fragment>
+            ) : null}
+            <Grid item xs={12}>
+              <Typography variant="subtitle1">Correos a enviar</Typography>
+            </Grid>
+            {indexProveedorSelectedPagosAdicionales !== -1 ? (
+              instruccionesAdicionales.correos[
+                indexProveedorSelectedPagosAdicionales
+              ].length > 0 ? (
+                instruccionesAdicionales.correos[
+                  indexProveedorSelectedPagosAdicionales
+                ].map((infoCorreo, index) => {
+                  return (
+                    <Fragment key={index}>
+                      <Grid item xs={9} md={5}>
+                        <TextField
+                          className={classes.textFields}
+                          id={`correoparaenviar${index + 1}`}
+                          label={`Correo ${index + 1}`}
+                          type="text"
+                          margin="normal"
+                          disabled={infoCorreo.obligatorio}
+                          value={infoCorreo.correo}
+                          inputProps={{
+                            maxLength: 100,
+                          }}
+                          onKeyPress={(e) => {
+                            keyValidation(e, 4);
+                          }}
+                          onChange={(e) => {
+                            pasteValidation(e, 4);
+                            let nuevosCorreosProveedores =
+                              instruccionesAdicionales.correos;
+                            nuevosCorreosProveedores[
+                              indexProveedorSelectedPagosAdicionales
+                            ][index].correo = e.target.value;
+                            setInstruccionesAdicionales({
+                              ...instruccionesAdicionales,
+                              correos: nuevosCorreosProveedores,
+                            });
+                          }}
+                        />
+                      </Grid>
+                      <Grid
+                        item
+                        xs={3}
+                        md={1}
+                        style={{ alignSelf: "center", textAlign: "center" }}
+                      >
+                        {infoCorreo.obligatorio ? (
+                          <Checkbox
+                            color="primary"
+                            checked={infoCorreo.enviar}
+                            onChange={(e) => {
+                              let nuevosCorreos =
+                                instruccionesAdicionales.correos;
+                              nuevosCorreos[
+                                indexProveedorSelectedPagosAdicionales
+                              ][index].enviar = e.target.checked;
+                              setInstruccionesAdicionales({
+                                ...instruccionesAdicionales,
+                                correos: nuevosCorreos,
+                              });
+                            }}
+                          />
+                        ) : (
+                          <Tooltip title="Quitar">
+                            <IconButton
+                              onClick={() => {
+                                quitarCorreoProveedorPagosAdicionales(index);
+                              }}
+                            >
+                              <CloseIcon color="secondary" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Grid>
+                    </Fragment>
+                  );
+                })
+              ) : (
+                <Grid item xs={12}>
+                  <Typography
+                    variant="subtitle1"
+                    style={{ textAlign: "center" }}
+                  >
+                    Este proveedor no tiene correos configurados
+                  </Typography>
+                </Grid>
+              )
+            ) : null}
+            <Grid item xs={12}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  agregarCorreoProveedorPagosAdicionales();
+                }}
+              >
+                Agregar Correo
+              </Button>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseDialogConfiguracionCorreosPagosAdicionales}
+            variant="contained"
+            color="secondary"
+          >
+            Salir
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Grid>
   );
 }
@@ -7684,17 +9593,21 @@ function Paso4(props) {
   const fullScreenDialog = useMediaQuery(theme.breakpoints.down("xs"));
   const instruccionesPagoProveedores = props.instruccionesPagoProveedores;
   const instruccionesCombinadas = props.instruccionesCombinadas;
+  const setInstruccionesCombinadas = props.setInstruccionesCombinadas;
   const informacionBancos = props.informacionBancos;
   const setInformacionBancos = props.setInformacionBancos;
   const correoUsuario = props.correoUsuario;
   const passwordUsuario = props.passwordUsuario;
   const rfcEmpresa = props.rfcEmpresa;
-  const idUsuario = props.idUsuario;
+  /* const idUsuario = props.idUsuario; */
   /* const usuarioStorage = props.usuarioStorage;
   const passwordStorage = props.passwordStorage;
   const executeGenerarLayouts = props.executeGenerarLayouts; */
   const setLoading = props.setLoading;
   const tiposPago = props.tiposPago;
+  const idPagosAdicionalesExistentes = props.idPagosAdicionalesExistentes;
+  const instrucciones = props.instrucciones;
+  const instruccionesAdicionales = props.instruccionesAdicionales;
   /* const [infoLayouts, setInfoLayouts] = useState({
     ids: [],
     idsBancosOrigen: [],
@@ -7712,8 +9625,18 @@ function Paso4(props) {
   const [totalEspecificosExtras, setTotalEspecificosExtras] = useState(0.0);
   const [openDialogInstrucciones, setOpenDialogInstrucciones] = useState(false);
   const [openDialogLayoutsBancos, setOpenDialogLayoutsBancos] = useState(false);
-  const [layoutsBancos, setLayoutsBancos] = useState([]);
-  const [idBancoElegido, setIdBancoElegido] = useState(-1);
+  /* const [layoutsBancos, setLayoutsBancos] = useState([]); */
+  const [layoutsExistentesBancos, setLayoutsExistentesBancos] = useState([]);
+  /* const [layoutContentConfig, setLayoutContentConfig] = useState([]); */
+  /* const [idBancoElegido, setIdBancoElegido] = useState(-1); */
+  const [infoBancosLayouts, setInfoBancosLayouts] = useState({
+    idsBancosOrigen: [],
+    bancosOrigen: [],
+    combinacionesBancos: [],
+    idsLayouts: [],
+    nombresLayouts: [],
+    linksLayouts: [],
+  });
   const [
     {
       data: traerFlujosEfectivoFiltradosData,
@@ -7769,6 +9692,93 @@ function Paso4(props) {
   );
 
   useEffect(() => {
+    /* console.log(instrucciones);
+    console.log(instruccionesAdicionales);
+    console.log(idPagosAdicionalesExistentes); */
+    if (idPagosAdicionalesExistentes.length > 0) {
+      /* let ids = instrucciones.ids.concat(instruccionesAdicionales.ids); */
+      let ids = instrucciones.ids.concat(idPagosAdicionalesExistentes);
+      let tipos = instrucciones.tipos.concat(instruccionesAdicionales.tipos);
+      let proveedores = instrucciones.proveedores.concat(
+        instruccionesAdicionales.proveedores
+      );
+      let rfcProveedores = instrucciones.rfcProveedores.concat(
+        instruccionesAdicionales.rfcProveedores
+      );
+      let importes = instrucciones.importes.concat(
+        instruccionesAdicionales.importes
+      );
+      let idsCuentasOrigen = instrucciones.idsCuentasOrigen.concat(
+        instruccionesAdicionales.idsCuentasOrigen
+      );
+      let idsBancosOrigen = instrucciones.idsBancosOrigen.concat(
+        instruccionesAdicionales.idsBancosOrigen
+      );
+      let cuentasOrigen = instrucciones.cuentasOrigen.concat(
+        instruccionesAdicionales.cuentasOrigen
+      );
+      let bancosOrigen = instrucciones.bancosOrigen.concat(
+        instruccionesAdicionales.bancosOrigen
+      );
+      let sucursalesOrigen = instrucciones.sucursalesOrigen.concat(
+        instruccionesAdicionales.sucursalesOrigen
+      );
+      let idsCuentasDestino = instrucciones.idsCuentasDestino.concat(
+        instruccionesAdicionales.idsCuentasDestino
+      );
+      let idsBancosDestino = instrucciones.idsBancosDestino.concat(
+        instruccionesAdicionales.idsBancosDestino
+      );
+      let cuentasDestino = instrucciones.cuentasDestino.concat(
+        instruccionesAdicionales.cuentasDestino
+      );
+      let sucursalesDestino = instrucciones.sucursalesDestino.concat(
+        instruccionesAdicionales.sucursalesDestino
+      );
+      let fechas = instrucciones.fechas.concat(instruccionesAdicionales.fechas);
+      let llavesMatch = instrucciones.llavesMatch.concat(
+        instruccionesAdicionales.llavesMatch
+      );
+      let pagos = instrucciones.pagos.concat(instruccionesAdicionales.pagos);
+      for (let x = 0; x < instruccionesAdicionales.correos.length; x++) {
+        for (let y = 0; y < instruccionesAdicionales.correos[x].length; y++) {
+          instruccionesAdicionales.correos[x][y].idPago =
+            idPagosAdicionalesExistentes[x];
+        }
+      }
+      let correos = instrucciones.correos.concat(
+        instruccionesAdicionales.correos
+      );
+      setInstruccionesCombinadas({
+        ...instruccionesAdicionales,
+        ids: ids,
+        tipos: tipos,
+        proveedores: proveedores,
+        rfcProveedores: rfcProveedores,
+        importes: importes,
+        idsCuentasOrigen: idsCuentasOrigen,
+        idsBancosOrigen: idsBancosOrigen,
+        cuentasOrigen: cuentasOrigen,
+        bancosOrigen: bancosOrigen,
+        sucursalesOrigen: sucursalesOrigen,
+        idsCuentasDestino: idsCuentasDestino,
+        idsBancosDestino: idsBancosDestino,
+        cuentasDestino: cuentasDestino,
+        sucursalesDestino: sucursalesDestino,
+        fechas: fechas,
+        llavesMatch: llavesMatch,
+        pagos: pagos,
+        correos: correos,
+      });
+    }
+  }, [
+    instrucciones,
+    instruccionesAdicionales,
+    idPagosAdicionalesExistentes,
+    setInstruccionesCombinadas,
+  ]);
+
+  useEffect(() => {
     let nuevosIds = [];
     let nuevosTipos = [];
     let nuevosProveedores = [];
@@ -7777,73 +9787,26 @@ function Paso4(props) {
     let nuevosIdsCuentasOrigen = [];
     let nuevosIdsBancosOrigen = [];
     let nuevasCuentasOrigen = [];
+    let nuevosBancosOrigen = [];
+    let nuevasSucursalesOrigen = [];
     let nuevosIdsCuentasDestino = [];
     let nuevosIdsBancosDestino = [];
     let nuevasCuentasDestino = [];
+    let nuevasSucursalesDestino = [];
     let nuevasFechas = [];
     let nuevasLlavesMatch = [];
     let nuevosTiposLayouts = [];
     let nuevosPagos = [];
     let nuevosImportesPorPagos = [];
     let nuevosIdsFlwPorPago = [];
-
-    /* function verExistencia(cuentaOrigen, cuentaDestino, proveedor) {
-      let pos = -1;
-      for (let x = 0; x < nuevasCuentasOrigen.length; x++) {
-        if (
-          nuevasCuentasOrigen[x] === cuentaOrigen &&
-          nuevasCuentasDestino[x] === cuentaDestino &&
-          nuevosProveedores[x] === proveedor
-        ) {
-          pos = x;
-          break;
-        }
-      }
-      return pos;
-    } */
-
-    /* function verExistencia(idBancoOrigen, idBancoDestino, proveedor) {
-      console.log(idBancoOrigen, idBancoDestino, proveedor);
-      let pos = -1;
-      for (let x = 0; x < nuevasCuentasOrigen.length; x++) {
-        if (
-          nuevosIdsBancosOrigen[x] === idBancoOrigen &&
-          nuevosIdsBancosDestino[x] === idBancoDestino &&
-          nuevosProveedores[x] === proveedor
-        ) {
-          pos = x;
-          break;
-        }
-      }
-      return pos;
-    } */
-
-    /* function verExistencia(idCuentaOrigen, idBancoDestino) {
-      let pos = -1;
-      for (let x = 0; x < nuevasCuentasOrigen.length; x++) {
-        console.log("x:",x);
-        console.log("Ids Cuenta Origen Existentes:",nuevosIdsCuentasOrigen[x], "Id Cuenta origen:",idCuentaOrigen);
-        console.log("Ids Bancos Destinos Existentes:",nuevosIdsBancosDestino[x], "Id Banco Destino:",idBancoDestino);
-        if (
-          nuevosIdsCuentasOrigen[x] === idCuentaOrigen &&
-          nuevosIdsBancosDestino[x] === idBancoDestino
-        ) {
-          pos = x;
-          break;
-        }
-        if(nuevosIdsCuentasOrigen[x] === idCuentaOrigen &&
-          nuevosIdsBancosDestino[x] !== idBancoDestino) {
-            pos = x;
-            break;
-          }
-      }
-      return pos;
-    } */
+    let nuevasCombinacionesBancos = [];
+    let nuevosIdsLayouts = [];
+    let nuevosNombresLayouts = [];
+    let nuevosLinksLayouts = [];
 
     function verExistencia(idCuentaOrigen, idBancoOrigen, idBancoDestino) {
       let pos = -1;
       let posiciones = [];
-      //1. Checar si existe la cuenta de origen ya. 2. Si existe ver si en alguna pocisión esta una cuenta destino igual y si no una desigual. 3.sacar la posicion en la cual esta la cuenta destino igual o desigual.
       for (let x = 0; x < nuevosIdsCuentasOrigen.length; x++) {
         if (nuevosIdsCuentasOrigen[x] === idCuentaOrigen) {
           posiciones.push(x);
@@ -7866,18 +9829,7 @@ function Paso4(props) {
       return pos;
     }
 
-    //console.log(instruccionesCombinadas);
     for (let x = 0; x < instruccionesCombinadas.idsBancosOrigen.length; x++) {
-      /* let pos = verExistencia(
-        instruccionesCombinadas.cuentasOrigen[x],
-        instruccionesCombinadas.cuentasDestino[x],
-        instruccionesCombinadas.proveedores[x]
-      ); */
-      /* let pos = verExistencia(
-        instruccionesCombinadas.idsBancosOrigen[x],
-        instruccionesCombinadas.idsBancosDestino[x],
-        instruccionesCombinadas.proveedores[x]
-      ); */
       let pos = verExistencia(
         instruccionesCombinadas.idsCuentasOrigen[x],
         instruccionesCombinadas.idsBancosOrigen[x],
@@ -7894,6 +9846,10 @@ function Paso4(props) {
         );
         nuevosIdsBancosOrigen.push(instruccionesCombinadas.idsBancosOrigen[x]);
         nuevasCuentasOrigen.push(instruccionesCombinadas.cuentasOrigen[x]);
+        nuevosBancosOrigen.push(instruccionesCombinadas.bancosOrigen[x]);
+        nuevasSucursalesOrigen.push(
+          instruccionesCombinadas.sucursalesOrigen[x]
+        );
         nuevosIdsCuentasDestino.push(
           instruccionesCombinadas.idsCuentasDestino[x]
         );
@@ -7901,16 +9857,36 @@ function Paso4(props) {
           instruccionesCombinadas.idsBancosDestino[x]
         );
         nuevasCuentasDestino.push(instruccionesCombinadas.cuentasDestino[x]);
+        nuevasSucursalesDestino.push(
+          instruccionesCombinadas.sucursalesDestino[x]
+        );
         nuevasFechas.push(instruccionesCombinadas.fechas[x]);
         nuevasLlavesMatch.push(instruccionesCombinadas.llavesMatch[x]);
         nuevosTiposLayouts.push(1);
         nuevosPagos.push(parseFloat(instruccionesCombinadas.pagos[x]));
         nuevosImportesPorPagos.push(instruccionesCombinadas.importes[x]);
         nuevosIdsFlwPorPago.push(instruccionesCombinadas.ids[x]);
+        nuevasCombinacionesBancos.push(
+          instruccionesCombinadas.idsBancosOrigen[x] ===
+            instruccionesCombinadas.idsBancosDestino[x]
+            ? 1
+            : 2
+        );
+        nuevosIdsLayouts.push("");
+        nuevosNombresLayouts.push("");
+        nuevosLinksLayouts.push("");
       } else {
         nuevosIds[pos] = nuevosIds[pos] + "," + instruccionesCombinadas.ids[x];
-        nuevosProveedores[pos] = nuevosProveedores[pos] + "-$-" + instruccionesCombinadas.proveedores[x];
-        nuevosRFCProveedores[pos] = nuevosRFCProveedores[pos] + "-$-" + instruccionesCombinadas.rfcProveedores[x];
+        nuevosTipos[pos] =
+          nuevosTipos[pos] + "-$-" + instruccionesCombinadas.tipos[x];
+        nuevosProveedores[pos] =
+          nuevosProveedores[pos] +
+          "-$-" +
+          instruccionesCombinadas.proveedores[x];
+        nuevosRFCProveedores[pos] =
+          nuevosRFCProveedores[pos] +
+          "-$-" +
+          instruccionesCombinadas.rfcProveedores[x];
         nuevosImportes[pos] =
           nuevosImportes[pos] + instruccionesCombinadas.importes[x];
         nuevosPagos[pos] = nuevosPagos[pos] + instruccionesCombinadas.pagos[x];
@@ -7918,9 +9894,20 @@ function Paso4(props) {
           nuevasFechas[pos] =
             nuevasFechas[pos] + ", " + instruccionesCombinadas.fechas[x];
         }
-        nuevasCuentasDestino[pos] = nuevasCuentasDestino[pos] + "-$-" + instruccionesCombinadas.cuentasDestino[x];
-        nuevosImportesPorPagos[pos] = nuevosImportesPorPagos[pos] + "-$-" + instruccionesCombinadas.importes[x];
-        nuevosIdsFlwPorPago[pos] = nuevosIdsFlwPorPago[pos] + "-$-" + instruccionesCombinadas.ids[x];
+        nuevasCuentasDestino[pos] =
+          nuevasCuentasDestino[pos] +
+          "-$-" +
+          instruccionesCombinadas.cuentasDestino[x];
+        nuevasSucursalesDestino[pos] =
+          nuevasSucursalesDestino[pos] +
+          "-$-" +
+          instruccionesCombinadas.sucursalesDestino[x];
+        nuevosImportesPorPagos[pos] =
+          nuevosImportesPorPagos[pos] +
+          "-$-" +
+          instruccionesCombinadas.importes[x];
+        nuevosIdsFlwPorPago[pos] =
+          nuevosIdsFlwPorPago[pos] + "-$-" + instruccionesCombinadas.ids[x];
       }
     }
     setInformacionBancos({
@@ -7932,15 +9919,22 @@ function Paso4(props) {
       idsCuentasOrigen: nuevosIdsCuentasOrigen,
       idsBancosOrigen: nuevosIdsBancosOrigen,
       cuentasOrigen: nuevasCuentasOrigen,
+      bancosOrigen: nuevosBancosOrigen,
+      sucursalesOrigen: nuevasSucursalesOrigen,
       idsCuentasDestino: nuevosIdsCuentasDestino,
       idsBancosDestino: nuevosIdsBancosDestino,
       cuentasDestino: nuevasCuentasDestino,
+      sucursalesDestino: nuevasSucursalesDestino,
       fechas: nuevasFechas,
       llavesMatch: nuevasLlavesMatch,
       tiposLayouts: nuevosTiposLayouts,
       pagos: nuevosPagos,
       importesPorPagos: nuevosImportesPorPagos,
       idsFlwPorPago: nuevosIdsFlwPorPago,
+      combinacionesBancos: nuevasCombinacionesBancos,
+      idsLayouts: nuevosIdsLayouts,
+      nombresLayouts: nuevosNombresLayouts,
+      linksLayouts: nuevosLinksLayouts,
     });
   }, [instruccionesCombinadas, setInformacionBancos]);
 
@@ -7987,13 +9981,54 @@ function Paso4(props) {
             "warning"
           );
         } else {
-          setLayoutsBancos(traerLayoutsPorIdBancoData.layouts);
+          /* setLayoutsBancos(traerLayoutsPorIdBancoData.layouts); */
+          setLayoutsExistentesBancos(traerLayoutsPorIdBancoData.layouts);
+          /* console.log(traerLayoutsPorIdBancoData.layouts);
+          console.log(informacionBancos); */
+          /* let bancosOrigen = informacionBancos.bancosOrigen;
+          let combinacionesBancos = informacionBancos.combinacionesBancos; */
+
+          let nuevosIdsBancosOrigen = [];
+          let nuevosBancosOrigen = [];
+          let nuevasCombinacionesBancos = [];
+          let nuevosIdsLayouts = [];
+          let nuevosNombresLayouts = [];
+          let nuevosLinksLayouts = [];
+
+          for (let x = 0; x < informacionBancos.idsBancosOrigen.length; x++) {
+            nuevosIdsBancosOrigen.push(informacionBancos.idsBancosOrigen[x]);
+            nuevosBancosOrigen.push(informacionBancos.bancosOrigen[x]);
+            nuevasCombinacionesBancos.push(
+              informacionBancos.combinacionesBancos[x]
+            );
+            nuevosIdsLayouts.push(0);
+            nuevosNombresLayouts.push("");
+            nuevosLinksLayouts.push("");
+            const infoLayout = traerLayoutsPorIdBancoData.layouts.filter(
+              (layout) =>
+                layout.IdBanco === informacionBancos.idsBancosOrigen[x] &&
+                layout.Destino === informacionBancos.combinacionesBancos[x]
+            );
+            if (infoLayout.length > 0) {
+              nuevosIdsLayouts[x] = infoLayout[0].id;
+              nuevosNombresLayouts[x] = infoLayout[0].NombreLayout;
+              nuevosLinksLayouts[x] = infoLayout[0].LinkLayout;
+            }
+          }
+          setInfoBancosLayouts({
+            idsBancosOrigen: nuevosIdsBancosOrigen,
+            bancosOrigen: nuevosBancosOrigen,
+            combinacionesBancos: nuevasCombinacionesBancos,
+            idsLayouts: nuevosIdsLayouts,
+            nombresLayouts: nuevosNombresLayouts,
+            linksLayouts: nuevosLinksLayouts,
+          });
         }
       }
     }
 
     checkData();
-  }, [traerLayoutsPorIdBancoData]);
+  }, [traerLayoutsPorIdBancoData, informacionBancos]);
 
   useEffect(() => {
     function checkData() {
@@ -8005,7 +10040,7 @@ function Paso4(props) {
             "warning"
           );
         } else {
-          setLayoutsBancos(cambiarLayoutElegidoData.layouts);
+          /* setLayoutsBancos(cambiarLayoutElegidoData.layouts); */
         }
       }
     }
@@ -8013,13 +10048,21 @@ function Paso4(props) {
     checkData();
   }, [cambiarLayoutElegidoData]);
 
-  if (traerFlujosEfectivoFiltradosLoading || traerLayoutsPorIdBancoLoading || cambiarLayoutElegidoLoading) {
+  if (
+    traerFlujosEfectivoFiltradosLoading ||
+    traerLayoutsPorIdBancoLoading ||
+    cambiarLayoutElegidoLoading
+  ) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (traerFlujosEfectivoFiltradosError || traerLayoutsPorIdBancoError || cambiarLayoutElegidoError) {
+  if (
+    traerFlujosEfectivoFiltradosError ||
+    traerLayoutsPorIdBancoError ||
+    cambiarLayoutElegidoError
+  ) {
     return <ErrorQueryDB />;
   }
 
@@ -8128,13 +10171,16 @@ function Paso4(props) {
                     /* console.log(informacionBancos);
                     console.log(instruccionesCombinadas);
                     console.log(informacionBancos.ids[index]); */
-                    obtenerDocumentosPorPago(informacionBancos.ids[index]);
+                    obtenerDocumentosPorPago(
+                      informacionBancos.ids[index],
+                      informacionBancos.tipos[index]
+                    );
                   }}
                 >
                   <FindInPageIcon color="primary" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Configuracion De Layouts">
+              {/* <Tooltip title="Configuracion De Layouts">
                 <IconButton
                   onClick={() => {
                     executeTraerLayoutsPorIdBanco({
@@ -8143,17 +10189,17 @@ function Paso4(props) {
                         pwd: passwordUsuario,
                         rfc: rfcEmpresa,
                         idsubmenu: 46,
-                        idUsuario: idUsuario,
                         idBanco: informacionBancos.idsBancosOrigen[index],
+                        combinacion:
+                          informacionBancos.combinacionesBancos[index],
                       },
                     });
-                    setIdBancoElegido(informacionBancos.idsBancosOrigen[index]);
                     handleClickOpenDialogLayoutsBancos();
                   }}
                 >
                   <FileCopyIcon color="primary" />
                 </IconButton>
-              </Tooltip>
+              </Tooltip> */}
             </TableCell>
           </TableRow>
         );
@@ -8161,14 +10207,16 @@ function Paso4(props) {
     }
   };
 
-  const obtenerDocumentosPorPago = (ids) => {
+  const obtenerDocumentosPorPago = (ids, tiposDocumentos) => {
     let idsExtraidos = ids.toString().split(",");
+    let tiposDocumentosExtraidos = tiposDocumentos.toString().split("-$-");
     let nuevosIds = [];
     let nuevosFlujosEfectivosFiltradosExtras = [];
     let nuevoTotalExtra = 0.0;
     for (let x = 0; x < idsExtraidos.length; x++) {
       idsExtraidos[x] = parseInt(idsExtraidos[x]);
-      if (idsExtraidos[x] > 0) {
+      tiposDocumentosExtraidos[x] = parseInt(tiposDocumentosExtraidos[x]);
+      if (tiposDocumentosExtraidos[x] === 1) {
         nuevosIds.push(idsExtraidos[x]);
       } else {
         for (let y = 0; y < instruccionesCombinadas.ids.length; y++) {
@@ -8298,9 +10346,11 @@ function Paso4(props) {
 
   const handleCloseDialogLayoutsBancos = () => {
     setOpenDialogLayoutsBancos(false);
+    /* setLayoutContentConfig([]); */
   };
 
-  const getLayoutsBancos = () => {
+  /* const getLayoutsBancos2 = () => {
+    console.log(layoutsExistentesBancos);
     if (layoutsBancos.length > 0) {
       return layoutsBancos.map((layout, index) => {
         return (
@@ -8324,7 +10374,7 @@ function Paso4(props) {
                       idBancoActual: idBancoElegido,
                       idBanco: layout.IdBanco,
                       idLayout: layout.id,
-                    }
+                    },
                   });
                 }}
               >
@@ -8344,6 +10394,195 @@ function Paso4(props) {
         <Typography variant="subtitle1" style={{ textAlign: "center" }}>
           Sin Layouts
         </Typography>
+      );
+    }
+  }; */
+
+  /* const getLayoutsBancos = () => {
+    if (layoutsExistentesBancos.length > 0) {
+      return layoutsExistentesBancos.map((layout, index) => {
+        return (
+          <ListItem key={index} button selected={layout.Eleccion === 1}>
+            <ListItemText
+              primary={layout.NombreLayout}
+              secondary={
+                layout.Destino === 1
+                  ? "Mismo Banco"
+                  : layout.Destino === 2
+                  ? "Otros Bancos"
+                  : ""
+              }
+            />
+            <ListItemSecondaryAction>
+              <Tooltip title="Ver Contenido">
+                <IconButton
+                  edge="end"
+                  aria-label="details"
+                  onClick={() => {
+                    setLayoutContentConfig(
+                      layoutsExistentesBancos[index].ConfigContent
+                    );
+                  }}
+                >
+                  <ListAltIcon color="primary" />
+                </IconButton>
+              </Tooltip>
+            </ListItemSecondaryAction>
+          </ListItem>
+        );
+      });
+    } else {
+      return (
+        <Typography variant="subtitle1" style={{ textAlign: "center" }}>
+          Sin Layouts
+        </Typography>
+      );
+    }
+  };
+
+  const getLayoutConfigContent = () => {
+    if (layoutContentConfig.length > 0) {
+      return layoutContentConfig.map((layout, index) => {
+        return (
+          <ListItem key={index}>
+            <ListItemText
+              primary={`${layout.posicion}. ${layout.NombreVariable}`}
+              secondary={`Longitud: ${layout.Longitud}. Alineación: ${
+                layout.Alineacion === 1 ? "Derecha" : "Izquierda"
+              }. Llenado: ${
+                layout.Llenado === " " || layout.Llenado === null
+                  ? "Espacios"
+                  : layout.Llenado
+              }.`}
+            />
+          </ListItem>
+        );
+      });
+    } else {
+      return (
+        <Typography variant="subtitle1" style={{ textAlign: "center" }}>
+          Sin Layout Seleccionado
+        </Typography>
+      );
+    }
+  }; */
+
+  const getLayoutsBancos = () => {
+    /* console.log(informacionBancos);
+    console.log(layoutsExistentesBancos);
+    console.log(infoBancosLayouts); */
+    if (infoBancosLayouts.bancosOrigen.length > 0) {
+      return infoBancosLayouts.bancosOrigen.map((bancoOrigen, index) => {
+        /* const infoLayout = layoutsExistentesBancos.filter(
+          (layout) =>
+            layout.IdBanco === informacionBancos.idsBancosOrigen[index] &&
+            layout.Destino === informacionBancos.combinacionesBancos[index]
+        );
+        console.log(infoLayout); */
+        return (
+          <TableRow key={index}>
+            <TableCell padding="checkbox" />
+            <TableCell component="th" scope="row">
+              {infoBancosLayouts.bancosOrigen[index]}
+            </TableCell>
+            <TableCell align="right">
+              {infoBancosLayouts.combinacionesBancos[index] === 1
+                ? "Mismo Banco"
+                : "Otros Bancos"}
+            </TableCell>
+            <TableCell align="right">
+              <TextField
+                className={classes.textFields}
+                select
+                SelectProps={{
+                  native: true,
+                }}
+                value={infoBancosLayouts.idsLayouts[index]}
+                variant="outlined"
+                type="text"
+                margin="normal"
+                onChange={(e) => {
+                  let nuevosIdsLayouts = infoBancosLayouts.idsLayouts;
+                  let nuevosNombresLayouts = infoBancosLayouts.nombresLayouts;
+                  let nuevosLinksLayouts = infoBancosLayouts.linksLayouts;
+
+                  const nuevoLayout = layoutsExistentesBancos.filter(
+                    (layout) => layout.id === parseInt(e.target.value)
+                  );
+                  nuevosIdsLayouts[index] =
+                    nuevoLayout.length > 0 ? nuevoLayout[0].id : 0;
+                  nuevosNombresLayouts[index] =
+                    nuevoLayout.length > 0 ? nuevoLayout[0].NombreLayout : "";
+                  nuevosLinksLayouts[index] =
+                    nuevoLayout.length > 0 ? nuevoLayout[0].LinkLayout : "";
+
+                  setInfoBancosLayouts({
+                    ...infoBancosLayouts,
+                    idsLayouts: nuevosIdsLayouts,
+                    nombresLayouts: nuevosNombresLayouts,
+                    linksLayouts: nuevosLinksLayouts,
+                  });
+                }}
+              >
+                <option value={0}>Sin Layout</option>
+                {layoutsExistentesBancos.map((layout, index) => {
+                  return (
+                    <option key={index} value={layout.id}>
+                      {layout.NombreLayout}
+                    </option>
+                  );
+                })}
+              </TextField>
+              {/* <span style={{ color: "blue" }}>
+                  {infoLayout[0].NombreLayout}.txt
+                </span> */}
+              {/* {infoLayout.length > 0 ? (
+                <TextField
+                  className={classes.textFields}
+                  select
+                  SelectProps={{
+                    native: true,
+                  }}
+                  value={infoLayout[0].id}
+                  variant="outlined"
+                  type="text"
+                  margin="normal"
+                >
+                  {layoutsExistentesBancos.map((layout, index) => {
+                    return (
+                      <option key={index} value={layout.id}>{layout.NombreLayout}</option>
+                    )
+                  })}
+                </TextField>
+              ) : (
+                <TextField
+                  className={classes.textFields}
+                  select
+                  SelectProps={{
+                    native: true,
+                  }}
+                  variant="outlined"
+                  type="text"
+                  margin="normal"
+                >
+                  <option value={0}>Sin Layout</option>
+                  {layoutsExistentesBancos.map((layout, index) => {
+                    return (
+                      <option key={index} value={layout.id}>{layout.NombreLayout}</option>
+                    )
+                  })}
+                </TextField>
+              )} */}
+            </TableCell>
+          </TableRow>
+        );
+      });
+    } else {
+      return (
+        <TableRow>
+          <TableCell padding="checkbox" />
+          <TableCell colSpan={3}>Sin Layouts</TableCell>
+        </TableRow>
       );
     }
   };
@@ -8377,6 +10616,25 @@ function Paso4(props) {
             Descargar Seleccionados
           </Button>
         </Grid> */}
+        <Grid item xs={12}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              executeTraerLayoutsPorIdBanco({
+                params: {
+                  usuario: correoUsuario,
+                  pwd: passwordUsuario,
+                  rfc: rfcEmpresa,
+                  idsubmenu: 46,
+                },
+              });
+              handleClickOpenDialogLayoutsBancos();
+            }}
+          >
+            Configuración de Layouts
+          </Button>
+        </Grid>
         <Grid item xs={12}>
           <TableContainer component={Paper}>
             <Table className={classes.table} aria-label="simple table">
@@ -8532,18 +10790,80 @@ function Paso4(props) {
         maxWidth="lg"
         fullWidth={true}
       >
-        <DialogTitle id="alert-dialog-title">Layouts De Banco</DialogTitle>
+        <DialogTitle id="alert-dialog-title">
+          Información de Layouts
+        </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <Typography variant="subtitle1">
-                *Si no hay un layout elegido, por default se tomara el genérico.
-              </Typography>
+              <TableContainer component={Paper}>
+                <Table className={classes.table} aria-label="simple table">
+                  <TableHead style={{ background: "#FAFAFA" }}>
+                    <TableRow>
+                      <TableCell padding="checkbox" />
+                      <TableCell>
+                        <strong>Banco Origen</strong>
+                      </TableCell>
+                      <TableCell align="right">
+                        <strong>Banco Destino</strong>
+                      </TableCell>
+                      <TableCell align="right">
+                        <strong>Layout</strong>
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>{getLayoutsBancos()}</TableBody>
+                </Table>
+              </TableContainer>
             </Grid>
-            {getLayoutsBancos()}
+            {/* <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" style={{ textAlign: "center" }}>
+                Layouts
+              </Typography>
+              <List
+                component="nav"
+                aria-labelledby="nested-list-subheader"
+                className={classes.root}
+              >
+                {getLayoutsBancos()}
+              </List>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" style={{ textAlign: "center" }}>
+                Contenido Layout
+              </Typography>
+              <List
+                component="nav"
+                aria-labelledby="nested-list-subheader"
+                className={classes.root}
+                dense={false}
+              >
+                {getLayoutConfigContent()}
+              </List>
+            </Grid> */}
           </Grid>
         </DialogContent>
         <DialogActions>
+          <Button
+            onClick={() => {
+              console.log(infoBancosLayouts);
+              executeCambiarLayoutElegido({
+                data: {
+                  usuario: correoUsuario,
+                  pwd: passwordUsuario,
+                  rfc: rfcEmpresa,
+                  idsubmenu: 46,
+                  idsBancosOrigen: infoBancosLayouts.idsBancosOrigen,
+                  combinacionesBancos: infoBancosLayouts.combinacionesBancos,
+                  idsLayouts: infoBancosLayouts.idsLayouts,
+                },
+              });
+            }}
+            variant="contained"
+            color="primary"
+          >
+            Guardar Cambios
+          </Button>
           <Button
             onClick={handleCloseDialogLayoutsBancos}
             variant="contained"
