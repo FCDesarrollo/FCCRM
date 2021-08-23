@@ -90,8 +90,9 @@ const useStyles = makeStyles({
   },
 });
 
-export default function Empresas() {
+export default function Empresas(props) {
   const classes = useStyles();
+  const setEmpresaDatos = props.setEmpresaDatos;
   let userEmail = "";
   let userPassword = "";
   let nombreUsuario = "";
@@ -207,6 +208,7 @@ export default function Empresas() {
         localStorage.removeItem("notificacionData");
         localStorage.removeItem("home");
         setUserAuth(false);
+        setEmpresaDatos([]);
       }
     });
   };

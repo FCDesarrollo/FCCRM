@@ -29,6 +29,8 @@ import ConfiguracionesPermisos from "./componentes/miAdministracion/configuracio
 import FinanzasTesoreria from "./componentes/miAdministracion/finanzasTesoreria";
 import GestionEmpresarial from "./componentes/miAdministracion/gestionEmpresarial";
 import ReportesPDF from "./componentes/miAdministracion/reportesPDF";
+import ReportesProyectos from "./componentes/miAdministracion/reportesProyectos";
+import ReportePorProyecto from "./componentes/miAdministracion/reportePorProyecto";
 import ExpedientesDigitales from "./componentes/miAdministracion/expedientesDigitales";
 import Publicaciones from "./componentes/miAdministracion/publicaciones";
 import EstadosFinancieros from "./componentes/miContabilidad/estadosFinancieros";
@@ -146,7 +148,7 @@ function App() {
           <CambiarContra />
         </Route>
         <Route exact path="/empresas">
-          <Empresas />
+          <Empresas setEmpresaDatos={setEmpresaDatos} />
         </Route>
         <Route exact path="/cpanel">
           <CPanel
@@ -445,6 +447,30 @@ function App() {
         </Route>
         <Route exact path="/reportesPDF">
           <ReportesPDF
+            submenuContent={submenuContent}
+            setSubmenuContent={setSubmenuContent}
+            usuarioDatos={usuarioDatos}
+            setUsuarioDatos={setUsuarioDatos}
+            empresaDatos={empresaDatos}
+            setEmpresaDatos={setEmpresaDatos}
+            loading={loading}
+            setLoading={setLoading}
+          />
+        </Route>
+        <Route exact path="/reportesProyectos">
+          <ReportesProyectos
+            submenuContent={submenuContent}
+            setSubmenuContent={setSubmenuContent}
+            usuarioDatos={usuarioDatos}
+            setUsuarioDatos={setUsuarioDatos}
+            empresaDatos={empresaDatos}
+            setEmpresaDatos={setEmpresaDatos}
+            loading={loading}
+            setLoading={setLoading}
+          />
+        </Route>
+        <Route exact path="/reportesProyectos/:idProyecto">
+          <ReportePorProyecto
             submenuContent={submenuContent}
             setSubmenuContent={setSubmenuContent}
             usuarioDatos={usuarioDatos}

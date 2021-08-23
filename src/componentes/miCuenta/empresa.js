@@ -1678,8 +1678,9 @@ function ServiciosContratados(props) {
                 margin="normal"
                 value={servicioSelected}
                 onChange={(e) => {
-                  setServicioSelected(e.target.value);
-                  executeGetNotificacionesUsuarioPorServicio({
+                  setServicioSelected(parseInt(e.target.value));
+                  if(parseInt(e.target.value) !== 0) {
+                    executeGetNotificacionesUsuarioPorServicio({
                     params: {
                       usuario: correo,
                       pwd: password,
@@ -1689,6 +1690,7 @@ function ServiciosContratados(props) {
                       idservicio: parseInt(e.target.value),
                     },
                   });
+                  }
                 }}
               >
                 <option value={0}>Elija un servicio</option>
@@ -1702,58 +1704,76 @@ function ServiciosContratados(props) {
             <Grid item xs={12}>
               <TableContainer component={Paper}>
                 <Table className={classes.table} aria-label="simple table">
-                  <TableHead>
+                  <TableHead style={{ background: "#FAFAFA" }}>
                     <TableRow>
-                      <TableCell>Usuario</TableCell>
-                      <TableCell align="right">CRM</TableCell>
-                      <TableCell align="right">Correo</TableCell>
-                      <TableCell align="right">SMS</TableCell>
+                      <TableCell>
+                        <strong>Usuario</strong>
+                      </TableCell>
+                      <TableCell align="right">
+                        <strong>CRM</strong>
+                      </TableCell>
+                      <TableCell align="right">
+                        <strong>Correo</strong>
+                      </TableCell>
+                      <TableCell align="right">
+                        <strong>SMS</strong>
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {usuariosNotificaciones.map(
-                      (usuarioNotificacion, index) => (
-                        <TableRow key={index}>
-                          <TableCell component="th" scope="row">
-                            {usuarioNotificacion.usuario}
-                          </TableCell>
-                          <TableCell align="right">
-                            <Checkbox
-                              color="primary"
-                              checked={true}
-                              disabled
-                              /* checked={
-                                usuarioNotificacion.notificacionCRM === 1
-                              }
-                              onChange={(e) => {
-                                handleChangeNotificaciones(e, index, 1);
-                              }} */
-                            />
-                          </TableCell>
-                          <TableCell align="right">
-                            <Checkbox
-                              color="primary"
-                              checked={
-                                usuarioNotificacion.notificacionCorreo === 1
-                              }
-                              onChange={(e) => {
-                                handleChangeNotificaciones(e, index, 2);
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell align="right">
-                            <Checkbox
-                              color="primary"
-                              checked={
-                                usuarioNotificacion.notificacionSMS === 1
-                              }
-                              onChange={(e) => {
-                                handleChangeNotificaciones(e, index, 3);
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
+                    {servicioSelected !== 0 ? (
+                      usuariosNotificaciones.map(
+                        (usuarioNotificacion, index) => (
+                          <TableRow key={index}>
+                            <TableCell component="th" scope="row">
+                              {usuarioNotificacion.usuario}
+                            </TableCell>
+                            <TableCell align="right">
+                              <Checkbox
+                                color="primary"
+                                /* checked={true}
+                              disabled */
+                                checked={
+                                  usuarioNotificacion.notificacionCRM === 1
+                                }
+                                onChange={(e) => {
+                                  handleChangeNotificaciones(e, index, 1);
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Checkbox
+                                color="primary"
+                                checked={
+                                  usuarioNotificacion.notificacionCorreo === 1
+                                }
+                                onChange={(e) => {
+                                  handleChangeNotificaciones(e, index, 2);
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Checkbox
+                                color="primary"
+                                checked={
+                                  usuarioNotificacion.notificacionSMS === 1
+                                }
+                                onChange={(e) => {
+                                  handleChangeNotificaciones(e, index, 3);
+                                }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )
                       )
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4}>
+                          <Typography variant="subtitle1" align="center">
+                            Seleccione un servicio
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
                     )}
                   </TableBody>
                 </Table>

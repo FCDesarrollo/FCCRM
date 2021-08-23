@@ -673,7 +673,15 @@ export default function Header(props) {
     notificacionesLoading ||
     eliminaNotificacionLoading
   ) {
-    return <LoadingComponent mensaje={carpetasEmpresa === 0 ? "Creando carpetas (esto puede tardar varios minutos)." : ""} />;
+    return (
+      <LoadingComponent
+        mensaje={
+          carpetasEmpresa === 0
+            ? "Creando carpetas (esto puede tardar varios minutos)."
+            : ""
+        }
+      />
+    );
   }
   if (
     getEmpresaError ||
@@ -720,16 +728,16 @@ export default function Header(props) {
     localStorage.setItem("usuarioRegistrado", token);
     return <Redirect to={`/${urlRuta}`} />;
   }
-  
+
   if (
     (urlRuta !== false &&
-    urlIdEmpresa !== false &&
-    urlIdModulo !== false &&
-    urlIdMenu !== false &&
-    urlIdSubmenu !== false &&
-    urlIdDocumento !== false &&
-    urlTipoDocumento !== false &&
-    urlRuta === "autorizacionesGastos") ||
+      urlIdEmpresa !== false &&
+      urlIdModulo !== false &&
+      urlIdMenu !== false &&
+      urlIdSubmenu !== false &&
+      urlIdDocumento !== false &&
+      urlTipoDocumento !== false &&
+      urlRuta === "autorizacionesGastos") ||
     (urlRuta !== false &&
       urlIdEmpresa !== false &&
       urlIdModulo !== false &&
@@ -738,42 +746,45 @@ export default function Header(props) {
       urlRuta === "estadosFinancieros")
   ) {
     if (!userAuth) {
-      const token = urlRuta === "autorizacionesGastos" ? jwt.sign(
-        {
-          notificacionData: {
-            url: urlRuta,
-            idEmpresa: urlIdEmpresa,
-            tableTittle:
-              urlIdModulo === 4 && urlIdSubmenu === 44
-                ? "Gastos"
-                : urlIdModulo === 4 && urlIdSubmenu === 68
-                ? "Compras"
-                : urlIdModulo === 4 && urlIdSubmenu === 69
-                ? "Ventas"
-                : "Pagos",
-            showComponent: 2,
-            idModulo: urlIdModulo,
-            idMenu: urlIdMenu,
-            idSubmenu: urlIdSubmenu,
-            accionAG: 2,
-            idRequerimiento: urlIdDocumento,
-            estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2,
-          },
-        },
-        "mysecretpassword"
-      ) : jwt.sign(
-        {
-          notificacionData: {
-            url: urlRuta,
-            idEmpresa: urlIdEmpresa,
-            showComponent: 1,
-            idSubmenu: urlIdSubmenu,
-            busquedaFiltro: "",
-            page: 0,
-          },
-        },
-        "mysecretpassword"
-      );
+      const token =
+        urlRuta === "autorizacionesGastos"
+          ? jwt.sign(
+              {
+                notificacionData: {
+                  url: urlRuta,
+                  idEmpresa: urlIdEmpresa,
+                  tableTittle:
+                    urlIdModulo === 4 && urlIdSubmenu === 44
+                      ? "Gastos"
+                      : urlIdModulo === 4 && urlIdSubmenu === 68
+                      ? "Compras"
+                      : urlIdModulo === 4 && urlIdSubmenu === 69
+                      ? "Ventas"
+                      : "Pagos",
+                  showComponent: 2,
+                  idModulo: urlIdModulo,
+                  idMenu: urlIdMenu,
+                  idSubmenu: urlIdSubmenu,
+                  accionAG: 2,
+                  idRequerimiento: urlIdDocumento,
+                  estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2,
+                },
+              },
+              "mysecretpassword"
+            )
+          : jwt.sign(
+              {
+                notificacionData: {
+                  url: urlRuta,
+                  idEmpresa: urlIdEmpresa,
+                  showComponent: 1,
+                  idSubmenu: urlIdSubmenu,
+                  busquedaFiltro: "",
+                  page: 0,
+                },
+              },
+              "mysecretpassword"
+            );
       localStorage.setItem("notificacionData", token);
     } else {
       for (let x = 0; x < empresasData.empresas.length; x++) {
@@ -787,42 +798,45 @@ export default function Header(props) {
           break;
         }
       }
-      const token = urlRuta === "autorizacionesGastos" ? jwt.sign(
-        {
-          notificacionData: {
-            url: urlRuta,
-            idEmpresa: urlIdEmpresa,
-            tableTittle:
-              urlIdModulo === 4 && urlIdSubmenu === 44
-                ? "Gastos"
-                : urlIdModulo === 4 && urlIdSubmenu === 68
-                ? "Compras"
-                : urlIdModulo === 4 && urlIdSubmenu === 69
-                ? "Ventas"
-                : "Pagos",
-            showComponent: 2,
-            idModulo: urlIdModulo,
-            idMenu: urlIdMenu,
-            idSubmenu: urlIdSubmenu,
-            accionAG: 2,
-            idRequerimiento: urlIdDocumento,
-            estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2,
-          },
-        },
-        "mysecretpassword"
-      ) : jwt.sign(
-        {
-          notificacionData: {
-            url: urlRuta,
-            idEmpresa: urlIdEmpresa,
-            showComponent: 1,
-            idSubmenu: urlIdSubmenu,
-            busquedaFiltro: "",
-            page: 0,
-          },
-        },
-        "mysecretpassword"
-      );
+      const token =
+        urlRuta === "autorizacionesGastos"
+          ? jwt.sign(
+              {
+                notificacionData: {
+                  url: urlRuta,
+                  idEmpresa: urlIdEmpresa,
+                  tableTittle:
+                    urlIdModulo === 4 && urlIdSubmenu === 44
+                      ? "Gastos"
+                      : urlIdModulo === 4 && urlIdSubmenu === 68
+                      ? "Compras"
+                      : urlIdModulo === 4 && urlIdSubmenu === 69
+                      ? "Ventas"
+                      : "Pagos",
+                  showComponent: 2,
+                  idModulo: urlIdModulo,
+                  idMenu: urlIdMenu,
+                  idSubmenu: urlIdSubmenu,
+                  accionAG: 2,
+                  idRequerimiento: urlIdDocumento,
+                  estatusRequerimiento: urlTipoDocumento !== "gastos" ? 1 : 2,
+                },
+              },
+              "mysecretpassword"
+            )
+          : jwt.sign(
+              {
+                notificacionData: {
+                  url: urlRuta,
+                  idEmpresa: urlIdEmpresa,
+                  showComponent: 1,
+                  idSubmenu: urlIdSubmenu,
+                  busquedaFiltro: "",
+                  page: 0,
+                },
+              },
+              "mysecretpassword"
+            );
       localStorage.setItem("notificacionData", token);
       return <Redirect to={`/${urlRuta}`} />;
     }
@@ -1068,6 +1082,7 @@ export default function Header(props) {
         localStorage.removeItem("dataTemporal");
         localStorage.removeItem("dataNotificacionHome");
         setUserAuth(false);
+        setEmpresaDatos([]);
       }
     });
   };

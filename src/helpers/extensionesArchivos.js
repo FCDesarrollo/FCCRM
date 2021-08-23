@@ -1,5 +1,5 @@
 export const verificarExtensionArchivo = fileName => {
-    const extensionesPermitidas = /(.jpg|.jpeg|.png|.doc|.docx|.rtf|.prn|.dif|.slk|.xps|.pdf|.txt|.csv|.xlsx|.xlsm|.xlsb|.xltx|.xltm|.xls|.xlt|.xls|.xml|.xlam|.xla|.xlw|.XLR)$/i;
+    const extensionesPermitidas = /(.jpg|.jpeg|.png|.doc|.docx|.rtf|.prn|.dif|.slk|.xps|.pdf|.txt|.csv|.xlsx|.xlsm|.xlsb|.xltx|.xltm|.xls|.xlt|.xls|.xml|.xlam|.xla|.xlw|.XLR|.dat)$/i;
     return extensionesPermitidas.exec(fileName);
 }
 

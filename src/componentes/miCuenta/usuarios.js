@@ -19,11 +19,13 @@ import {
   FormGroup,
   Checkbox,
   useMediaQuery,
+  Paper,
 } from "@material-ui/core";
 import { TreeView, TreeItem } from "@material-ui/lab";
 import {
   Close as CloseIcon,
   Settings as SettingsIcon,
+  Notifications as NotificationsIcon,
   Edit as EditIcon,
   Link as LinkIcon,
   LinkOff as LinkOffIcon,
@@ -330,6 +332,22 @@ export default function Usuarios(props) {
                 setExpanded={setExpanded}
                 idSubmenuActual={idSubmenuActual}
               />
+            ) : showComponent === 5 ? (
+              <EditarNotificacionesUsuario
+                permisosSubmenu={permisosSubmenu}
+                setPermisosSubmenu={setPermisosSubmenu}
+                setShowComponent={setShowComponent}
+                setLoading={setLoading}
+                usuario={usuario}
+                pwd={pwd}
+                rfc={rfc}
+                idUsuarioEditar={idUsuarioEditar}
+                idEmpresa={idEmpresa}
+                setExecuteQueriesHeader={setExecuteQueriesHeader}
+                expanded={expanded}
+                setExpanded={setExpanded}
+                idSubmenuActual={idSubmenuActual}
+              />
             ) : null}
           </Grid>
         </Grid>
@@ -452,6 +470,38 @@ function ListaUsuarios(props) {
               {usuario.estatus_vinculacion === 1 ? "Vinculado" : "No Vinculado"}
             </TableCell>
             <TableCell align="right">
+              <Tooltip title="Editar notificaciones">
+                <span>
+                  <IconButton
+                    disabled={permisosSubmenu < 2 || statusEmpresa !== 1}
+                    onClick={() => {
+                      setIdUsuarioEditar(usuario.idusuario);
+                      setShowComponent(5);
+                      const token = jwt.sign(
+                        {
+                          menuTemporal: {
+                            showComponent: 5,
+                            idUsuarioEditar: usuario.idusuario,
+                            permisosSubmenu: permisosSubmenu,
+                            idSubmenuActual: idSubmenuActual,
+                          },
+                        },
+                        "mysecretpassword"
+                      );
+                      localStorage.setItem("menuTemporal", token);
+                    }}
+                  >
+                    <NotificationsIcon
+                      style={{
+                        color:
+                          permisosSubmenu < 2 || statusEmpresa !== 1
+                            ? "disabled"
+                            : "#3f51b5",
+                      }}
+                    />
+                  </IconButton>
+                </span>
+              </Tooltip>
               <Tooltip title="Editar permisos">
                 <span>
                   <IconButton
@@ -474,7 +524,12 @@ function ListaUsuarios(props) {
                     }}
                   >
                     <EditIcon
-                      style={{ color: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "black" }}
+                      style={{
+                        color:
+                          permisosSubmenu < 2 || statusEmpresa !== 1
+                            ? "disabled"
+                            : "black",
+                      }}
                     />
                   </IconButton>
                 </span>
@@ -506,7 +561,12 @@ function ListaUsuarios(props) {
                       }}
                     >
                       <LinkOffIcon
-                        style={{ color: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#ffc400" }}
+                        style={{
+                          color:
+                            permisosSubmenu < 2 || statusEmpresa !== 1
+                              ? "disabled"
+                              : "#ffc400",
+                        }}
                       />
                     </IconButton>
                   </span>
@@ -538,7 +598,12 @@ function ListaUsuarios(props) {
                       }}
                     >
                       <LinkIcon
-                        style={{ color: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#ffc400" }}
+                        style={{
+                          color:
+                            permisosSubmenu < 2 || statusEmpresa !== 1
+                              ? "disabled"
+                              : "#ffc400",
+                        }}
                       />
                     </IconButton>
                   </span>
@@ -569,7 +634,11 @@ function ListaUsuarios(props) {
                     }}
                   >
                     <DeleteIcon
-                      color={permisosSubmenu !== 3 || statusEmpresa !== 1 ? "disabled" : "secondary"}
+                      color={
+                        permisosSubmenu !== 3 || statusEmpresa !== 1
+                          ? "disabled"
+                          : "secondary"
+                      }
                     />
                   </IconButton>
                 </span>
@@ -1555,7 +1624,7 @@ function CrearUsuario(props) {
           );
         } else {
           swal("Usuario Creado", "Usuario creado con éxito", "success");
-          //executeListaUsuariosEmpresa();
+          executeListaUsuariosEmpresa();
         }
       }
     }
@@ -1801,8 +1870,14 @@ function CrearUsuario(props) {
           variant="contained"
           disabled={permisosSubmenu < 2 || statusEmpresa !== 1}
           style={{
-            background: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#17A2B8",
-            color: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#FFFFFF",
+            background:
+              permisosSubmenu < 2 || statusEmpresa !== 1
+                ? "disabled"
+                : "#17A2B8",
+            color:
+              permisosSubmenu < 2 || statusEmpresa !== 1
+                ? "disabled"
+                : "#FFFFFF",
             float: "right",
             marginBottom: "10px",
           }}
@@ -2005,8 +2080,14 @@ function VincularUsuario(props) {
           disabled={permisosSubmenu < 2 || statusEmpresa !== 1}
           variant="contained"
           style={{
-            background: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#17A2B8",
-            color: permisosSubmenu < 2 || statusEmpresa !== 1 ? "disabled" : "#FFFFFF",
+            background:
+              permisosSubmenu < 2 || statusEmpresa !== 1
+                ? "disabled"
+                : "#17A2B8",
+            color:
+              permisosSubmenu < 2 || statusEmpresa !== 1
+                ? "disabled"
+                : "#FFFFFF",
             float: "right",
             marginBottom: "10px",
           }}
@@ -2016,6 +2097,247 @@ function VincularUsuario(props) {
         >
           Vincular Usuario
         </Button>
+      </Grid>
+    </Grid>
+  );
+}
+
+function EditarNotificacionesUsuario(props) {
+  const classes = useStyles();
+  const setShowComponent = props.setShowComponent;
+  const permisosSubmenu = props.permisosSubmenu;
+  /* const setPermisosSubmenu = props.setPermisosSubmenu; */
+  const setLoading = props.setLoading;
+  const usuario = props.usuario;
+  const pwd = props.pwd;
+  const rfc = props.rfc;
+  const idUsuarioEditar = props.idUsuarioEditar;
+  const idEmpresa = props.idEmpresa;
+  /* const setExecuteQueriesHeader = props.setExecuteQueriesHeader;
+  const expanded = props.expanded; */
+  const setExpanded = props.setExpanded;
+  const idSubmenuActual = props.idSubmenuActual;
+
+  const [notificacionesUsuario, setNotificacionesUsuario] = useState([]);
+
+  const [
+    {
+      data: getNotificacionesServiciosUsuarioEmpresaData,
+      loading: getNotificacionesServiciosUsuarioEmpresaLoading,
+      error: getNotificacionesServiciosUsuarioEmpresaError,
+    },
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getNotificacionesServiciosUsuarioEmpresa`,
+      method: "GET",
+      params: {
+        usuario: usuario,
+        pwd: pwd,
+        rfc: rfc,
+        idsubmenu: 21,
+        idempresa: idEmpresa,
+        idusuario: idUsuarioEditar,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+
+  const [
+    {
+      data: guardarNotificacionesServiciosUsuarioEmpresaData,
+      loading: guardarNotificacionesServiciosUsuarioEmpresaLoading,
+      error: guardarNotificacionesServiciosUsuarioEmpresaError,
+    }, executeGuardarNotificacionesServiciosUsuarioEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/guardarNotificacionesServiciosUsuarioEmpresa`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  useEffect(() => {
+    function checkData() {
+      if (getNotificacionesServiciosUsuarioEmpresaData) {
+        if (getNotificacionesServiciosUsuarioEmpresaData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(getNotificacionesServiciosUsuarioEmpresaData.error),
+            "warning"
+          );
+        } else {
+          setNotificacionesUsuario(
+            getNotificacionesServiciosUsuarioEmpresaData.servicios
+          );
+        }
+      }
+    }
+
+    checkData();
+  }, [getNotificacionesServiciosUsuarioEmpresaData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (guardarNotificacionesServiciosUsuarioEmpresaData) {
+        if (guardarNotificacionesServiciosUsuarioEmpresaData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(guardarNotificacionesServiciosUsuarioEmpresaData.error),
+            "warning"
+          );
+        } else {
+          setNotificacionesUsuario(
+            guardarNotificacionesServiciosUsuarioEmpresaData.servicios
+          );
+        }
+      }
+    }
+
+    checkData();
+  }, [guardarNotificacionesServiciosUsuarioEmpresaData]);
+
+  if (getNotificacionesServiciosUsuarioEmpresaLoading || guardarNotificacionesServiciosUsuarioEmpresaLoading) {
+    setLoading(true);
+  } else {
+    setLoading(false);
+  }
+
+  if (getNotificacionesServiciosUsuarioEmpresaError || guardarNotificacionesServiciosUsuarioEmpresaError) {
+    return <ErrorQueryDB />;
+  }
+
+  const handleChangeNotificaciones = (e, index, variable) => {
+    let newUsuariosNotificaciones = notificacionesUsuario.slice();
+    switch (variable) {
+      case 1:
+        newUsuariosNotificaciones[index].notificacionCRM = e.target.checked
+          ? 1
+          : 0;
+        break;
+      case 2:
+        newUsuariosNotificaciones[index].notificacionCorreo = e.target.checked
+          ? 1
+          : 0;
+        break;
+      default:
+        newUsuariosNotificaciones[index].notificacionSMS = e.target.checked
+          ? 1
+          : 0;
+        break;
+    }
+
+    setNotificacionesUsuario(newUsuariosNotificaciones);
+  };
+
+  const handleClickGuardarNotificaciones = () => {
+    console.log(notificacionesUsuario);
+    executeGuardarNotificacionesServiciosUsuarioEmpresa({
+      data: {
+        usuario: usuario,
+        pwd: pwd,
+        rfc: rfc,
+        idsubmenu: idSubmenuActual,
+        idempresa: idEmpresa,
+        idusuario: idUsuarioEditar,
+        datosnotificaciones: notificacionesUsuario,
+      }
+    })
+  }
+
+  return (
+    <Grid container justify="center" spacing={3}>
+      <Grid item xs={12}>
+        <Typography variant="h6">
+          <Tooltip title="Regresar">
+            <IconButton
+              onClick={() => {
+                setExpanded([]);
+                setShowComponent(1);
+                //localStorage.removeItem("menuTemporal");
+                const token = jwt.sign(
+                  {
+                    menuTemporal: {
+                      showComponent: 1,
+                      permisosSubmenu: permisosSubmenu,
+                      idSubmenuActual: idSubmenuActual,
+                    },
+                  },
+                  "mysecretpassword"
+                );
+                localStorage.setItem("menuTemporal", token);
+              }}
+            >
+              <ArrowBackIcon color="primary" />
+            </IconButton>
+          </Tooltip>
+          EDITAR NOTIFICACIONES USUARIO
+        </Typography>
+      </Grid>
+      <Grid item xs={12}>
+        <Button variant="contained" color="primary" style={{ float: "right" }} onClick={handleClickGuardarNotificaciones}>Guardar</Button>
+      </Grid>
+      <Grid item xs={12}>
+        <TableContainer component={Paper}>
+          <Table className={classes.table} aria-label="simple table">
+            <TableHead style={{ background: "#FAFAFA" }}>
+              <TableRow>
+                <TableCell>
+                  <strong>Servicio</strong>
+                </TableCell>
+                <TableCell align="right">
+                  <strong>CRM</strong>
+                </TableCell>
+                <TableCell align="right">
+                  <strong>Correo</strong>
+                </TableCell>
+                <TableCell align="right">
+                  <strong>SMS</strong>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {notificacionesUsuario.map((notificacionUsuario, index) => (
+                <TableRow key={index}>
+                  <TableCell component="th" scope="row">
+                    {notificacionUsuario.nombreservicio}
+                  </TableCell>
+                  <TableCell align="right">
+                    <Checkbox
+                      color="primary"
+                      checked={notificacionUsuario.notificacionCRM === 1}
+                      onChange={(e) => {
+                        handleChangeNotificaciones(e, index, 1);
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Checkbox
+                      color="primary"
+                      checked={notificacionUsuario.notificacionCorreo === 1}
+                      onChange={(e) => {
+                        handleChangeNotificaciones(e, index, 2);
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Checkbox
+                      color="primary"
+                      checked={notificacionUsuario.notificacionSMS === 1}
+                      onChange={(e) => {
+                        handleChangeNotificaciones(e, index, 3);
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Grid>
     </Grid>
   );

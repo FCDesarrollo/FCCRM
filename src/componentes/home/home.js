@@ -324,6 +324,8 @@ export default function Home(props) {
   const empresaDatos = props.empresaDatos;
   const dbEmpresa = empresaDatos.rutaempresa;
   const idEmpresa = empresaDatos.idempresa;
+  /* console.log(empresaDatos); */
+  const setEmpresaDatos = props.setEmpresaDatos;
 
   const [vista, setVista] = useState("notificaciones");
 
@@ -365,6 +367,7 @@ export default function Home(props) {
           passwordUsuario={passwordUsuario}
           setLoading={setLoading}
           idEmpresa={idEmpresa}
+          setEmpresaDatos={setEmpresaDatos}
         />
       ) : (
         <Dashboard
@@ -428,6 +431,7 @@ function Notificaciones(props) {
   const passwordUsuario = props.passwordUsuario;
   const setLoading = props.setLoading;
   const idEmpresa = props.idEmpresa;
+  const setEmpresaDatos = props.setEmpresaDatos;
 
   const [value, setValue] = useState(0);
   const [notificaciones, setNotificaciones] = useState([]);
@@ -669,16 +673,13 @@ function Notificaciones(props) {
                     <Tooltip title="Ir a sección">
                       <IconButton
                         onClick={() => {
-                          /* if (notificacion.vista === 0) {
-                            executeCambiarVistaNotificacionServicios({
-                              data: {
-                                usuario: correoUsuario,
-                                pwd: passwordUsuario,
-                                idnotificacion: notificacion.id,
-                                vista: 1,
-                              },
-                            });
-                          } */
+                          setEmpresaDatos(notificacion.empresa[0]);
+                          const tokenEmpresa = jwt.sign(
+                            { empresaData: notificacion.empresa[0] },
+                            "mysecretpassword"
+                          );
+                          localStorage.setItem("emToken", tokenEmpresa);
+
                           const token = jwt.sign(
                             {
                               data: {
@@ -697,15 +698,6 @@ function Notificaciones(props) {
                       </IconButton>
                     </Tooltip>
                   </Link>
-                  {/* <Tooltip title="Ver documento">
-                    <IconButton
-                      onClick={() => {
-                        window.open(notificacion.linkDocumento);
-                      }}
-                    >
-                      <AttachmentIcon />
-                    </IconButton>
-                  </Tooltip> */}
                   <Tooltip
                     title={
                       notificacion.vista === 0

@@ -24,7 +24,7 @@ import {
   TextField,
   Divider,
   useMediaQuery,
-  SvgIcon,
+  /* SvgIcon, */
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
@@ -40,7 +40,7 @@ import {
   Radio,
   ListItemIcon,
 } from "@material-ui/core";
-import { TreeView, TreeItem } from "@material-ui/lab";
+/* import { TreeView, TreeItem } from "@material-ui/lab"; */
 import {
   Close as CloseIcon,
   Error as ErrorIcon,
@@ -63,6 +63,7 @@ import {
   Assignment as AssignmentIcon,
   KeyboardArrowUp as KeyboardArrowUpIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
+  PictureAsPdf as PictureAsPdfIcon,
 } from "@material-ui/icons";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import { Fragment } from "react";
@@ -74,6 +75,19 @@ import swal from "sweetalert";
 import moment from "moment";
 import { keyValidation, pasteValidation } from "../../helpers/inputHelpers";
 import jwt from "jsonwebtoken";
+import TreeMenu, { ItemComponent } from "react-simple-tree-menu";
+import "../../../node_modules/react-simple-tree-menu/dist/main.css";
+import {
+  PDFDownloadLink,
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Link as LinkPdf,
+  Image,
+} from "@react-pdf/renderer";
+import DublockLogo from "../../assets/images/logodublock.png";
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -118,6 +132,7 @@ export default function GestionEmpresarial(props) {
   const classes = useStyles();
   const usuarioDatos = props.usuarioDatos;
   const empresaDatos = props.empresaDatos;
+  const nombreEmpresa = empresaDatos.nombreempresa;
   const idUsuario = usuarioDatos.idusuario;
   const correoUsuario = usuarioDatos.correo;
   const passwordUsuario = usuarioDatos.password;
@@ -193,6 +208,7 @@ export default function GestionEmpresarial(props) {
                               correoUsuario: correoUsuario,
                               passwordUsuario: passwordUsuario,
                               rfcEmpresa: rfcEmpresa,
+                              nombreEmpresa: nombreEmpresa,
                             },
                           },
                           "mysecretpassword"
@@ -325,8 +341,14 @@ const headCellsProyectos = [
   },
 ];
 
-function createDataAgentesPersonas(idAgentePersona, agente, estatus, tipo) {
-  return { idAgentePersona, agente, estatus, tipo };
+function createDataAgentesPersonas(
+  idAgentePersona,
+  agente,
+  estatus,
+  tipo,
+  idProyecto
+) {
+  return { idAgentePersona, agente, estatus, tipo, idProyecto };
 }
 
 const headCellsAgentesPersonas = [
@@ -344,13 +366,13 @@ const headCellsAgentesPersonas = [
     disablePadding: false,
     label: "Estatus",
   },
-  {
+  /* {
     id: "tipo",
     align: "right",
     sortHeadCell: true,
     disablePadding: false,
     label: "Tipo",
-  },
+  }, */
   {
     id: "acciones",
     align: "right",
@@ -547,7 +569,8 @@ const useAgentesPersonas = (
                 agentePersona.id,
                 agentePersona.Agente,
                 agentePersona.Estatus,
-                agentePersona.tipo
+                agentePersona.tipo,
+                agentePersona.idProyecto
               )
             )
           );
@@ -585,8 +608,7 @@ function PlanesTrabajo(props) {
   const nombreSubmenu = props.nombreSubmenu;
   const showSection = props.showSection;
   const setShowSection = props.setShowSection;
-  const [openDialogAgentesPersonas, setOpenDialogAgentesPersonas] =
-    useState(false);
+  const [openDialogAgentes, setOpenDialogAgentes] = useState(false);
   const [openDialogGuardarProyecto, setOpenDialogGuardarProyecto] =
     useState(false);
   const [idAgente, setIdAgente] = useState(0);
@@ -672,12 +694,12 @@ function PlanesTrabajo(props) {
     return <ErrorQueryDB />;
   }
 
-  const handleOpenDialogAgentesPersonas = () => {
-    setOpenDialogAgentesPersonas(true);
+  const handleOpenDialogAgentes = () => {
+    setOpenDialogAgentes(true);
   };
 
-  const handleCloseDialogAgentesPersonas = () => {
-    setOpenDialogAgentesPersonas(false);
+  const handleCloseDialogAgentes = () => {
+    setOpenDialogAgentes(false);
   };
 
   const handleOpenDialogGuardarProyecto = () => {
@@ -818,15 +840,16 @@ function PlanesTrabajo(props) {
             {xsSize ? (
               <Fragment>
                 <Grid item xs={12}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    disabled={permisosSubmenu < 2}
-                    style={{ float: "right" }}
-                    onClick={handleOpenDialogGuardarProyecto}
-                  >
-                    Reportes
-                  </Button>
+                  <Link to="/reportesProyectos" target="_blank">
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      disabled={permisosSubmenu < 2}
+                      style={{ float: "right" }}
+                    >
+                      Reportes
+                    </Button>
+                  </Link>
                 </Grid>
                 <Grid item xs={12}>
                   <Button
@@ -858,7 +881,7 @@ function PlanesTrabajo(props) {
                   >
                     Agregar Proyecto
                   </Button>
-                  <Link to="/reportesPDF" target="_blank">
+                  <Link to="/reportesProyectos" target="_blank">
                     <Button
                       variant="contained"
                       color="primary"
@@ -869,6 +892,13 @@ function PlanesTrabajo(props) {
                       Reportes
                     </Button>
                   </Link>
+                  <div>
+              <PDFDownloadLink document={<ReportePorProyecto idProyecto={7} setLoading={setLoading} correoUsuario={correoUsuario} passwordUsuario={passwordUsuario} rfcEmpresa={rfcEmpresa} idSubmenu={idSubmenu} />} fileName="somename.pdf">
+                {({ blob, url, loading, error }) =>
+                  loading ? 'Loading document...' : <button>{url}</button>
+                }
+              </PDFDownloadLink>
+            </div>
                 </Grid>
               </Fragment>
             )}
@@ -905,8 +935,8 @@ function PlanesTrabajo(props) {
               </TextField>
             </Grid>
             <Grid item xs={12} sm={6} md={1} style={{ alignSelf: "center" }}>
-              <Tooltip title="Agentes y Personas">
-                <IconButton onClick={handleOpenDialogAgentesPersonas}>
+              <Tooltip title="Agentes">
+                <IconButton onClick={handleOpenDialogAgentes}>
                   <GroupAddIcon color="primary" />
                 </IconButton>
               </Tooltip>
@@ -976,6 +1006,7 @@ function PlanesTrabajo(props) {
               executeGetPryProyectos={executeGetPryProyectos}
               setDatosProyecto={setDatosProyecto}
               handleOpenDialogGuardarProyecto={handleOpenDialogGuardarProyecto}
+              idProyectoSelected={idProyectoSelected}
               setIdProyectoSelected={setIdProyectoSelected}
               setShowSection={setShowSection}
             />
@@ -994,6 +1025,7 @@ function PlanesTrabajo(props) {
             idProyecto={idProyectoSelected}
             setIdProyecto={setIdProyectoSelected}
             setShowSection={setShowSection}
+            executeGetPryProyectos={executeGetPryProyectos}
           />
         ) : null /* (
         <Planes
@@ -1010,13 +1042,13 @@ function PlanesTrabajo(props) {
       ) */
       }
       <Dialog
-        onClose={handleCloseDialogAgentesPersonas}
+        onClose={handleCloseDialogAgentes}
         aria-labelledby="simple-dialog-title"
-        open={openDialogAgentesPersonas}
+        open={openDialogAgentes}
         fullWidth={true}
         maxWidth="lg"
       >
-        <DialogTitle id="agentesPersonas">{`Agentes y Personas`}</DialogTitle>
+        <DialogTitle id="dialogAgentes">{`Agentes`}</DialogTitle>
         <DialogContent dividers>
           <AgentesPersonas
             setLoading={setLoading}
@@ -1026,13 +1058,15 @@ function PlanesTrabajo(props) {
             idSubmenu={idSubmenu}
             permisosSubmenu={permisosSubmenu}
             executeGetPryAgentesPersonasProyectos={executeGetPryAgentesPersonas}
+            tipoEncargado={1}
+            idProyecto={0}
           />
         </DialogContent>
         <DialogActions>
           <Button
             variant="contained"
             color="secondary"
-            onClick={handleCloseDialogAgentesPersonas}
+            onClick={handleCloseDialogAgentes}
           >
             Salir
           </Button>
@@ -1107,6 +1141,7 @@ function Proyectos(props) {
   const executeGetPryProyectos = props.executeGetPryProyectos;
   const setDatosProyecto = props.setDatosProyecto;
   const handleOpenDialogGuardarProyecto = props.handleOpenDialogGuardarProyecto;
+  const idProyectoSelected = props.idProyectoSelected;
   const setIdProyectoSelected = props.setIdProyectoSelected;
   const setShowSection = props.setShowSection;
 
@@ -1122,6 +1157,14 @@ function Proyectos(props) {
   const [fechaUltimaAccionProyecto, setFechaUltimaAccionProyecto] =
     useState("");
   const [filtradoProyectos, setFiltradoProyectos] = useState([]);
+  const [openDialogPersonas, setOpenDialogPersonas] = useState(false);
+
+  const {
+    /* agentesPersonasData,
+    agentesPersonasLoading,
+    agentesPersonasError, */
+    executeGetPryAgentesPersonas,
+  } = useAgentesPersonas(correoUsuario, passwordUsuario, rfcEmpresa, idSubmenu);
 
   const [
     {
@@ -1243,6 +1286,15 @@ function Proyectos(props) {
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  const handleOpenDialogPersonas = () => {
+    setOpenDialogPersonas(true);
+  };
+
+  const handleCloseDialogPersonas = () => {
+    setOpenDialogPersonas(false);
+    setIdProyectoSelected(0);
   };
 
   return (
@@ -1367,6 +1419,23 @@ function Proyectos(props) {
                                   }}
                                 >
                                   <FindInPageIcon color="primary" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Reporte">
+                                <Link to={`/reportesProyectos/${proyecto.idProyecto}`} target="_blank">
+                                  <IconButton>
+                                    <PictureAsPdfIcon color="primary" />
+                                  </IconButton>
+                                </Link>
+                              </Tooltip>
+                              <Tooltip title="Personas">
+                                <IconButton
+                                  onClick={() => {
+                                    setIdProyectoSelected(proyecto.idProyecto);
+                                    handleOpenDialogPersonas();
+                                  }}
+                                >
+                                  <GroupAddIcon color="primary" />
                                 </IconButton>
                               </Tooltip>
                               <Tooltip
@@ -1554,6 +1623,37 @@ function Proyectos(props) {
           />
         </Paper>
       </Grid>
+      <Dialog
+        onClose={handleCloseDialogPersonas}
+        aria-labelledby="simple-dialog-title"
+        open={openDialogPersonas}
+        fullWidth={true}
+        maxWidth="lg"
+      >
+        <DialogTitle id="dialogPersonas">{`Personas`}</DialogTitle>
+        <DialogContent dividers>
+          <AgentesPersonas
+            setLoading={setLoading}
+            correoUsuario={correoUsuario}
+            passwordUsuario={passwordUsuario}
+            rfcEmpresa={rfcEmpresa}
+            idSubmenu={idSubmenu}
+            permisosSubmenu={permisosSubmenu}
+            executeGetPryAgentesPersonasProyectos={executeGetPryAgentesPersonas}
+            tipoEncargado={2}
+            idProyecto={idProyectoSelected}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleCloseDialogPersonas}
+          >
+            Salir
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Grid>
   );
 }
@@ -1569,6 +1669,8 @@ function AgentesPersonas(props) {
   const permisosSubmenu = props.permisosSubmenu;
   const executeGetPryAgentesPersonasProyectos =
     props.executeGetPryAgentesPersonasProyectos;
+  const tipoEncargado = props.tipoEncargado;
+  const idProyecto = props.idProyecto;
 
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("id");
@@ -1578,7 +1680,7 @@ function AgentesPersonas(props) {
   const [enabledAgentePersona, setEnableAgentePersona] = useState(false);
   const [idAgentePersona, setIdAgentePersona] = useState(0);
   const [nombreAgentePersona, setNombreAgentePersona] = useState("");
-  const [tipoAgentePersona, setTipoAgentePersona] = useState(0);
+  /* const [tipoAgentePersona, setTipoAgentePersona] = useState(0); */
 
   const {
     agentesPersonasData,
@@ -1655,7 +1757,7 @@ function AgentesPersonas(props) {
           executeGetPryAgentesPersonasProyectos();
           setIdAgentePersona(0);
           setNombreAgentePersona("");
-          setTipoAgentePersona(0);
+          /* setTipoAgentePersona(0); */
           setEnableAgentePersona(false);
         }
       }
@@ -1753,7 +1855,7 @@ function AgentesPersonas(props) {
     if (enabledAgentePersona) {
       setIdAgentePersona(0);
       setNombreAgentePersona("");
-      setTipoAgentePersona(0);
+      /* setTipoAgentePersona(0); */
     }
     setEnableAgentePersona(!enabledAgentePersona);
   };
@@ -1762,16 +1864,16 @@ function AgentesPersonas(props) {
     setNombreAgentePersona(event.target.value);
   };
 
-  const handleInputChangeTipoAgentePersona = (event) => {
+  /* const handleInputChangeTipoAgentePersona = (event) => {
     setTipoAgentePersona(parseInt(event.target.value));
-  };
+  }; */
 
   const handleGuardarAgentePersona = () => {
     if (nombreAgentePersona.trim() === "") {
       swal("Error", "Ingrese un nombre", "warning");
-    } else if (tipoAgentePersona === 0) {
+    } /* else if (tipoAgentePersona === 0) {
       swal("Error", "Seleccione un tipo", "warning");
-    } else {
+    }  */ else {
       executeGuardarPryAgentePersona({
         data: {
           usuario: correoUsuario,
@@ -1781,7 +1883,8 @@ function AgentesPersonas(props) {
           idAgentePersona: idAgentePersona,
           Agente: nombreAgentePersona.trim(),
           Estatus: 1,
-          tipo: tipoAgentePersona,
+          tipo: tipoEncargado,
+          idProyecto: idProyecto,
           accion: idAgentePersona === 0 ? 1 : 2,
         },
       });
@@ -1835,7 +1938,7 @@ function AgentesPersonas(props) {
           Cancelar
         </Button>
       </Grid>
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid item xs={12} sm={6} /* md={4} */>
         <TextField
           className={classes.textFields}
           label="Nombre"
@@ -1852,7 +1955,7 @@ function AgentesPersonas(props) {
           onChange={handleInputChangeNombreAgentePersona}
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={4}>
+      {/* <Grid item xs={12} sm={6} md={4}>
         <TextField
           className={classes.textFields}
           select
@@ -1874,7 +1977,7 @@ function AgentesPersonas(props) {
           <option value={1}>Agente</option>
           <option value={2}>Persona</option>
         </TextField>
-      </Grid>
+      </Grid> */}
       <Grid item xs={12}>
         <Paper className={classes.paper}>
           <TableContainer>
@@ -1896,6 +1999,12 @@ function AgentesPersonas(props) {
                 {agentesPersonasData.length > 0 ? (
                   stableSort(agentesPersonasData, getComparator(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .filter(
+                      (agentePersona) =>
+                        (agentePersona.tipo === 2 &&
+                          agentePersona.idProyecto === idProyecto) ||
+                        (agentePersona.tipo === 1 && idProyecto === 0)
+                    )
                     .map((agentePersona, index) => {
                       return (
                         <TableRow
@@ -1913,9 +2022,9 @@ function AgentesPersonas(props) {
                               ? "Activo"
                               : "Inactivo"}
                           </TableCell>
-                          <TableCell align="right">
+                          {/* <TableCell align="right">
                             {agentePersona.tipo === 1 ? "Agente" : "Persona"}
-                          </TableCell>
+                          </TableCell> */}
                           <TableCell align="right">
                             <Tooltip
                               title="Editar"
@@ -1935,7 +2044,7 @@ function AgentesPersonas(props) {
                                     setNombreAgentePersona(
                                       agentePersona.agente
                                     );
-                                    setTipoAgentePersona(agentePersona.tipo);
+                                    /* setTipoAgentePersona(agentePersona.tipo); */
                                     setEnableAgentePersona(true);
                                   }}
                                 >
@@ -2075,12 +2184,12 @@ function AgentesPersonas(props) {
                     })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4}>
+                    <TableCell colSpan={3}>
                       <Typography variant="subtitle1">
                         <ErrorIcon
                           style={{ color: "red", verticalAlign: "sub" }}
                         />
-                        No hay agentes o personas
+                        No hay agentes
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -2373,10 +2482,9 @@ function GuardarProyecto(props) {
   );
 }
 
-function MinusSquare(props) {
+/* function MinusSquare(props) {
   return (
     <SvgIcon fontSize="inherit" style={{ width: 14, height: 14 }} {...props}>
-      {/* tslint:disable-next-line: max-line-length */}
       <path d="M22.047 22.074v0 0-20.147 0h-20.12v0 20.147 0h20.12zM22.047 24h-20.12q-.803 0-1.365-.562t-.562-1.365v-20.147q0-.776.562-1.351t1.365-.575h20.147q.776 0 1.351.575t.575 1.351v20.147q0 .803-.575 1.365t-1.378.562v0zM17.873 11.023h-11.826q-.375 0-.669.281t-.294.682v0q0 .401.294 .682t.669.281h11.826q.375 0 .669-.281t.294-.682v0q0-.401-.294-.682t-.669-.281z" />
     </SvgIcon>
   );
@@ -2385,7 +2493,6 @@ function MinusSquare(props) {
 function PlusSquare(props) {
   return (
     <SvgIcon fontSize="inherit" style={{ width: 14, height: 14 }} {...props}>
-      {/* tslint:disable-next-line: max-line-length */}
       <path d="M22.047 22.074v0 0-20.147 0h-20.12v0 20.147 0h20.12zM22.047 24h-20.12q-.803 0-1.365-.562t-.562-1.365v-20.147q0-.776.562-1.351t1.365-.575h20.147q.776 0 1.351.575t.575 1.351v20.147q0 .803-.575 1.365t-1.378.562v0zM17.873 12.977h-4.923v4.896q0 .401-.281.682t-.682.281v0q-.375 0-.669-.281t-.294-.682v-4.896h-4.923q-.401 0-.682-.294t-.281-.669v0q0-.401.281-.682t.682-.281h4.923v-4.896q0-.401.294-.682t.669-.281v0q.401 0 .682.281t.281.682v4.896h4.923q.401 0 .682.281t.281.682v0q0 .375-.281.669t-.682.294z" />
     </SvgIcon>
   );
@@ -2399,7 +2506,6 @@ function CloseSquare(props) {
       style={{ width: 14, height: 14 }}
       {...props}
     >
-      {/* tslint:disable-next-line: max-line-length */}
       <path d="M17.485 17.512q-.281.281-.682.281t-.696-.268l-4.12-4.147-4.12 4.147q-.294.268-.696.268t-.682-.281-.281-.682.294-.669l4.12-4.147-4.12-4.147q-.294-.268-.294-.669t.281-.682.682-.281.696 .268l4.12 4.147 4.12-4.147q.294-.268.696-.268t.682.281 .281.669-.294.682l-4.12 4.147 4.12 4.147q.294.268 .294.669t-.281.682zM22.047 22.074v0 0-20.147 0h-20.12v0 20.147 0h20.12zM22.047 24h-20.12q-.803 0-1.365-.562t-.562-1.365v-20.147q0-.776.562-1.351t1.365-.575h20.147q.776 0 1.351.575t.575 1.351v20.147q0 .803-.575 1.365t-1.378.562v0z" />
     </SvgIcon>
   );
@@ -2407,7 +2513,6 @@ function CloseSquare(props) {
 
 const useTreeItemStyles = makeStyles((theme) => ({
   root: {
-    /* color: theme.palette.text.secondary, */
     "&:hover > $content": {
       backgroundColor: "#c0c0ff",
     },
@@ -2461,10 +2566,7 @@ function StyledTreeItem(props) {
   const classes = useTreeItemStyles();
   const {
     labelText,
-    /* labelIcon: LabelIcon, */
     labelInfo,
-    /* color,
-    bgColor, */
     ...other
   } = props;
 
@@ -2472,7 +2574,6 @@ function StyledTreeItem(props) {
     <TreeItem
       label={
         <div className={classes.labelRoot}>
-          {/* <LabelIcon color="inherit" className={classes.labelIcon} /> */}
           <Typography variant="body2" className={classes.labelText}>
             {labelText}
           </Typography>
@@ -2481,17 +2582,11 @@ function StyledTreeItem(props) {
           </Typography>
         </div>
       }
-      /* style={{
-        "--tree-view-color": color,
-        "--tree-view-bg-color": bgColor,
-      }} */
       classes={{
         root: classes.root,
         content: classes.content,
         expanded: classes.expanded,
-        /* selected: classes.selected, */
         group: classes.group,
-        /* label: classes.label, */
       }}
       {...other}
     />
@@ -2499,23 +2594,19 @@ function StyledTreeItem(props) {
 }
 
 StyledTreeItem.propTypes = {
-  /* bgColor: PropTypes.string,
-  color: PropTypes.string, */
-  /* labelIcon: PropTypes.elementType.isRequired, */
   labelInfo: PropTypes.string,
   labelText: PropTypes.string.isRequired,
-};
+}; 
 
 const useStylesActividades = makeStyles({
   root: {
     height: "100%",
     flexGrow: 1,
-    /* maxWidth: 400, */
   },
-});
+}); */
 
 function Actividades(props) {
-  const classes = useStylesActividades();
+  /* const classes = useStylesActividades(); */
   const setLoading = props.setLoading;
   const correoUsuario = props.correoUsuario;
   const passwordUsuario = props.passwordUsuario;
@@ -2528,8 +2619,9 @@ function Actividades(props) {
   const idProyecto = props.idProyecto;
   const setIdProyecto = props.setIdProyecto;
   const setShowSection = props.setShowSection;
+  const executeGetPryProyectos = props.executeGetPryProyectos;
 
-  const [actividadesInfo, setActividadesInfo] = useState([]);
+  /* const [actividadesInfo, setActividadesInfo] = useState([]); */
   const [idProyectoSelected, setIdProyectoSelected] = useState(0);
   const [proyectoTitulo, setProyectoTitulo] = useState("");
   const [idActividadSelected, setIdActividadSelected] = useState(0);
@@ -2571,7 +2663,7 @@ function Actividades(props) {
     fechaInicial: moment().format("YYYY-MM-DD"),
     fechaFin: "",
     idAgente: "",
-    avance: "",
+    avance: 0,
     estatus: 0,
     fechaUltimaAccion: "",
   });
@@ -2591,6 +2683,7 @@ function Actividades(props) {
     idAgente: 0,
     idActividad: 0,
   });
+  const [treeData, setTreeData] = useState([]);
   const [vista, setVista] = useState(1);
 
   const [
@@ -2610,6 +2703,7 @@ function Actividades(props) {
         rfc: rfcEmpresa,
         idsubmenu: idSubmenu,
         IdProyecto: idProyecto,
+        reportes: 0,
       },
     },
     {
@@ -2779,6 +2873,30 @@ function Actividades(props) {
     }
   );
 
+  const [
+    {
+      data: borrarPryProyActividadData,
+      loading: borrarPryProyActividadLoading,
+      error: borrarPryProyActividadError,
+    },
+    executeBorrarPryProyActividad,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/borrarPryProyActividad`,
+      method: "DELETE",
+      params: {
+        usuario: correoUsuario,
+        pwd: passwordUsuario,
+        rfc: rfcEmpresa,
+        idsubmenu: idSubmenu,
+      },
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
   useEffect(() => {
     function checkData() {
       if (getPryProyActividadesInfoData) {
@@ -2795,7 +2913,7 @@ function Actividades(props) {
           setProyectoTitulo(
             getPryProyActividadesInfoData.actividadesInfo[0].Proyecto
           );
-          setActividadesInfo(getPryProyActividadesInfoData.actividadesInfo);
+          /* setActividadesInfo(getPryProyActividadesInfoData.actividadesInfo); */
           setActividades(
             getPryProyActividadesInfoData.actividadesInfo[0].Actividades
           );
@@ -2812,6 +2930,91 @@ function Actividades(props) {
           setDocumentosSelected(
             getPryProyActividadesInfoData.actividadesInfo[0].Documentos
           );
+
+          for (
+            let x = 0;
+            x <
+            getPryProyActividadesInfoData.actividadesInfo[0].Actividades.length;
+            x++
+          ) {
+            getPryProyActividadesInfoData.actividadesInfo[0].Actividades[
+              x
+            ].key =
+              getPryProyActividadesInfoData.actividadesInfo[0].Actividades[
+                x
+              ].id;
+            const numAcciones =
+              getPryProyActividadesInfoData.actividadesInfo[0].Acciones.filter(
+                (accion) =>
+                  accion.idactividad ===
+                  getPryProyActividadesInfoData.actividadesInfo[0].Actividades[
+                    x
+                  ].id
+              ).length;
+            const textoNumAcciones = numAcciones !== 1 ? "acciones" : "acción";
+            getPryProyActividadesInfoData.actividadesInfo[0].Actividades[
+              x
+            ].label = `Ps. ${getPryProyActividadesInfoData.actividadesInfo[0].Actividades[x].Pos} Nv. ${getPryProyActividadesInfoData.actividadesInfo[0].Actividades[x].Nivel} ${getPryProyActividadesInfoData.actividadesInfo[0].Actividades[x].Actividad} (${getPryProyActividadesInfoData.actividadesInfo[0].Actividades[x].Avance}% completada, ${numAcciones} ${textoNumAcciones})`;
+            getPryProyActividadesInfoData.actividadesInfo[0].Actividades[
+              x
+            ].nodes = [];
+          }
+
+          let nivelMaximo = 0;
+          for (
+            let x = 0;
+            x <
+            getPryProyActividadesInfoData.actividadesInfo[0].Actividades.length;
+            x++
+          ) {
+            /* console.log(getPryProyActividadesInfoData.actividadesInfo[0].Actividades[x]); */
+            if (
+              getPryProyActividadesInfoData.actividadesInfo[0].Actividades[x]
+                .Nivel > nivelMaximo
+            ) {
+              nivelMaximo =
+                getPryProyActividadesInfoData.actividadesInfo[0].Actividades[x]
+                  .Nivel;
+            }
+          }
+          /* console.log("nivel maximo:",nivelMaximo); */
+          let actividadesPorNivel = [];
+          for (let x = 0; x <= nivelMaximo; x++) {
+            actividadesPorNivel.push(
+              getPryProyActividadesInfoData.actividadesInfo[0].Actividades.filter(
+                (actividad) => actividad.Nivel === x
+              )
+            );
+          }
+          /* console.log(actividadesPorNivel); */
+          let diferenciaPos = 10000;
+          let posMasCerca = 0;
+          for (let x = 1; x <= nivelMaximo; x++) {
+            for (let y = 0; y < actividadesPorNivel[x].length; y++) {
+              diferenciaPos = 10000;
+              posMasCerca = 0;
+              for (let z = 0; z < actividadesPorNivel[x - 1].length; z++) {
+                if (
+                  actividadesPorNivel[x][y].Pos -
+                    actividadesPorNivel[x - 1][z].Pos <
+                    diferenciaPos &&
+                  actividadesPorNivel[x][y].Pos -
+                    actividadesPorNivel[x - 1][z].Pos >
+                    0
+                ) {
+                  diferenciaPos =
+                    actividadesPorNivel[x][y].Pos -
+                    actividadesPorNivel[x - 1][z].Pos;
+                  posMasCerca = z;
+                }
+              }
+              actividadesPorNivel[x - 1][posMasCerca].nodes.push(
+                actividadesPorNivel[x][y]
+              );
+            }
+          }
+          /* console.log(actividadesPorNivel[0]); */
+          setTreeData(actividadesPorNivel[0]);
         }
       }
     }
@@ -2838,8 +3041,9 @@ function Actividades(props) {
             );
             setIdAccionSelected(guardarPryProyAccionData.nuevaAccion[0].id);
             setAccionTitulo(guardarPryProyAccionData.nuevaAccion[0].nombre);
-            setIdAccionEditar(0);
           }
+          setIdAccionEditar(0);
+          setIdAccionSelected(0);
           setInfoAcciones({
             nombre: "",
             fecha: moment().format("YYYY-MM-DD"),
@@ -2849,12 +3053,17 @@ function Actividades(props) {
             agentesPersonas: [],
           });
           executeGetPryProyActividades();
+          executeGetPryProyectos();
         }
       }
     }
 
     checkData();
-  }, [guardarPryProyAccionData, executeGetPryProyActividades]);
+  }, [
+    guardarPryProyAccionData,
+    executeGetPryProyActividades,
+    executeGetPryProyectos,
+  ]);
 
   useEffect(() => {
     function checkData() {
@@ -2896,12 +3105,17 @@ function Actividades(props) {
           );
         } else {
           executeGetPryProyActividades();
+          executeGetPryProyectos();
         }
       }
     }
 
     checkData();
-  }, [guardarPryProyDocumentoData, executeGetPryProyActividades]);
+  }, [
+    guardarPryProyDocumentoData,
+    executeGetPryProyActividades,
+    executeGetPryProyectos,
+  ]);
 
   useEffect(() => {
     function checkData() {
@@ -2950,6 +3164,7 @@ function Actividades(props) {
           );
         } else {
           executeGetPryProyActividades();
+          executeGetPryProyectos();
           setOpenDialogGuardarActividad(false);
           setInfoActividad({
             id: 0,
@@ -2960,7 +3175,7 @@ function Actividades(props) {
             fechaInicial: moment().format("YYYY-MM-DD"),
             fechaFin: "",
             idAgente: "",
-            avance: "",
+            avance: 0,
             estatus: 0,
             fechaUltimaAccion: "",
           });
@@ -2969,7 +3184,11 @@ function Actividades(props) {
     }
 
     checkData();
-  }, [guardarPryProyActividadData, executeGetPryProyActividades]);
+  }, [
+    guardarPryProyActividadData,
+    executeGetPryProyActividades,
+    executeGetPryProyectos,
+  ]);
 
   useEffect(() => {
     function checkData() {
@@ -3038,6 +3257,39 @@ function Actividades(props) {
     checkData();
   }, [descargarDocumentosPryProyDocumentoData]);
 
+  useEffect(() => {
+    function checkData() {
+      if (borrarPryProyActividadData) {
+        if (borrarPryProyActividadData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(borrarPryProyActividadData.error),
+            "warning"
+          );
+        } else {
+          swal("Actividad Borrada", "Actividad borrada con éxito", "success");
+          executeGetPryProyActividades();
+          setOpenDialogGuardarActividad(false);
+          setInfoActividad({
+            id: 0,
+            idProyecto: 0,
+            pos: "",
+            nivel: "",
+            actividad: "",
+            fechaInicial: moment().format("YYYY-MM-DD"),
+            fechaFin: "",
+            idAgente: "",
+            avance: 0,
+            estatus: 0,
+            fechaUltimaAccion: "",
+          });
+        }
+      }
+    }
+
+    checkData();
+  }, [borrarPryProyActividadData, executeGetPryProyActividades]);
+
   if (
     getPryProyActividadesLoading ||
     guardarPryProyAccionLoading ||
@@ -3048,7 +3300,8 @@ function Actividades(props) {
     guardarPryProyActividadLoading ||
     modificarInfoPryProyActividadLoading ||
     modificarActividadAccionPryProyDocumentoLoading ||
-    descargarDocumentosPryProyDocumentoLoading
+    descargarDocumentosPryProyDocumentoLoading ||
+    borrarPryProyActividadLoading
   ) {
     setLoading(true);
     return <div></div>;
@@ -3065,7 +3318,8 @@ function Actividades(props) {
     guardarPryProyActividadError ||
     modificarInfoPryProyActividadError ||
     modificarActividadAccionPryProyDocumentoError ||
-    descargarDocumentosPryProyDocumentoError
+    descargarDocumentosPryProyDocumentoError ||
+    borrarPryProyActividadError
   ) {
     return <ErrorQueryDB />;
   }
@@ -3098,7 +3352,7 @@ function Actividades(props) {
       fechaInicial: moment().format("YYYY-MM-DD"),
       fechaFin: "",
       idAgente: "",
-      avance: "",
+      avance: 0,
       estatus: 0,
       fechaUltimaAccion: "",
     });
@@ -3114,11 +3368,13 @@ function Actividades(props) {
       agentesPersonas,
     } = infoAcciones;
 
-    if (nombre.trim() === "") {
+    if (idActividadSelected === 0) {
+      swal("Error", "Seleccione una actividad", "warning");
+    } else if (nombre.trim() === "") {
       swal("Error", "ingrese un nombre", "warning");
     } else if (fecha === "") {
       swal("Error", "Seleccione una fecha", "warning");
-    } else if (porcientoAvance.trim() === "") {
+    } else if (porcientoAvance === "") {
       swal("Error", "Ingrese un porcentaje de avance", "warning");
     } else if (parseInt(porcientoAvance) > 100) {
       swal("Error", "Ingrese un porcentaje de avance valido", "warning");
@@ -3138,7 +3394,7 @@ function Actividades(props) {
           idactividad: idAccionEditar === 0 ? idActividadSelected : idActividad,
           nombre: nombre,
           fecha: fecha,
-          Avance: porcientoAvance.trim(),
+          Avance: porcientoAvance,
           estatus: estatus,
           agentesPersonas: agentesPersonas,
           accion: idAccionEditar === 0 ? 1 : 2,
@@ -3164,6 +3420,7 @@ function Actividades(props) {
               rfc: rfcEmpresa,
               idsubmenu: idSubmenu,
               idProyAccion: idAccionSelected,
+              idActividad: idActividadSelected,
             },
           });
         }
@@ -3268,9 +3525,9 @@ function Actividades(props) {
       swal("Error", "Ingrese un nivel", "warning");
     } else  */ if (actividad.trim() === "") {
       swal("Error", "Ingrese una actividad", "warning");
-    } else if (avance.trim() === "") {
+    } else if (avance === "") {
       swal("Error", "Ingrese un porcentaje de avance", "warning");
-    } else if (parseInt(avance.trim()) > 100) {
+    } else if (parseInt(avance) > 100) {
       swal("Error", "Ingrese un porcentaje de avance valido", "warning");
     } else if (fechaInicial === "") {
       swal("Error", "Seleccione una fecha inicial", "warning");
@@ -3332,7 +3589,15 @@ function Actividades(props) {
       case 1:
         for (let x = 1; x < actividades.length - 1; x++) {
           console.log(actividades[x].Arbol);
-          console.log(hasChildren(actividades[x-1].Arbol, actividades[x].Arbol, actividades[x+1].Arbol) ? "Padre" : "No padre");
+          console.log(
+            hasChildren(
+              actividades[x - 1].Arbol,
+              actividades[x].Arbol,
+              actividades[x + 1].Arbol
+            )
+              ? "Padre"
+              : "No padre"
+          );
           /* console.log(isChildren(actividades[x].Arbol, actividades[x].Arbol) ? "Hijo" : "No Hijo"); */
 
           /* if (actividades[x].Pos === pos) {
@@ -3608,6 +3873,30 @@ function Actividades(props) {
     });
   };
 
+  /* const treeData = [
+    {
+      key: "first-level-node-1",
+      label: "Node 1 at the first level",
+      nodes: [
+        {
+          key: "second-level-node-1",
+          label: "Node 1 at the second level",
+          nodes: [
+            {
+              key: "third-level-node-1",
+              label: "Last node of the branch",
+              nodes: [], // you can remove the nodes property or leave it as an empty array
+            },
+          ],
+        },
+      ],
+    },
+    {
+      key: "first-level-node-2",
+      label: "Node 2 at the first level",
+    },
+  ]; */
+
   return (
     <Fragment>
       <Grid container spacing={3}>
@@ -3687,6 +3976,40 @@ function Actividades(props) {
           </Tooltip>
         </Grid>
         <Grid item xs={12}>
+          <TreeMenu data={treeData}>
+            {({ search, items }) => (
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {items.map(({ key, ...props }) => (
+                  <div key={key}>
+                    <ItemComponent
+                      {...props}
+                      style={{
+                        background:
+                          props.id === idActividadSelected ? "#c0c0ff" : "",
+                      }}
+                      onClick={() => {
+                        /* console.log(props); */
+                        setIdActividadSelected(
+                          props.id === idActividadSelected ? 0 : props.id
+                        );
+                        setActividadTitulo(
+                          props.id === idActividadSelected
+                            ? ""
+                            : props.Actividad
+                        );
+                        setIdAccionSelected(0);
+                        setAccionTitulo("");
+                        setIdPlanSelected(0);
+                        setPlanTitulo("");
+                      }}
+                    />
+                  </div>
+                ))}
+              </ul>
+            )}
+          </TreeMenu>
+        </Grid>
+        {/* <Grid item xs={12}>
           <TreeView
             className={classes.root}
             defaultExpanded={["1"]}
@@ -3706,8 +4029,6 @@ function Actividades(props) {
                         ? "Actividad"
                         : "Actividades"
                     }`}
-                    /* color="#1a73e8"
-                    bgColor="#e8f0fe" */
                     onClick={(e) => {
                       setIdActividadSelected(0);
                       setActividadTitulo("");
@@ -3722,45 +4043,78 @@ function Actividades(props) {
                         (accion) => accion.idactividad === actividad.id
                       ).length;
                       return (
-                        <StyledTreeItem
-                          key={indexActividad}
-                          nodeId={
-                            proyecto.id.toString() + actividad.id.toString()
-                          }
-                          labelText={`Ps. ${actividad.Pos} Nv. ${actividad.Nivel} ${actividad.Actividad}`}
-                          labelInfo={`${numAcciones} ${
-                            numAcciones === 1 ? "Acción" : "Acciones"
-                          } (${actividad.Avance}% avance)`}
-                          style={{
-                            paddingLeft: (actividad.Nivel + 1) * 16,
-                            background:
-                              actividad.id === idActividadSelected
-                                ? "#c0c0ff"
-                                : "",
-                          }}
-                          /* color="#1a73e8"
-                          bgColor="#e8f0fe" */
-                          onClick={() => {
-                            setIdActividadSelected(
-                              actividad.id === idActividadSelected
-                                ? 0
-                                : actividad.id
-                            );
-                            setActividadTitulo(
-                              actividad.id === idActividadSelected
-                                ? ""
-                                : actividad.Actividad
-                            );
-                            setIdAccionSelected(0);
-                            setAccionTitulo("");
-                            setIdPlanSelected(0);
-                            setPlanTitulo("");
-                            /* if (actividad.id === idActividadSelected) {
+                        <Fragment key={indexActividad}>
+                          <StyledTreeItem
+                            nodeId={
+                              proyecto.id.toString() + actividad.id.toString()
+                            }
+                            labelText={`Ps. ${actividad.Pos} Nv. ${actividad.Nivel} ${actividad.Actividad}`}
+                            labelInfo={`${numAcciones} ${
+                              numAcciones === 1 ? "Acción" : "Acciones"
+                            } (${actividad.Avance}% avance)`}
+                            style={{
+                              paddingLeft: (actividad.Nivel + 1) * 16,
+                              background:
+                                actividad.id === idActividadSelected
+                                  ? "#c0c0ff"
+                                  : "",
+                              display:
+                                indexActividad !== 0 &&
+                                actividad.Nivel >
+                                  proyecto.Actividades[indexActividad - 1].Nivel
+                                  ? "none"
+                                  : "",
+                            }}
+                            onClick={() => {
+                              setIdActividadSelected(
+                                actividad.id === idActividadSelected
+                                  ? 0
+                                  : actividad.id
+                              );
+                              setActividadTitulo(
+                                actividad.id === idActividadSelected
+                                  ? ""
+                                  : actividad.Actividad
+                              );
                               setIdAccionSelected(0);
                               setAccionTitulo("");
-                            } */
-                          }}
-                        />
+                              setIdPlanSelected(0);
+                              setPlanTitulo("");
+                            }}
+                          >
+                            {indexActividad !==
+                              proyecto.Actividades.length - 1 &&
+                            actividad.Nivel <
+                              proyecto.Actividades[indexActividad + 1].Nivel ? (
+                              <StyledTreeItem
+                                nodeId={
+                                  proyecto.id.toString() +
+                                  proyecto.Actividades[
+                                    indexActividad + 1
+                                  ].id.toString()
+                                }
+                                labelText={`Ps. ${
+                                  proyecto.Actividades[indexActividad + 1].Pos
+                                } Nv. ${
+                                  proyecto.Actividades[indexActividad + 1].Nivel
+                                } ${
+                                  proyecto.Actividades[indexActividad + 1]
+                                    .Actividad
+                                }`}
+                                style={{
+                                  paddingLeft:
+                                    proyecto.Actividades[indexActividad + 1]
+                                      .Nivel * 16,
+                                  background:
+                                    proyecto.Actividades[indexActividad + 1]
+                                      .id === idActividadSelected
+                                      ? "#c0c0ff"
+                                      : "",
+                                }}
+                              ></StyledTreeItem>
+                            ) : null}
+                          </StyledTreeItem>
+                        </Fragment>
                       );
                     })}
                   </StyledTreeItem>
@@ -3772,7 +4126,7 @@ function Actividades(props) {
               </Typography>
             )}
           </TreeView>
-        </Grid>
+        </Grid> */}
         <Grid item xs={12}>
           <Avances
             setLoading={setLoading}
@@ -3835,6 +4189,7 @@ function Actividades(props) {
             handleClickEditarPlan={handleClickEditarPlan}
             vista={vista}
             setVista={setVista}
+            executeGetPryProyectos={executeGetPryProyectos}
           />
         </Grid>
         <Dialog
@@ -3855,6 +4210,7 @@ function Actividades(props) {
               agentesPersonasExistentes={agentesPersonasFilter}
               newPersonasSelected={newPersonasSelected}
               setNewPersonasSelected={setNewPersonasSelected}
+              idProyecto={idProyecto}
               /* agentesPersonasFilter={agentesPersonasFilter} */
             />
           </DialogContent>
@@ -3893,6 +4249,8 @@ function Actividades(props) {
               idSubmenu={idSubmenu}
               infoActividad={infoActividad}
               setInfoActividad={setInfoActividad}
+              executeBorrarPryProyActividad={executeBorrarPryProyActividad}
+              idProyecto={idProyecto}
             />
           </DialogContent>
           <DialogActions>
@@ -3978,6 +4336,7 @@ function Avances(props) {
   const handleClickEditarPlan = props.handleClickEditarPlan;
   const vista = props.vista;
   const setVista = props.setVista;
+  const executeGetPryProyectos = props.executeGetPryProyectos;
 
   const [accionesFilter, setAccionesFilter] = useState([]);
   const [documentosFilter, setDocumentosFilter] = useState([]);
@@ -4066,7 +4425,7 @@ function Avances(props) {
     });
   };
 
-  const handleClickEditarAccion = () => {
+  /* const handleClickEditarAccion = () => {
     const accionSelected = accionesSelected.filter(
       (accion) => accion.id === idAccionSelected
     )[0];
@@ -4082,7 +4441,7 @@ function Avances(props) {
       agentesPersonas: idsAgentesPersonasAccionSelected,
     });
     setIdAccionEditar(idAccionSelected);
-  };
+  }; */
 
   const handleLimpiarEdicionAccion = () => {
     setInfoAcciones({
@@ -4167,7 +4526,7 @@ function Avances(props) {
                           fechaInicial: actividadSelected.FecIni,
                           fechaFin: actividadSelected.FecFin,
                           idAgente: actividadSelected.idAgente,
-                          avance: actividadSelected.Avance.toString(),
+                          avance: actividadSelected.Avance,
                           estatus: actividadSelected.Estatus,
                           fechaUltimaAccion: actividadSelected.FecUltAccion,
                         });
@@ -4202,7 +4561,7 @@ function Avances(props) {
                 <Fragment>
                   <strong>Acción: </strong>
                   {accionTitulo !== "" ? accionTitulo : "No Seleccionada"}
-                  {accionTitulo !== "" ? (
+                  {/* {accionTitulo !== "" ? (
                     <Tooltip title="Editar" disabled={permisosSubmenu < 2}>
                       <span>
                         <IconButton
@@ -4215,7 +4574,7 @@ function Avances(props) {
                         </IconButton>
                       </span>
                     </Tooltip>
-                  ) : null}
+                  ) : null} */}
                 </Fragment>
               ) : (
                 <Fragment>
@@ -4464,28 +4823,28 @@ function Avances(props) {
                               ) !== -1
                             }
                             onClick={() => {
-                              if (agentePersona.tipo === 1) {
+                              /* if (agentePersona.tipo === 1) {
                                 swal(
                                   "Error",
                                   "Solo se pueden seleccionar personas en las acciones",
                                   "warning"
                                 );
+                              } else { */
+                              let newAgentesPersonas =
+                                infoAcciones.agentesPersonas;
+                              const pos = newAgentesPersonas.indexOf(
+                                agentePersona.id
+                              );
+                              if (pos === -1) {
+                                newAgentesPersonas.push(agentePersona.id);
                               } else {
-                                let newAgentesPersonas =
-                                  infoAcciones.agentesPersonas;
-                                const pos = newAgentesPersonas.indexOf(
-                                  agentePersona.id
-                                );
-                                if (pos === -1) {
-                                  newAgentesPersonas.push(agentePersona.id);
-                                } else {
-                                  newAgentesPersonas.splice(pos, 1);
-                                }
-                                setInfoAcciones({
-                                  ...infoAcciones,
-                                  agentesPersonas: newAgentesPersonas,
-                                });
+                                newAgentesPersonas.splice(pos, 1);
                               }
+                              setInfoAcciones({
+                                ...infoAcciones,
+                                agentesPersonas: newAgentesPersonas,
+                              });
+                              /* } */
                             }}
                           >
                             <ListItemText
@@ -4596,6 +4955,47 @@ function Avances(props) {
                                 idAccionSelected === accion.id
                                   ? ""
                                   : accion.nombre
+                              );
+
+                              let idsAgentesPersonasAccionSelected = [];
+                              if (idAccionSelected !== accion.id) {
+                                idsAgentesPersonasAccionSelected =
+                                  agentesPersonasSelected
+                                    .filter(
+                                      (agentePersona) =>
+                                        agentePersona.idAccion === accion.id
+                                    )
+                                    .map((agentePersona) => agentePersona.id);
+                              }
+
+                              setInfoAcciones({
+                                nombre:
+                                  idAccionSelected === accion.id
+                                    ? ""
+                                    : accion.nombre,
+                                fecha:
+                                  idAccionSelected === accion.id
+                                    ? moment().format("YYYY-MM-DD")
+                                    : accion.fecha,
+                                porcientoAvance:
+                                  idAccionSelected === accion.id
+                                    ? ""
+                                    : accion.Avance,
+                                estatus:
+                                  idAccionSelected === accion.id
+                                    ? 0
+                                    : accion.estatus,
+                                idActividad:
+                                  idAccionSelected === accion.id
+                                    ? 0
+                                    : accion.idactividad,
+                                agentesPersonas:
+                                  idAccionSelected === accion.id
+                                    ? []
+                                    : idsAgentesPersonasAccionSelected,
+                              });
+                              setIdAccionEditar(
+                                idAccionSelected === accion.id ? 0 : accion.id
                               );
                             }}
                           >
@@ -4806,6 +5206,7 @@ function Avances(props) {
           setInfoPlan={setInfoPlan}
           idActividadSelected={idActividadSelected}
           setIdActividadSelected={setIdActividadSelected}
+          executeGetPryProyectos={executeGetPryProyectos}
         />
       )}
       <Dialog
@@ -4922,6 +5323,7 @@ function AgentesPersonasAvances(props) {
   const idSubmenu = props.idSubmenu;
   const agentesPersonasExistentes = props.agentesPersonasExistentes;
   const setNewPersonasSelected = props.setNewPersonasSelected;
+  const idProyecto = props.idProyecto;
 
   /* const [agentesPersonas, setAgentesPersonas] = useState([]); */
   const [checked, setChecked] = useState([]);
@@ -5214,11 +5616,13 @@ function AgentesPersonasAvances(props) {
           onChange={handleInputsChangePoryectoSelected}
         >
           <option value={0}>Personas sin proyecto</option>
-          {proyectos.map((proyecto, index) => (
-            <option key={index} value={proyecto.id}>
-              {proyecto.Proyecto}
-            </option>
-          ))}
+          {proyectos
+            .filter((proyecto) => proyecto.id !== idProyecto)
+            .map((proyecto, index) => (
+              <option key={index} value={proyecto.id}>
+                {proyecto.Proyecto}
+              </option>
+            ))}
         </TextField>
         <Paper className={classes.paper}>
           <List
@@ -5358,6 +5762,8 @@ function GuardarActividad(props) {
   const idSubmenu = props.idSubmenu;
   const infoActividad = props.infoActividad;
   const setInfoActividad = props.setInfoActividad;
+  const executeBorrarPryProyActividad = props.executeBorrarPryProyActividad;
+  const idProyecto = props.idProyecto;
 
   const { agentesPersonasData, agentesPersonasLoading, agentesPersonasError } =
     useAgentesPersonas(correoUsuario, passwordUsuario, rfcEmpresa, idSubmenu);
@@ -5382,38 +5788,77 @@ function GuardarActividad(props) {
     });
   };
 
+  const handleClickEliminarActividad = () => {
+    swal({
+      text: `¿Está seguro de eliminar la actividad?`,
+      buttons: ["No", "Sí"],
+      dangerMode: true,
+    }).then((value) => {
+      if (value) {
+        executeBorrarPryProyActividad({
+          data: {
+            usuario: correoUsuario,
+            pwd: passwordUsuario,
+            rfc: rfcEmpresa,
+            idsubmenu: idSubmenu,
+            idProyActividad: infoActividad.id,
+            pos: infoActividad.pos,
+          },
+        });
+        /* swal({
+          text: `Elija una opción de borrado`,
+          buttons: ["Eliminar solo la actividad", "Eliminar todo el arbol desendente"],
+          dangerMode: true,
+        }).then((value) => {
+          if (value) {
+            console.log("Eliminar todo el arbol desendente");
+          }
+          else {
+            console.log("Eliminar solo la actividad");
+          }
+        }); */
+      }
+    });
+  };
+
   return (
     <Grid container spacing={3} justify="center">
-      <Grid item xs={12} sm={6} md={4}>
-        <TextField
-          className={classes.textFields}
-          id="pos"
-          label="Posición"
-          value={infoActividad.pos}
-          inputProps={{
-            maxLength: 3,
-          }}
-          onKeyPress={(e) => {
-            keyValidation(e, 2);
-          }}
-          onChange={handleInputsGuardarActividadChange}
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={4}>
-        <TextField
-          className={classes.textFields}
-          id="nivel"
-          label="Nivel"
-          value={infoActividad.nivel}
-          inputProps={{
-            maxLength: 3,
-          }}
-          onKeyPress={(e) => {
-            keyValidation(e, 2);
-          }}
-          onChange={handleInputsGuardarActividadChange}
-        />
-      </Grid>
+      {infoActividad.id !== 0 && (
+        <Fragment>
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              className={classes.textFields}
+              id="pos"
+              label="Posición"
+              disabled
+              value={infoActividad.pos}
+              inputProps={{
+                maxLength: 3,
+              }}
+              onKeyPress={(e) => {
+                keyValidation(e, 2);
+              }}
+              onChange={handleInputsGuardarActividadChange}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              className={classes.textFields}
+              id="nivel"
+              label="Nivel"
+              disabled
+              value={infoActividad.nivel}
+              inputProps={{
+                maxLength: 3,
+              }}
+              onKeyPress={(e) => {
+                keyValidation(e, 2);
+              }}
+              onChange={handleInputsGuardarActividadChange}
+            />
+          </Grid>
+        </Fragment>
+      )}
       <Grid item xs={12} sm={6} md={4}>
         <TextField
           className={classes.textFields}
@@ -5472,7 +5917,7 @@ function GuardarActividad(props) {
           onChange={handleInputsGuardarActividadChange}
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={infoActividad.id === 0 ? 6 : 4}>
+      <Grid item xs={12} sm={6} md={4}>
         <TextField
           className={classes.textFields}
           select
@@ -5491,14 +5936,16 @@ function GuardarActividad(props) {
           onChange={handleInputsGuardarActividadChange}
         >
           <option value={0}>Elija un agente</option>
-          {agentesPersonasData.map((agente, index) => (
-            <option key={index} value={agente.idAgentePersona}>
-              {agente.agente}
-            </option>
-          ))}
+          {agentesPersonasData
+            .filter((agentePersona) => agentePersona.idProyecto === idProyecto)
+            .map((agente, index) => (
+              <option key={index} value={agente.idAgentePersona}>
+                {agente.agente}
+              </option>
+            ))}
         </TextField>
       </Grid>
-      <Grid item xs={12} sm={6} md={infoActividad.id === 0 ? 6 : 4}>
+      <Grid item xs={12} sm={6} md={4}>
         <TextField
           className={classes.textFields}
           id="estatus"
@@ -5545,6 +5992,18 @@ function GuardarActividad(props) {
           />
         </Grid>
       ) : null}
+      {infoActividad.id !== 0 && (
+        <Grid item xs={12}>
+          <Button
+            variant="contained"
+            color="secondary"
+            style={{ float: "right" }}
+            onClick={handleClickEliminarActividad}
+          >
+            Eliminar
+          </Button>
+        </Grid>
+      )}
     </Grid>
   );
 }
@@ -5570,6 +6029,7 @@ function Planes(props) {
   const setInfoPlan = props.setInfoPlan;
   const idActividadSelected = props.idActividadSelected;
   const setIdActividadSelected = props.setIdActividadSelected;
+  const executeGetPryProyectos = props.executeGetPryProyectos;
 
   const [planesFilter, setPlanesFilter] = useState([]);
 
@@ -5652,6 +6112,7 @@ function Planes(props) {
             idActividad: 0,
           });
           executeGetPryProyActividades();
+          executeGetPryProyectos();
         }
       }
     }
@@ -5665,6 +6126,7 @@ function Planes(props) {
     setPlanTitulo,
     setInfoPlan,
     executeGetPryProyActividades,
+    executeGetPryProyectos,
   ]);
 
   useEffect(() => {
@@ -5752,8 +6214,9 @@ function Planes(props) {
   const handleGuardarPlan = () => {
     const { id, nombre, fechaInicio, fechaFin, idAgente, idActividad } =
       infoPlan;
-
-    if (nombre.trim() === "") {
+    if (idActividadSelected === 0) {
+      swal("Error", "Seleccione una actividad", "warning");
+    } else if (nombre.trim() === "") {
       swal("Error", "Ingrese un nombre", "warning");
     } else if (fechaInicio === "") {
       swal("Error", "Seleccione una fecha de inicio", "warning");
@@ -5945,11 +6408,15 @@ function Planes(props) {
                   onChange={handleInputsInfoPlanChange}
                 >
                   <option value={0}>Elija un agente</option>
-                  {agentesPersonas.map((agente, index) => (
-                    <option key={index} value={agente.idAgentePersona}>
-                      {agente.agente}
-                    </option>
-                  ))}
+                  {agentesPersonas
+                    .filter(
+                      (agentePersona) => agentePersona.idProyecto === idProyecto
+                    )
+                    .map((agente, index) => (
+                      <option key={index} value={agente.idAgentePersona}>
+                        {agente.agente}
+                      </option>
+                    ))}
                 </TextField>
               </Grid>
               {infoPlan.id !== 0 ? (
@@ -6051,40 +6518,94 @@ function Planes(props) {
   );
 }
 
-/* function Planes1(props) {
-  const classes = useStyles();
+const stylesPDF = StyleSheet.create({
+  page: {
+    flexDirection: "row",
+    padding: 15,
+  },
+  pageConfig: {
+    padding: 15,
+  },
+  body: {
+    flexGrow: 1,
+  },
+  row: {
+    flexGrow: 1,
+    flexDirection: "row",
+  },
+  table: {
+    display: "table",
+    width: "auto",
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+  },
+  tableRow: { margin: "auto", flexDirection: "row", cursor: "pointer" },
+  tableColProyectos: {
+    width: 100 / 10 + "%",
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+  },
+  tableColActividades: {
+    width: 100 / 11 + "%",
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+  },
+  tableColAcciones: {
+    width: 100 / 9 + "%",
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+  },
+  tableColDocumentos: {
+    width: 100 / 3 + "%",
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+  },
+  tableHeader: { margin: "auto", marginTop: 5, fontSize: 12 },
+  tableCell: { margin: "auto", marginTop: 5, fontSize: 10 },
+  tableCellLink: { margin: "auto", marginTop: 5, fontSize: 10, color: "blue" },
+  linksDocumentos: {
+    color: "blue",
+  },
+});
 
+function ReportePorProyecto(props) {
+  const idProyecto = props.idProyecto;
   const setLoading = props.setLoading;
   const correoUsuario = props.correoUsuario;
   const passwordUsuario = props.passwordUsuario;
   const rfcEmpresa = props.rfcEmpresa;
   const idSubmenu = props.idSubmenu;
-  const permisosSubmenu = props.permisosSubmenu;
-  const idProyecto = props.idProyecto;
-  const setIdProyecto = props.setIdProyecto;
-  const setShowSection = props.setShowSection;
 
-  const [infoPlan, setInfoPlan] = useState({
-    id: 0,
-    fechaInicio: moment().format("YYYY-MM-DD"),
-    fechaFin: "",
-    idAgente: 0,
-    idActividad: 0,
-  });
-  const [actividadesInfo, setActividadesInfo] = useState([]);
-  const [actividades, setActividades] = useState([]);
-  const [planes, setPlanes] = useState([]);
-  const [proyectoTitulo, setProyectoTitulo] = useState("");
-  const [idActividadSelected, setIdActividadSelected] = useState(0);
-  const [actividadTitulo, setActividadTitulo] = useState("");
-  const [idPlanSelected, setIdPlanSelected] = useState(0);
-  const [planTitulo, setPlanTitulo] = useState("");
-  const [planesFilter, setPlanesFilter] = useState([]);
+  /* if (localStorage.getItem("dataTemporal")) {
+    try {
+      const decodedToken = jwt.verify(
+        localStorage.getItem("dataTemporal"),
+        "mysecretpassword"
+      );
+      correoUsuario = decodedToken.data.correoUsuario;
+      passwordUsuario = decodedToken.data.passwordUsuario;
+      rfcEmpresa = decodedToken.data.rfcEmpresa;
+      idSubmenu = decodedToken.data.idSubmenu;
+    } catch (err) {
+      localStorage.removeItem("dataTemporal");
+    }
+  } */
 
-  const [agentesPersonas, setAgentesPersonas] = useState([]);
-
-  const { agentesPersonasData, agentesPersonasLoading, agentesPersonasError } =
-    useAgentesPersonas(correoUsuario, passwordUsuario, rfcEmpresa, idSubmenu);
+  const fechaActual = moment();
+  const [actividadesProyectosData, setActividadesProyectosData] = useState([]);
+  const [accionesProyectosData, setAccionesProyectosData] = useState([]);
+  const [documentosProyectosData, setDocumentosProyectosData] = useState([]);
+  const estatus = ["Pendiente", "En proceso", "Terminado", "Cerrado"];
 
   const [
     {
@@ -6092,7 +6613,6 @@ function Planes(props) {
       loading: getPryProyActividadesLoading,
       error: getPryProyActividadesError,
     },
-    executeGetPryProyActividades,
   ] = useAxios(
     {
       url: API_BASE_URL + `/getPryProyActividadesInfo`,
@@ -6103,59 +6623,13 @@ function Planes(props) {
         rfc: rfcEmpresa,
         idsubmenu: idSubmenu,
         IdProyecto: idProyecto,
+        reportes: 0,
       },
     },
     {
       useCache: false,
     }
   );
-
-  const [
-    {
-      data: guardarPryProyPlanData,
-      loading: guardarPryProyPlanLoading,
-      error: guardarPryProyPlanError,
-    },
-    executeGuardarPryProyPlan,
-  ] = useAxios(
-    {
-      url: API_BASE_URL + `/guardarPryProyPlan`,
-      method: "POST",
-    },
-    {
-      useCache: false,
-      manual: true,
-    }
-  );
-
-  const [
-    {
-      data: borrarPryProyPlanData,
-      loading: borrarPryProyPlanLoading,
-      error: borrarPryProyPlanError,
-    },
-    executeBorrarPryProyPlan,
-  ] = useAxios(
-    {
-      url: API_BASE_URL + `/borrarPryProyPlan`,
-      method: "DELETE",
-    },
-    {
-      useCache: false,
-      manual: true,
-    }
-  );
-
-  useEffect(() => {
-    if (agentesPersonasData.length > 0) {
-      setAgentesPersonas(
-        agentesPersonasData.filter(
-          (agentePersona) =>
-            agentePersona.tipo === 1 && agentePersona.estatus === 1
-        )
-      );
-    }
-  }, [agentesPersonasData]);
 
   useEffect(() => {
     function checkData() {
@@ -6167,14 +6641,39 @@ function Planes(props) {
             "warning"
           );
         } else {
-          setActividadesInfo(getPryProyActividadesInfoData.actividadesInfo);
-          setActividades(
-            getPryProyActividadesInfoData.actividadesInfo[0].Actividades
-          );
-          setPlanes(getPryProyActividadesInfoData.actividadesInfo[0].Planes);
-          setProyectoTitulo(
-            getPryProyActividadesInfoData.actividadesInfo[0].Proyecto
-          );
+          let actividadesData = [];
+          let accionesData = [];
+          let documentosData = [];
+          for (
+            let x = 0;
+            x < getPryProyActividadesInfoData.actividadesInfo.length;
+            x++
+          ) {
+            actividadesData.push({
+              idProyecto: getPryProyActividadesInfoData.actividadesInfo[x].id,
+              nombreProyecto:
+                getPryProyActividadesInfoData.actividadesInfo[x].Proyecto,
+              actividades:
+                getPryProyActividadesInfoData.actividadesInfo[x].Actividades,
+            });
+            accionesData.push({
+              idProyecto: getPryProyActividadesInfoData.actividadesInfo[x].id,
+              nombreProyecto:
+                getPryProyActividadesInfoData.actividadesInfo[x].Proyecto,
+              acciones:
+                getPryProyActividadesInfoData.actividadesInfo[x].Acciones,
+            });
+            documentosData.push({
+              idProyecto: getPryProyActividadesInfoData.actividadesInfo[x].id,
+              nombreProyecto:
+                getPryProyActividadesInfoData.actividadesInfo[x].Proyecto,
+              documentos:
+                getPryProyActividadesInfoData.actividadesInfo[x].Documentos,
+            });
+          }
+          setActividadesProyectosData(actividadesData);
+          setAccionesProyectosData(accionesData);
+          setDocumentosProyectosData(documentosData);
         }
       }
     }
@@ -6182,547 +6681,402 @@ function Planes(props) {
     checkData();
   }, [getPryProyActividadesInfoData]);
 
-  useEffect(() => {
-    function checkData() {
-      if (guardarPryProyPlanData) {
-        if (guardarPryProyPlanData.error !== 0) {
-          swal(
-            "Error",
-            dataBaseErrores(guardarPryProyPlanData.error),
-            "warning"
-          );
-        } else {
-          if (guardarPryProyPlanData.nuevoPlan) {
-            setIdActividadSelected(
-              guardarPryProyPlanData.nuevoPlan[0].idactividades
-            );
-            setActividadTitulo(guardarPryProyPlanData.nuevoPlan[0].Actividad);
-            setIdPlanSelected(guardarPryProyPlanData.nuevoPlan[0].id);
-            setPlanTitulo(
-              `${guardarPryProyPlanData.nuevoPlan[0].fecini} - ${guardarPryProyPlanData.nuevoPlan[0].fecfin}`
-            );
-          }
-          setInfoPlan({
-            id: 0,
-            fechaInicio: moment().format("YYYY-MM-DD"),
-            fechaFin: "",
-            idAgente: 0,
-            idActividad: 0,
-          });
-          executeGetPryProyActividades();
-        }
-      }
-    }
-
-    checkData();
-  }, [guardarPryProyPlanData, executeGetPryProyActividades]);
-
-  useEffect(() => {
-    function checkData() {
-      if (borrarPryProyPlanData) {
-        if (borrarPryProyPlanData.error !== 0) {
-          swal(
-            "Error",
-            dataBaseErrores(borrarPryProyPlanData.error),
-            "warning"
-          );
-        } else {
-          setIdPlanSelected(0);
-          setPlanTitulo("");
-          setInfoPlan({
-            id: 0,
-            fechaInicio: moment().format("YYYY-MM-DD"),
-            fechaFin: "",
-            idAgente: 0,
-            idActividad: 0,
-          });
-          executeGetPryProyActividades();
-        }
-      }
-    }
-
-    checkData();
-  }, [borrarPryProyPlanData, executeGetPryProyActividades]);
-
-  useEffect(() => {
-    if (planes.length > 0) {
-      let idsPlanes = [];
-      let newPlanes = [];
-      for (let x = 0; x < planes.length; x++) {
-        if (
-          idsPlanes.indexOf(planes[x].id) === -1 &&
-          (idActividadSelected === 0 ||
-            idActividadSelected === planes[x].idactividades)
-        ) {
-          idsPlanes.push(planes[x].id);
-          newPlanes.push(planes[x]);
-        }
-      }
-      setPlanesFilter(newPlanes);
-    } else {
-      setPlanesFilter([]);
-    }
-  }, [planes, idActividadSelected]);
-
-  if (
-    agentesPersonasLoading ||
-    getPryProyActividadesLoading ||
-    guardarPryProyPlanLoading ||
-    borrarPryProyPlanLoading
-  ) {
+  if (getPryProyActividadesLoading) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (
-    agentesPersonasError ||
-    getPryProyActividadesError ||
-    guardarPryProyPlanError ||
-    borrarPryProyPlanError
-  ) {
+  if (getPryProyActividadesError) {
     return <ErrorQueryDB />;
   }
-
-  const handleChangueIdProyecto = () => {
-    setIdProyecto(0);
-    setShowSection(0);
-  };
-
-  const handleInputsInfoPlanChange = (e) => {
-    setInfoPlan({
-      ...infoPlan,
-      [e.target.id]: e.target.value,
-    });
-  };
-
-  const handleGuardarPlan = () => {
-    const { id, fechaInicio, fechaFin, idAgente, idActividad } = infoPlan;
-
-    if (fechaInicio === "") {
-      swal("Error", "Seleccione una fecha de inicio", "warning");
-    } else if (fechaFin === "") {
-      swal("Error", "Seleccione una fecha de fin", "warning");
-    } else if (idAgente === 0) {
-      swal("Error", "Seleccione un agente", "warning");
-    } else {
-      executeGuardarPryProyPlan({
-        data: {
-          usuario: correoUsuario,
-          pwd: passwordUsuario,
-          rfc: rfcEmpresa,
-          idsubmenu: idSubmenu,
-          idProyPlan: id,
-          idproyecto: idProyecto,
-          idactividades: id === 0 ? idActividadSelected : idActividad,
-          fecini: fechaInicio,
-          fecfin: fechaFin,
-          idagente: idAgente,
-          accion: id === 0 ? 1 : 2,
-        },
-      });
-    }
-  };
-
-  const handleBorrarPlan = () => {
-    if (idPlanSelected === 0) {
-      swal("Error", "Seleccione un plan", "warning");
-    } else {
-      swal({
-        text: `¿Está seguro de eliminar este plan?`,
-        buttons: ["No", "Sí"],
-        dangerMode: true,
-      }).then((value) => {
-        if (value) {
-          executeBorrarPryProyPlan({
-            data: {
-              usuario: correoUsuario,
-              pwd: passwordUsuario,
-              rfc: rfcEmpresa,
-              idsubmenu: idSubmenu,
-              idProyPlan: idPlanSelected,
-            },
-          });
-        }
-      });
-    }
-  };
-
-  const handleClickEditarPlan = () => {
-    const planSelected = planes.filter((plan) => plan.id === idPlanSelected)[0];
-    setInfoPlan({
-      id: planSelected.id,
-      fechaInicio: planSelected.fecini,
-      fechaFin: planSelected.fecfin,
-      idAgente: planSelected.idagente,
-      idActividad: planSelected.idactividades,
-    });
-  };
-
-  const handleLimpiarEdicionPlan = () => {
-    setInfoPlan({
-      id: 0,
-      fechaInicio: moment().format("YYYY-MM-DD"),
-      fechaFin: "",
-      idAgente: 0,
-      idActividad: 0,
-    });
-  };
-
   return (
-    <Grid container spacing={3} justify="center" style={{ marginBottom: 15 }}>
-      <Grid item xs={12}>
-        <Typography variant="h6">
-          <Tooltip title="Regresar">
-            <IconButton onClick={handleChangueIdProyecto}>
-              <ArrowBackIcon color="primary" />
-            </IconButton>
-          </Tooltip>
-          Planeación
-        </Typography>
-      </Grid>
-      <Grid item xs={12}>
-        <TreeView
-          className={classes.root}
-          defaultExpanded={["1"]}
-          defaultCollapseIcon={<MinusSquare />}
-          defaultExpandIcon={<PlusSquare />}
-          defaultEndIcon={<CloseSquare />}
-        >
-          {actividadesInfo.length > 0 ? (
-            actividadesInfo.map((proyecto, indexProyecto) => {
-              return (
-                <StyledTreeItem
-                  key={indexProyecto}
-                  nodeId={proyecto.id.toString()}
-                  labelText={proyecto.Proyecto}
-                  labelInfo={`${proyecto.Actividades.length} ${
-                    proyecto.Actividades.length === 1
-                      ? "Actividad"
-                      : "Actividades"
-                  }`}
-                  onClick={(e) => {
-                    setIdActividadSelected(0);
-                    setActividadTitulo("");
-                    setIdPlanSelected(0);
-                    setPlanTitulo("");
-                  }}
-                >
-                  {proyecto.Actividades.map((actividad, indexActividad) => {
-                    const numAcciones = proyecto.Acciones.filter(
-                      (accion) => accion.idactividad === actividad.id
-                    ).length;
+    <Document>
+        {actividadesProyectosData.map(
+          (actividadesProyecto, indexActividadesProyecto) => (
+            <Page
+              key={indexActividadesProyecto}
+              size="A4"
+              style={stylesPDF.page}
+            >
+              <View style={stylesPDF.body}>
+                <View style={stylesPDF.row}>
+                  <Image src={DublockLogo} style={{ width: "200px" }} />
+                </View>
+                <View style={stylesPDF.row}>
+                  <Text style={{ textAlign: "center" }}>
+                    Detalle de Proyecto
+                  </Text>
+                </View>
+                <View style={stylesPDF.row}>
+                  <Text>Proyecto: {actividadesProyecto.nombreProyecto}</Text>
+                </View>
+                <View style={stylesPDF.table}>
+                  {/* TableHeader */}
+                  <View style={stylesPDF.tableRow}>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>Ps</Text>
+                    </View>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>NV</Text>
+                    </View>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>Actividad</Text>
+                    </View>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>FecIni</Text>
+                    </View>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>FecFin</Text>
+                    </View>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>Avance</Text>
+                    </View>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>Agente</Text>
+                    </View>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>Estatus</Text>
+                    </View>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>FecUltAccion</Text>
+                    </View>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>Doctos</Text>
+                    </View>
+                    <View style={stylesPDF.tableColActividades}>
+                      <Text style={stylesPDF.tableHeader}>Dias Retraso</Text>
+                    </View>
+                  </View>
+                  {/* TableBody */}
+                  {actividadesProyecto.actividades.map((actividad, index) => {
+                    let diasRetraso = 0;
+                    diasRetraso =
+                      actividad.Avance !== 100 &&
+                      actividad.FecFin < fechaActual.format("YYYY-MM-DD")
+                        ? fechaActual.diff(actividad.FecFin, "days")
+                        : 0;
                     return (
-                      <StyledTreeItem
-                        key={indexActividad}
-                        nodeId={
-                          proyecto.id.toString() + actividad.id.toString()
-                        }
-                        labelText={`Ps. ${actividad.Pos} Nv. ${actividad.Nivel} ${actividad.Actividad}`}
-                        labelInfo={`${numAcciones} ${
-                          numAcciones === 1 ? "Acción" : "Acciones"
-                        } (${actividad.Avance}% avance)`}
-                        style={{
-                          background:
-                            actividad.id === idActividadSelected
-                              ? "#c0c0ff"
-                              : "",
-                        }}
-                        onClick={() => {
-                          setIdActividadSelected(
-                            actividad.id === idActividadSelected
-                              ? 0
-                              : actividad.id
-                          );
-                          setActividadTitulo(
-                            actividad.id === idActividadSelected
-                              ? ""
-                              : actividad.Actividad
-                          );
-                          setIdPlanSelected(0);
-                          setPlanTitulo("");
-                        }}
-                      />
+                      <View style={stylesPDF.tableRow} key={index}>
+                        <View style={stylesPDF.tableColActividades}>
+                          <Text
+                            id={`actividad${actividad.id}`}
+                            style={stylesPDF.tableCell}
+                          >
+                            {actividad.Pos}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColActividades}>
+                          <Text style={stylesPDF.tableCell}>
+                            {actividad.Nivel}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColActividades}>
+                          <Text style={stylesPDF.tableCell}>
+                            {actividad.Actividad}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColActividades}>
+                          <Text style={stylesPDF.tableCell}>
+                            {actividad.FecIni}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColActividades}>
+                          <Text style={stylesPDF.tableCell}>
+                            {actividad.FecFin}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColActividades}>
+                          <Text style={stylesPDF.tableCell}>
+                            {actividad.Avance}%
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColActividades}>
+                          <Text style={stylesPDF.tableCell}>
+                            {actividad.Agente}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColActividades}>
+                          <Text style={stylesPDF.tableCell}>
+                            {estatus[actividad.Estatus - 1]}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColActividades}>
+                          {actividad.idUltimaAccion !== 0 ? (
+                            <LinkPdf
+                              style={stylesPDF.tableCellLink}
+                              src={`#accion${actividad.idUltimaAccion}`}
+                            >
+                              <Text style={stylesPDF.tableCell}>
+                                {actividad.FecUltAccion}
+                              </Text>
+                            </LinkPdf>
+                          ) : (
+                            <Text style={stylesPDF.tableCell}>
+                              {actividad.FecUltAccion}
+                            </Text>
+                          )}
+                        </View>
+                        <View style={stylesPDF.tableColActividades}>
+                          {actividad.numDocumentos > 0 ? (
+                            <LinkPdf
+                              style={stylesPDF.tableCellLink}
+                              src={`#documentoActividad${actividad.id}`}
+                            >
+                              <Text style={stylesPDF.tableCell}>
+                                {actividad.numDocumentos}
+                              </Text>
+                            </LinkPdf>
+                          ) : (
+                            <Text style={stylesPDF.tableCell}>
+                              {actividad.numDocumentos}
+                            </Text>
+                          )}
+                        </View>
+                        <View style={stylesPDF.tableColActividades}>
+                          <Text style={stylesPDF.tableCell}>{diasRetraso}</Text>
+                        </View>
+                      </View>
                     );
                   })}
-                </StyledTreeItem>
-              );
-            })
-          ) : (
-            <Typography variant="h6" style={{ textAlign: "center" }}>
-              No hay actividades aún
-            </Typography>
-          )}
-        </TreeView>
-      </Grid>
-      <Grid item xs={12} style={{ marginBottom: "30px" }}>
-        <Grid container>
-          <Grid
-            item
-            xs={12}
-            md={4}
-            style={{ border: "1px solid", background: "#c0c0ff", height: 50 }}
-          >
-            <Typography variant="subtitle1" style={{ marginTop: "10px" }}>
-              <strong>Proyecto: </strong>
-              {proyectoTitulo !== "" ? proyectoTitulo : "no seleccionado"}
-            </Typography>
-          </Grid>
-          <Grid
-            item
-            xs={12}
-            md={4}
-            style={{ border: "1px solid", background: "#c0c0ff", height: 50 }}
-          >
-            <Typography variant="subtitle1" style={{ marginTop: "10px" }}>
-              <strong>Actividad: </strong>
-              {actividadTitulo !== "" ? actividadTitulo : "No Seleccionada"}
-            </Typography>
-          </Grid>
-          <Grid
-            item
-            xs={12}
-            md={4}
-            style={{ border: "1px solid", background: "#c0c0ff", height: 50 }}
-          >
-            <Typography
-              variant="subtitle1"
-              style={{ marginTop: planTitulo === "" ? "10px" : "" }}
-            >
-              <strong>Plan: </strong>
-              {planTitulo !== "" ? planTitulo : "No Seleccionado"}
-              {planTitulo !== "" ? (
-                <Tooltip title="Editar">
-                  <span disabled={permisosSubmenu < 2}>
-                    <IconButton
-                      disabled={permisosSubmenu < 2}
-                      onClick={handleClickEditarPlan}
-                    >
-                      <EditIcon
-                        color={permisosSubmenu < 2 ? "disabled" : "primary"}
-                      />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              ) : null}
-            </Typography>
-          </Grid>
-        </Grid>
-      </Grid>
-      <Grid item xs={12}>
-        <Grid container spacing={3} justify="center">
-          <Grid item xs={12} md={6}>
-            <Grid container spacing={3} justify="center">
-              <Grid item xs={12} style={{ textAlign: "end" }}>
-                {infoPlan.id !== 0 ? (
-                  <Tooltip title="Cancelar">
-                    <IconButton
-                      style={{
-                        float: "right",
-                        margin: 5,
-                      }}
-                      onClick={handleLimpiarEdicionPlan}
-                    >
-                      <CloseIcon color="secondary" />
-                    </IconButton>
-                  </Tooltip>
-                ) : null}
-                <Tooltip
-                  title="Guardar Plan"
-                  disabled={permisosSubmenu < 2}
-                  style={{ display: "inline-block" }}
-                >
-                  <span>
-                    <IconButton
-                      style={{
-                        background: "#1769aa",
-                        margin: 5,
-                      }}
-                      disabled={permisosSubmenu < 2}
-                      onClick={handleGuardarPlan}
-                    >
-                      <SaveIcon
-                        style={{
-                          color: permisosSubmenu < 2 ? "gray" : "#ffffff",
-                        }}
-                      />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-                <Tooltip
-                  title="Eliminar Plan"
-                  disabled={permisosSubmenu < 3}
-                  style={{ display: "inline-block" }}
-                >
-                  <span>
-                    <IconButton
-                      style={{
-                        background: "#f50057",
-                        margin: 5,
-                      }}
-                      disabled={permisosSubmenu < 3}
-                      onClick={handleBorrarPlan}
-                    >
-                      <DeleteIcon
-                        style={{
-                          color: permisosSubmenu < 3 ? "gray" : "#ffffff",
-                        }}
-                      />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  className={classes.textFields}
-                  id="fechaInicio"
-                  label="Fecha Inicial"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  variant="outlined"
-                  type="date"
-                  value={infoPlan.fechaInicio}
-                  onChange={handleInputsInfoPlanChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  className={classes.textFields}
-                  id="fechaFin"
-                  label="Fecha Fin"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  variant="outlined"
-                  type="date"
-                  value={infoPlan.fechaFin}
-                  onChange={handleInputsInfoPlanChange}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  className={classes.textFields}
-                  select
-                  SelectProps={{
-                    native: true,
-                  }}
-                  id="idAgente"
-                  variant="outlined"
-                  label="Agente"
-                  type="text"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  margin="normal"
-                  value={infoPlan.idAgente}
-                  onChange={handleInputsInfoPlanChange}
-                >
-                  <option value={0}>Elija un agente</option>
-                  {agentesPersonas.map((agente, index) => (
-                    <option key={index} value={agente.idAgentePersona}>
-                      {agente.agente}
-                    </option>
-                  ))}
-                </TextField>
-              </Grid>
-              {infoPlan.id !== 0 ? (
-                <Grid item xs={12}>
-                  <TextField
-                    className={classes.textFields}
-                    select
-                    SelectProps={{
-                      native: true,
-                    }}
-                    id="idActividad"
-                    variant="outlined"
-                    label="Actividad"
-                    type="text"
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    margin="normal"
-                    value={infoPlan.idActividad}
-                    onChange={handleInputsInfoPlanChange}
-                  >
-                    <option value={0}>Elija una actividad</option>
-                    {actividades.map((actividad, indexActividad) => {
-                      return (
-                        <option key={indexActividad} value={actividad.id}>
-                          {actividad.Actividad}
-                        </option>
-                      );
-                    })}
-                  </TextField>
-                </Grid>
-              ) : null}
-            </Grid>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Grid container>
-              <Typography variant="subtitle2">Planes Registrados</Typography>
-              <Grid item xs={12}>
-                <Paper elevation={3}>
-                  <List
-                    component="nav"
-                    aria-label="lista planes"
-                    style={{ height: "320px", padding: 0, overflow: "auto" }}
-                  >
-                    {planesFilter.length > 0 ? (
-                      planesFilter.map((plan, indexPlan) => {
-                        return (
-                          <ListItem
-                            key={indexPlan}
-                            button
-                            style={{
-                              background:
-                                idPlanSelected === plan.id ? "#4caf50" : "",
-                            }}
-                            selected={idPlanSelected === plan.id}
-                            onClick={() => {
-                              setIdActividadSelected(
-                                plan.idactividades !== 0 &&
-                                  plan.idactividades !== null
-                                  ? plan.idactividades
-                                  : 0
-                              );
-                              setActividadTitulo(
-                                plan.Actividad !== "" && plan.Actividad !== null
-                                  ? plan.Actividad
-                                  : ""
-                              );
-                              setIdPlanSelected(
-                                idPlanSelected === plan.id ? 0 : plan.id
-                              );
-                              setPlanTitulo(
-                                idPlanSelected === plan.id
-                                  ? ""
-                                  : `${plan.fecini} - ${plan.fecfin}`
-                              );
-                            }}
+                </View>
+              </View>
+            </Page>
+          )
+        )}
+        {accionesProyectosData.map(
+          (accionesProyecto, indexAccionesProyecto) => (
+            <Page key={indexAccionesProyecto} size="A4" style={stylesPDF.page}>
+              <View style={stylesPDF.body}>
+                <View style={stylesPDF.row}>
+                  <Text style={{ textAlign: "center" }}>
+                    Detalle de Acciones
+                  </Text>
+                </View>
+                <View style={stylesPDF.row}>
+                  <Text>Proyecto: {accionesProyecto.nombreProyecto}</Text>
+                </View>
+                <View style={stylesPDF.table}>
+                  {/* TableHeader */}
+                  <View style={stylesPDF.tableRow}>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableHeader}>Actividad</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableHeader}>Accion</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableHeader}>FecFinActividad</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableHeader}>FechaAccion</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableHeader}>Ejecutó</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableHeader}>Avance</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableHeader}>Estatus</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableHeader}>Docto</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableHeader}>
+                        DiasRetrasoVsPlan
+                      </Text>
+                    </View>
+                  </View>
+                  {/* TableBody */}
+                  {accionesProyecto.acciones.map((accion, index) => {
+                    let diasRetraso = 0;
+                    diasRetraso = moment(accion.fecha).diff(
+                      accion.fecFinActividad,
+                      "days"
+                    );
+                    diasRetraso = diasRetraso > 0 ? diasRetraso : 0;
+                    let personas = "";
+                    for (let x = 0; x < accion.personas.length; x++) {
+                      personas += accion.personas[x].Agente;
+                      personas +=
+                        x === accion.personas.length - 1
+                          ? ""
+                          : x === accion.personas.length - 2
+                          ? " y "
+                          : " ,";
+                    }
+                    return (
+                      <View style={stylesPDF.tableRow} key={index}>
+                        <View style={stylesPDF.tableColAcciones}>
+                          <LinkPdf
+                            style={stylesPDF.tableCellLink}
+                            src={`#actividad${accion.idactividad}`}
                           >
-                            <ListItemText
-                              primary={`${plan.fecini} - ${plan.fecfin}`}
-                              secondary={`${plan.Agente}`}
-                            />
-                          </ListItem>
-                        );
-                      })
-                    ) : (
-                      <ListItem>
-                        <ListItemText
-                          style={{ textAlign: "center" }}
-                          primary="No hay Planes"
-                        />
-                      </ListItem>
-                    )}
-                  </List>
-                </Paper>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
-    </Grid>
+                            <Text
+                              id={`accion${accion.id}`}
+                              style={stylesPDF.tableCell}
+                            >
+                              {accion.Actividad}
+                            </Text>
+                          </LinkPdf>
+                        </View>
+                        <View style={stylesPDF.tableColAcciones}>
+                          <Text style={stylesPDF.tableCell}>
+                            {accion.nombre}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColAcciones}>
+                          <Text style={stylesPDF.tableCell}>
+                            {accion.fecFinActividad}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColAcciones}>
+                          <Text style={stylesPDF.tableCell}>
+                            {accion.fecha}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColAcciones}>
+                          <Text style={stylesPDF.tableCell}>{personas}</Text>
+                        </View>
+                        <View style={stylesPDF.tableColAcciones}>
+                          <Text style={stylesPDF.tableCell}>
+                            {accion.Avance}%
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColAcciones}>
+                          <Text style={stylesPDF.tableCell}>
+                            {estatus[accion.estatus - 1]}
+                          </Text>
+                        </View>
+                        <View style={stylesPDF.tableColAcciones}>
+                          {accion.numDocumentos > 0 ? (
+                            <LinkPdf
+                              style={stylesPDF.tableCellLink}
+                              src={`#documentoaccion${accion.id}`}
+                            >
+                              <Text style={stylesPDF.tableCell}>
+                                {accion.numDocumentos}
+                              </Text>
+                            </LinkPdf>
+                          ) : (
+                            <Text style={stylesPDF.tableCell}>
+                              {accion.numDocumentos}
+                            </Text>
+                          )}
+                        </View>
+                        <View style={stylesPDF.tableColAcciones}>
+                          <Text style={stylesPDF.tableCell}>{diasRetraso}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            </Page>
+          )
+        )}
+        {documentosProyectosData.map(
+          (documentosProyecto, indexDocumentosProyecto) => (
+            <Page
+              key={indexDocumentosProyecto}
+              size="A4"
+              style={stylesPDF.page}
+            >
+              <View style={stylesPDF.body}>
+                <View style={stylesPDF.row}>
+                  <Text
+                    id={`documentos${documentosProyecto.idProyecto}`}
+                    style={{ textAlign: "center" }}
+                  >
+                    Detalle de Documentos
+                  </Text>
+                </View>
+                <View style={stylesPDF.row}>
+                  <Text>Proyecto: {documentosProyecto.nombreProyecto}</Text>
+                </View>
+                <View style={stylesPDF.table}>
+                  {/* TableHeader */}
+                  <View style={stylesPDF.tableRow}>
+                    <View style={stylesPDF.tableColDocumentos}>
+                      <Text style={stylesPDF.tableHeader}>Actividad</Text>
+                    </View>
+                    <View style={stylesPDF.tableColDocumentos}>
+                      <Text style={stylesPDF.tableHeader}>Accion</Text>
+                    </View>
+                    <View style={stylesPDF.tableColDocumentos}>
+                      <Text style={stylesPDF.tableHeader}>Documento</Text>
+                    </View>
+                  </View>
+                  {/* TableBody */}
+                  {documentosProyecto.documentos.map((documento, index) => {
+                    return (
+                      <View style={stylesPDF.tableRow} key={index}>
+                        <View style={stylesPDF.tableColDocumentos}>
+                          {documento.idactividad !== 0 ? (
+                            <LinkPdf
+                              style={stylesPDF.linksDocumentos}
+                              src={`#actividad${documento.idactividad}`}
+                            >
+                              <Text
+                                id={`documentoActividad${documento.idactividad}`}
+                                style={stylesPDF.tableCell}
+                              >
+                                {documento.Actividad}
+                              </Text>
+                            </LinkPdf>
+                          ) : (
+                            <Text
+                              id={`documentoActividad${documento.idactividad}`}
+                              style={stylesPDF.tableCell}
+                            >
+                              {documento.Actividad}
+                            </Text>
+                          )}
+                        </View>
+                        <View style={stylesPDF.tableColDocumentos}>
+                          {documento.idaccion !== 0 ? (
+                            <LinkPdf
+                              style={stylesPDF.linksDocumentos}
+                              src={`#accion${documento.idaccion}`}
+                            >
+                              <Text
+                                id={`documentoAccion${documento.idaccion}`}
+                                style={stylesPDF.tableCell}
+                              >
+                                {documento.Accion}
+                              </Text>
+                            </LinkPdf>
+                          ) : (
+                            <Text
+                              id={`documentoAccion${documento.idaccion}`}
+                              style={stylesPDF.tableCell}
+                            >
+                              {documento.Accion}
+                            </Text>
+                          )}
+                        </View>
+                        <View style={stylesPDF.tableColDocumentos}>
+                          <LinkPdf
+                            style={stylesPDF.linksDocumentos}
+                            src={documento.LinkDocumento}
+                            rel="noopener noreferrer meaning"
+                            target="_blank"
+                          >
+                            <Text style={stylesPDF.tableCell}>
+                              {documento.NombreDocumento}
+                            </Text>
+                          </LinkPdf>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            </Page>
+          )
+        )}
+      </Document>
   );
-} */
+}

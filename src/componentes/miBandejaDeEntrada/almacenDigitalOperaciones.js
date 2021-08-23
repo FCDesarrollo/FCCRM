@@ -829,7 +829,7 @@ function TablaADO(props) {
 
   const newADO = () => {
     const { archivos, fecha, sucursal } = nuevoADO;
-    if (archivos === null) {
+    if (archivos === null || archivos.length === 0) {
       swal("Faltan llenar campos", "Seleccione un archivo", "warning");
     } else {
       for (let x = 0; x < archivos.length; x++) {
