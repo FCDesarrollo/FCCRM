@@ -195,6 +195,7 @@ export default function VincularEmpresa() {
                 InputLabelProps={{
                   shrink: true
                 }}
+                inputProps={{ accept: ".cer" }}
                 onChange={e => {
                   setVincularEmpresaDatos({
                     ...vincularEmpresaDatos,
@@ -213,6 +214,7 @@ export default function VincularEmpresa() {
                 InputLabelProps={{
                   shrink: true
                 }}
+                inputProps={{ accept: ".key" }}
                 onChange={e => {
                   setVincularEmpresaDatos({
                     ...vincularEmpresaDatos,

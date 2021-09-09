@@ -31,6 +31,7 @@ export default function Paso1(props) {
                 InputLabelProps={{
                   shrink: true
                 }}
+                inputProps={{ accept: ".cer" }}
                 onChange={(e) => {
                   setPaso1Datos({
                     ...paso1Datos,
@@ -49,6 +50,7 @@ export default function Paso1(props) {
                 InputLabelProps={{
                   shrink: true
                 }}
+                inputProps={{ accept: ".key" }}
                 onChange={(e) => {
                   setPaso1Datos({
                     ...paso1Datos,

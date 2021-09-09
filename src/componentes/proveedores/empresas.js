@@ -1685,6 +1685,24 @@ function InformacionEmpresa(props) {
     }
   );
 
+  const [
+    {
+      data: guardarInformacionEmpresaData,
+      loading: guardarInformacionEmpresaLoading,
+      error: guardarInformacionEmpresaError,
+    },
+    executeGuardarInformacionEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/guardarInformacionEmpresa`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
   useEffect(() => {
     if (getEmpresaData) {
       if (getEmpresaData.error !== 0) {
@@ -1717,14 +1735,45 @@ function InformacionEmpresa(props) {
     }
   }, [getEmpresaData]);
 
-  if (getEmpresaLoading) {
+  useEffect(() => {
+    if (guardarInformacionEmpresaData) {
+      if (guardarInformacionEmpresaData.error !== 0) {
+        swal("Error", dataBaseErrores(guardarInformacionEmpresaData.error), "warning");
+      }
+      else {
+        swal("Información Guardada", "Información guardada con éxito", "success");
+      }
+    }
+  }, [guardarInformacionEmpresaData]);
+
+  if (getEmpresaLoading || guardarInformacionEmpresaLoading) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (getEmpresaError) {
+  if (getEmpresaError || guardarInformacionEmpresaError) {
     return <ErrorQueryDB />;
+  }
+
+  const guardarInformacionEmpresa = () => {
+    const { calle, ciudad, codigopostal, colonia, direccion, estado, municipio, num_ext, num_int } = datosEmpresa;
+    executeGuardarInformacionEmpresa({
+      data: {
+        usuario: correo,
+        pwd: password,
+        idempresa: idEmpresa,
+        calle: calle,
+        ciudad: ciudad,
+        codigopostal: codigopostal,
+        colonia: colonia,
+        direccion: direccion,
+        estado: estado,
+        municipio: municipio,
+        num_ext: num_ext,
+        num_int: num_int,
+      }
+    })
   }
 
   return (
@@ -1792,7 +1841,7 @@ function InformacionEmpresa(props) {
           <Grid item xs={4}>
             <TextField
               id="calle"
-              disabled
+              /* disabled */
               className={classes.textFields}
               label="Calle"
               variant="outlined"
@@ -1816,7 +1865,7 @@ function InformacionEmpresa(props) {
           <Grid item xs={4}>
             <TextField
               id="ciudad"
-              disabled
+              /* disabled */
               className={classes.textFields}
               label="Ciudad"
               variant="outlined"
@@ -1840,7 +1889,7 @@ function InformacionEmpresa(props) {
           <Grid item xs={4}>
             <TextField
               id="codigopostal"
-              disabled
+              /* disabled */
               className={classes.textFields}
               label="Código Postal"
               variant="outlined"
@@ -1868,7 +1917,7 @@ function InformacionEmpresa(props) {
           <Grid item xs={4}>
             <TextField
               id="colonia"
-              disabled
+              /* disabled */
               className={classes.textFields}
               label="Colonia"
               variant="outlined"
@@ -1916,7 +1965,7 @@ function InformacionEmpresa(props) {
           <Grid item xs={4}>
             <TextField
               id="direccion"
-              disabled
+              /* disabled */
               className={classes.textFields}
               label="Dirección"
               variant="outlined"
@@ -1968,7 +2017,7 @@ function InformacionEmpresa(props) {
           <Grid item xs={4}>
             <TextField
               id="estado"
-              disabled
+              /* disabled */
               className={classes.textFields}
               label="Estado"
               variant="outlined"
@@ -2020,7 +2069,7 @@ function InformacionEmpresa(props) {
           <Grid item xs={4}>
             <TextField
               id="municipio"
-              disabled
+              /* disabled */
               className={classes.textFields}
               label="Municipio"
               variant="outlined"
@@ -2074,7 +2123,7 @@ function InformacionEmpresa(props) {
           <Grid item xs={4}>
             <TextField
               id="num_ext"
-              disabled
+              /* disabled */
               className={classes.textFields}
               label="Número Exterior"
               variant="outlined"
@@ -2098,7 +2147,7 @@ function InformacionEmpresa(props) {
           <Grid item xs={4}>
             <TextField
               id="num_int"
-              disabled
+              /* disabled */
               className={classes.textFields}
               label="Número Interior"
               variant="outlined"
@@ -2211,7 +2260,7 @@ function InformacionEmpresa(props) {
               label="Estatus"
               variant="outlined"
               margin="normal"
-              value={datosEmpresa.status !== null ? datosEmpresa.status : ""}
+              value={datosEmpresa.status !== null ? datosEmpresa.status === 1 ? 'Activa' : 'Inactiva' : ""}
               inputProps={{
                 maxLength: 50,
               }}
@@ -2312,6 +2361,7 @@ function InformacionEmpresa(props) {
               variant="contained"
               color="primary"
               style={{ float: "right" }}
+              onClick={guardarInformacionEmpresa}
             >
               Guardar
             </Button>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import {
   Card,
   Typography,
@@ -50,6 +51,8 @@ import {
   MonetizationOn as MonetizationOnIcon,
   Visibility as VisibilityIcon,
   Close as CloseIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from "@material-ui/icons";
 import { makeStyles, withStyles, useTheme } from "@material-ui/core/styles";
 import {
@@ -108,6 +111,9 @@ const useStyles = makeStyles((theme) => ({
     position: "absolute",
     top: 20,
     width: 1,
+  },
+  table: {
+    width: "100%",
   },
 }));
 
@@ -233,6 +239,16 @@ export default function Empresa(props) {
                         rfc={rfc}
                         idSubmenu={idSubmenu}
                       />
+                    ) : content.submenu.idsubmenu === 71 ? (
+                      <Sucursales
+                        setLoading={setLoading}
+                        idUsuario={idUsuario}
+                        correo={correo}
+                        password={password}
+                        idEmpresa={idEmpresa}
+                        rfc={rfc}
+                        idSubmenu={idSubmenu}
+                      />
                     ) : content.submenu.idsubmenu === 40 ? (
                       <ServiciosContratados
                         setLoading={setLoading}
@@ -303,6 +319,7 @@ function InformacionGeneral(props) {
   const [telefono, setTelefono] = useState(
     empresaDatos.telefono !== null ? empresaDatos.telefono : ""
   );
+  const [openMenuCambiarCorreo, setOpenMenuCambiarCorreo] = useState(false);
   const [openMenuRenovarCetificado, setOpenMenuRenovarCetificado] =
     useState(false);
   const [datosCertificado, setDatosCertificado] = useState({
@@ -407,6 +424,14 @@ function InformacionGeneral(props) {
   if (editarDatosFacturacionEmpresaError || renovarCertificadoEmpresaError) {
     return <ErrorQueryDB />;
   }
+
+  const handleClickOpenMenuCambiarCorreo = () => {
+    setOpenMenuCambiarCorreo(true);
+  };
+
+  const handleCloseMenuCambiarCorreo = () => {
+    setOpenMenuCambiarCorreo(false);
+  };
 
   const handleClickOpenMenuRenovarCetificado = () => {
     setOpenMenuRenovarCetificado(true);
@@ -563,12 +588,26 @@ function InformacionGeneral(props) {
           style={{
             float: "right",
             borderColor: "#F49917",
+            margin: 5,
           }}
           onClick={() => {
             handleClickOpenMenuRenovarCetificado();
           }}
         >
           Renovar Certificado
+        </Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          style={{
+            float: "right",
+            margin: 5,
+          }}
+          onClick={() => {
+            handleClickOpenMenuCambiarCorreo();
+          }}
+        >
+          Cambiar Correo
         </Button>
       </Grid>
       <Grid item xs={12}>
@@ -754,6 +793,36 @@ function InformacionGeneral(props) {
         </Button>
       </Grid>
       <Dialog
+        onClose={handleCloseMenuCambiarCorreo}
+        aria-labelledby="simple-dialog-title"
+        open={openMenuCambiarCorreo}
+      >
+        <DialogTitle id="simple-dialog-title">Cambiar Correo</DialogTitle>
+        <DialogContent dividers>
+          <Grid container justify="center" spacing={3}></Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              handleCloseMenuCambiarCorreo();
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              /* renovarCertificadoEmpresa(); */
+            }}
+          >
+            Cambiar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
         onClose={handleCloseMenuRenovarCetificado}
         aria-labelledby="simple-dialog-title"
         open={openMenuRenovarCetificado}
@@ -771,6 +840,7 @@ function InformacionGeneral(props) {
                 InputLabelProps={{
                   shrink: true,
                 }}
+                inputProps={{ accept: ".cer" }}
                 onChange={(e) => {
                   setDatosCertificado({
                     ...datosCertificado,
@@ -789,6 +859,7 @@ function InformacionGeneral(props) {
                 InputLabelProps={{
                   shrink: true,
                 }}
+                inputProps={{ accept: ".key" }}
                 onChange={(e) => {
                   setDatosCertificado({
                     ...datosCertificado,
@@ -833,6 +904,646 @@ function InformacionGeneral(props) {
             }}
           >
             Renovar
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Grid>
+  );
+}
+
+/* function createDataAgentesPersonas(
+  idAgentePersona,
+  agente,
+  estatus,
+  tipo,
+  idProyecto
+) {
+  return { idAgentePersona, agente, estatus, tipo, idProyecto };
+} */
+
+const headCellsSucursales = [
+  {
+    id: "sucursal",
+    align: "left",
+    sortHeadCell: true,
+    disablePadding: true,
+    label: "Sucursal",
+  },
+  {
+    id: "rutaadw",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Ruta ADW",
+  },
+  {
+    id: "sincronizado",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Sincronizado",
+  },
+  {
+    id: "idadw",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Id ADW",
+  },
+  {
+    id: "default",
+    align: "right",
+    sortHeadCell: true,
+    disablePadding: false,
+    label: "Default",
+  },
+  {
+    id: "acciones",
+    align: "right",
+    sortHeadCell: false,
+    disablePadding: false,
+    label: <SettingsIcon style={{ color: "black" }} />,
+  },
+];
+
+function EnhancedTableHeadSucursales(props) {
+  const { classes, order, orderBy, onRequestSort, headCellTable, actions } =
+    props;
+  const createSortHandler = (property) => (event) => {
+    onRequestSort(event, property);
+  };
+
+  return (
+    <TableHead style={{ background: "#FAFAFA" }}>
+      <TableRow>
+        <TableCell />
+        {headCellTable.map((headCell) => (
+          <TableCell
+            key={headCell.id}
+            align={headCell.align}
+            padding={headCell.disablePadding ? "none" : "default"}
+            sortDirection={orderBy === headCell.id ? order : false}
+            style={{
+              display:
+                headCell.id !== "acciones"
+                  ? "table-cell"
+                  : actions
+                  ? "table-cell"
+                  : "none",
+            }}
+          >
+            {headCell.sortHeadCell ? (
+              <TableSortLabel
+                active={orderBy === headCell.id}
+                direction={orderBy === headCell.id ? order : "asc"}
+                onClick={createSortHandler(headCell.id)}
+              >
+                <strong>{headCell.label}</strong>
+                {orderBy === headCell.id ? (
+                  <span className={classes.visuallyHidden}>
+                    {order === "desc"
+                      ? "sorted descending"
+                      : "sorted ascending"}
+                  </span>
+                ) : null}
+              </TableSortLabel>
+            ) : (
+              headCell.label
+            )}
+          </TableCell>
+        ))}
+      </TableRow>
+    </TableHead>
+  );
+}
+
+EnhancedTableHeadSucursales.propTypes = {
+  classes: PropTypes.object.isRequired,
+  onRequestSort: PropTypes.func.isRequired,
+  order: PropTypes.oneOf(["asc", "desc"]).isRequired,
+  orderBy: PropTypes.string.isRequired,
+  headCellTable: PropTypes.array.isRequired,
+  actions: PropTypes.bool.isRequired,
+};
+
+function Sucursales(props) {
+  const classes = useStyles();
+  /* const idUsuario = props.idUsuario; */
+  const correo = props.correo;
+  const password = props.password;
+  const setLoading = props.setLoading;
+  /*  const idEmpresa = props.idEmpresa; */
+  const rfc = props.rfc;
+  /* const idSubmenu = props.idSubmenu; */
+
+  const [sucursales, setSucursales] = useState([]);
+  const [page, setPage] = useState(0);
+  const [order, setOrder] = useState("desc");
+  const [orderBy, setOrderBy] = useState("id");
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [openDialogSucursales, setOpenDialogSucursales] = useState(false);
+  const [datosSucursal, setDatosSucursal] = useState({
+    idSucursal: 0,
+    sucursal: "",
+    rutaadw: "",
+    sincronizado: 0,
+    idadw: 0,
+    defaultRow: 0,
+  });
+
+  const [
+    {
+      data: getSucursalesEmpresaData,
+      loading: getSucursalesEmpresaLoading,
+      error: getSucursalesEmpresaError,
+    },
+    executeGetSucursalesEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getSucursalesEmpresa`,
+      method: "GET",
+      params: {
+        usuario: correo,
+        pwd: password,
+        rfc: rfc,
+        idsubmenu: 71,
+      },
+    },
+    {
+      useCache: false,
+    }
+  );
+
+  const [
+    {
+      data: getSucursalEmpresaData,
+      loading: getSucursalEmpresaLoading,
+      error: getSucursalEmpresaError,
+    },
+    executeGetSucursalEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/getSucursalEmpresa`,
+      method: "GET",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  const [
+    {
+      data: guardarSucursalEmpresaData,
+      loading: guardarSucursalEmpresaLoading,
+      error: guardarSucursalEmpresaEmpresaError,
+    },
+    executeGuardarSucursalEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/guardarSucursalEmpresa`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  const [
+    {
+      data: eliminarSucursalEmpresaData,
+      loading: eliminarSucursalEmpresaLoading,
+      error: eliminarSucursalEmpresaError,
+    },
+    executeEliminarSucursalEmpresa,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/eliminarSucursalEmpresa`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  useEffect(() => {
+    function checkData() {
+      if (getSucursalesEmpresaData) {
+        if (getSucursalesEmpresaData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(getSucursalesEmpresaData.error),
+            "warning"
+          );
+        } else {
+          setSucursales(getSucursalesEmpresaData.sucursales);
+        }
+      }
+    }
+
+    checkData();
+  }, [getSucursalesEmpresaData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (getSucursalEmpresaData) {
+        if (getSucursalEmpresaData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(getSucursalEmpresaData.error),
+            "warning"
+          );
+        } else {
+          setDatosSucursal({
+            idSucursal: getSucursalEmpresaData.sucursal[0].idsucursal,
+            sucursal: getSucursalEmpresaData.sucursal[0].sucursal,
+            rutaadw: getSucursalEmpresaData.sucursal[0].rutaadw !== null ? getSucursalEmpresaData.sucursal[0].rutaadw : "",
+            sincronizado: getSucursalEmpresaData.sucursal[0].sincronizado !== null ? getSucursalEmpresaData.sucursal[0].sincronizado : "",
+            idadw: getSucursalEmpresaData.sucursal[0].idadw !== null ? getSucursalEmpresaData.sucursal[0].idadw : "",
+            defaultRow: getSucursalEmpresaData.sucursal[0].default !== null ? getSucursalEmpresaData.sucursal[0].default : "",
+          });
+        }
+      }
+    }
+
+    checkData();
+  }, [getSucursalEmpresaData]);
+
+  useEffect(() => {
+    function checkData() {
+      if (guardarSucursalEmpresaData) {
+        if (guardarSucursalEmpresaData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(guardarSucursalEmpresaData.error),
+            "warning"
+          );
+        } else {
+          swal(
+            "Información De Sucursal Guardada",
+            "Información de sucursal guardada con éxito",
+            "success"
+          );
+          executeGetSucursalesEmpresa();
+          setDatosSucursal({
+            idSucursal: 0,
+            sucursal: "",
+            rutaadw: "",
+            sincronizado: 0,
+            idadw: 0,
+            defaultRow: 0,
+          });
+          setOpenDialogSucursales(false);
+        }
+      }
+    }
+
+    checkData();
+  }, [guardarSucursalEmpresaData, executeGetSucursalesEmpresa]);
+
+  useEffect(() => {
+    function checkData() {
+      if (eliminarSucursalEmpresaData) {
+        if (eliminarSucursalEmpresaData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(eliminarSucursalEmpresaData.error),
+            "warning"
+          );
+        } else {
+          swal("Sucursal Eliminada", "Sucursal eliminada con éxito", "success");
+          executeGetSucursalesEmpresa();
+        }
+      }
+    }
+
+    checkData();
+  }, [eliminarSucursalEmpresaData, executeGetSucursalesEmpresa]);
+
+  if (
+    getSucursalesEmpresaLoading ||
+    guardarSucursalEmpresaLoading ||
+    getSucursalEmpresaLoading ||
+    eliminarSucursalEmpresaLoading
+  ) {
+    setLoading(true);
+    return <div></div>;
+  } else {
+    setLoading(false);
+  }
+  if (
+    getSucursalesEmpresaError ||
+    guardarSucursalEmpresaEmpresaError ||
+    getSucursalEmpresaError ||
+    eliminarSucursalEmpresaError
+  ) {
+    return <ErrorQueryDB />;
+  }
+
+  const handleRequestSort = (event, property) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleOpenDialogSucursales = () => {
+    setOpenDialogSucursales(true);
+  };
+
+  const handleCloseDialogSucursales = () => {
+    setOpenDialogSucursales(false);
+    setDatosSucursal({
+      ...datosSucursal,
+      idSucursal: 0,
+    });
+  };
+
+  const handleInputsInformacionSucursalChange = (e) => {
+    if (e.target.id !== "rutaadw") {
+      pasteValidation(e, e.target.id === "sucursal" ? 3 : 2);
+    }
+    setDatosSucursal({
+      ...datosSucursal,
+      [e.target.id]: e.target.value,
+    });
+  };
+
+  const handleGuardarInformacionSucursal = () => {
+    const { idSucursal, sucursal, rutaadw, sincronizado, idadw, defaultRow } =
+      datosSucursal;
+    if (sucursal.trim() === "") {
+      swal("Error", "Ingrese una sucursal", "warning");
+    } else {
+      executeGuardarSucursalEmpresa({
+        data: {
+          usuario: correo,
+          pwd: password,
+          rfc: rfc,
+          idsubmenu: 71,
+          sucursal: sucursal,
+          rutaadw: rutaadw,
+          sincronizado: sincronizado,
+          idadw: idadw,
+          default: defaultRow,
+          idsucursal: idSucursal,
+        },
+      });
+    }
+  };
+
+  return (
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <Button
+          variant="contained"
+          color="primary"
+          style={{ float: "right" }}
+          onClick={handleOpenDialogSucursales}
+        >
+          Agregar
+        </Button>
+      </Grid>
+      <Grid item xs={12}>
+        <Paper className={classes.paper}>
+          <TableContainer>
+            <Table
+              className={classes.table}
+              aria-labelledby="tableTitle"
+              size={"medium"}
+              aria-label="enhanced table"
+            >
+              <EnhancedTableHeadSucursales
+                classes={classes}
+                order={order}
+                orderBy={orderBy}
+                onRequestSort={handleRequestSort}
+                headCellTable={headCellsSucursales}
+                actions={true}
+              />
+              <TableBody>
+                {sucursales.length > 0 ? (
+                  stableSort(sucursales, getComparator(order, orderBy))
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((sucursal, index) => {
+                      return (
+                        <TableRow
+                          hover
+                          role="checkbox"
+                          tabIndex={-1}
+                          key={index}
+                        >
+                          <TableCell />
+                          <TableCell component="th" scope="row" padding="none">
+                            {sucursal.sucursal}
+                          </TableCell>
+                          <TableCell align="right">
+                            {sucursal.rutaadw}
+                          </TableCell>
+                          <TableCell align="right">
+                            {sucursal.sincronizado}
+                          </TableCell>
+                          <TableCell align="right">{sucursal.idadw}</TableCell>
+                          <TableCell align="right">
+                            {sucursal.default}
+                          </TableCell>
+                          <TableCell align="right">
+                            <Tooltip title="Editar">
+                              <IconButton
+                                onClick={() => {
+                                  handleOpenDialogSucursales();
+                                  executeGetSucursalEmpresa({
+                                    params: {
+                                      usuario: correo,
+                                      pwd: password,
+                                      rfc: rfc,
+                                      idsubmenu: 71,
+                                      idsucursal: sucursal.idsucursal,
+                                    },
+                                  });
+                                }}
+                              >
+                                <EditIcon style={{ color: "#F49917" }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Eliminar">
+                              <IconButton onClick={() => {
+                                swal({
+                                  text: `¿Está seguro de eliminar la sucursal?`,
+                                  buttons: ["No", "Sí"],
+                                  dangerMode: true,
+                                }).then((value) => {
+                                  if (value) {
+                                    executeEliminarSucursalEmpresa({
+                                      params: {
+                                        usuario: correo,
+                                        pwd: password,
+                                        rfc: rfc,
+                                        idsubmenu: 71,
+                                        idsucursal: sucursal.idsucursal,
+                                      },
+                                    });
+                                  }
+                                });
+                              }}>
+                                <DeleteIcon color="secondary" />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3}>
+                      <Typography variant="subtitle1">
+                        <ErrorIcon
+                          style={{ color: "red", verticalAlign: "sub" }}
+                        />
+                        No hay sucursales
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 50]}
+            component="div"
+            labelRowsPerPage="Filas por página"
+            labelDisplayedRows={(e) => {
+              return `${e.from}-${e.to} de ${e.count}`;
+            }}
+            count={sucursales.length}
+            rowsPerPage={rowsPerPage}
+            page={sucursales.length > 0 ? page : 0}
+            onChangePage={handleChangePage}
+            onChangeRowsPerPage={handleChangeRowsPerPage}
+          />
+        </Paper>
+      </Grid>
+      <Dialog
+        onClose={handleCloseDialogSucursales}
+        aria-labelledby="simple-dialog-title"
+        open={openDialogSucursales}
+        fullWidth={true}
+        maxWidth="lg"
+      >
+        <DialogTitle id="guardarInformacionSucursal">{`Guardar Información Sucursal`}</DialogTitle>
+        <DialogContent dividers>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                className={classes.textFields}
+                id="sucursal"
+                label="Sucursal"
+                type="text"
+                margin="normal"
+                value={datosSucursal.sucursal}
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 3);
+                }}
+                onChange={handleInputsInformacionSucursalChange}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                className={classes.textFields}
+                id="rutaadw"
+                label="Ruta ADW"
+                type="text"
+                margin="normal"
+                value={datosSucursal.rutaadw}
+                inputProps={{
+                  maxLength: 100,
+                }}
+                /* onKeyPress={(e) => {
+                  keyValidation(e, 3);
+                }} */
+                onChange={handleInputsInformacionSucursalChange}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                className={classes.textFields}
+                id="sincronizado"
+                label="Sincronizado"
+                type="text"
+                margin="normal"
+                value={datosSucursal.sincronizado}
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 2);
+                }}
+                onChange={handleInputsInformacionSucursalChange}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                className={classes.textFields}
+                id="idadw"
+                label="Id ADW"
+                type="text"
+                margin="normal"
+                value={datosSucursal.idadw}
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 2);
+                }}
+                onChange={handleInputsInformacionSucursalChange}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                className={classes.textFields}
+                id="default"
+                label="Default"
+                type="text"
+                margin="normal"
+                value={datosSucursal.defaultRow}
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 2);
+                }}
+                onChange={handleInputsInformacionSucursalChange}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleCloseDialogSucursales}
+          >
+            Salir
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleGuardarInformacionSucursal}
+          >
+            Guardar
           </Button>
         </DialogActions>
       </Dialog>
@@ -1245,7 +1956,6 @@ function ServiciosContratados(props) {
   };
 
   const handleClickGuardarUsuarioNotificaciones = () => {
-    /* console.log(usuariosNotificaciones); */
     executeGuardarConfiguracionUsuariosNotificaciones({
       data: {
         usuario: correo,
@@ -1679,26 +2389,28 @@ function ServiciosContratados(props) {
                 value={servicioSelected}
                 onChange={(e) => {
                   setServicioSelected(parseInt(e.target.value));
-                  if(parseInt(e.target.value) !== 0) {
+                  if (parseInt(e.target.value) !== 0) {
                     executeGetNotificacionesUsuarioPorServicio({
-                    params: {
-                      usuario: correo,
-                      pwd: password,
-                      rfc: rfc,
-                      idsubmenu: idSubmenu,
-                      idempresa: idEmpresa,
-                      idservicio: parseInt(e.target.value),
-                    },
-                  });
+                      params: {
+                        usuario: correo,
+                        pwd: password,
+                        rfc: rfc,
+                        idsubmenu: idSubmenu,
+                        idempresa: idEmpresa,
+                        idservicio: parseInt(e.target.value),
+                      },
+                    });
                   }
                 }}
               >
                 <option value={0}>Elija un servicio</option>
-                {servicios.map((servicio, index) => (
-                  <option value={servicio.id} key={index}>
-                    {servicio.nombreservicio}
-                  </option>
-                ))}
+                {servicios
+                  .filter((servicio) => servicio.statuscontratacion === 1)
+                  .map((servicio, index) => (
+                    <option value={servicio.id} key={index}>
+                      {servicio.nombreservicio}
+                    </option>
+                  ))}
               </TextField>
             </Grid>
             <Grid item xs={12}>

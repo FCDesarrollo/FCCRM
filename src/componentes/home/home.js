@@ -669,7 +669,7 @@ function Notificaciones(props) {
                       }
                     }}
                   />
-                  <Link to={notificacion.refmenu}>
+                  <Link to={notificacion.refmenu ? notificacion.refmenu : "/"}>
                     <Tooltip title="Ir a sección">
                       <IconButton
                         onClick={() => {
@@ -832,7 +832,7 @@ function Notificaciones(props) {
                       }
                     }}
                   />
-                  <Link to={notificacion.refmenu}>
+                  <Link to={notificacion.refmenu ? notificacion.refmenu : "/"}>
                     <Tooltip title="Ir a sección">
                       <IconButton
                         onClick={() => {
@@ -1007,7 +1007,7 @@ function Notificaciones(props) {
                       }
                     }}
                   />
-                  <Link to={notificacion.refmenu}>
+                  <Link to={notificacion.refmenu ? notificacion.refmenu : "/"}>
                     <Tooltip title="Ir a sección">
                       <IconButton
                         onClick={() => {

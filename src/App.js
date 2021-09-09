@@ -62,6 +62,8 @@ function App() {
     setDocumentosGeneralesNuevaContabilidad,
   ] = useState([]);
   const [estadosNuevaContabilidad, setEstadosNuevaContabilidad] = useState([]);
+  const [ejecutarQueryPermisosCRM, setEjecutarQueryPermisosCRM] =
+    useState(false);
 
   return (
     <HashRouter>
@@ -236,6 +238,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <Home
                 submenuContent={submenuContent}
@@ -260,6 +264,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <EditarPerfil
                 submenuContent={submenuContent}
@@ -284,6 +290,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <Empresa
                 submenuContent={submenuContent}
@@ -310,6 +318,8 @@ function App() {
             setLoading={setLoading}
             executeQueriesHeader={executeQueriesHeader}
             setExecuteQueriesHeader={setExecuteQueriesHeader}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <Usuarios
                 submenuContent={submenuContent}
@@ -321,6 +331,8 @@ function App() {
                 loading={loading}
                 setLoading={setLoading}
                 setExecuteQueriesHeader={setExecuteQueriesHeader}
+                ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+                setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
               />
             }
           />
@@ -335,6 +347,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <Perfiles
                 submenuContent={submenuContent}
@@ -359,6 +373,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <AutorizacionesGastos
                 submenuContent={submenuContent}
@@ -383,6 +399,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <ConfiguracionesPermisos
                 submenuContent={submenuContent}
@@ -407,6 +425,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <FinanzasTesoreria
                 submenuContent={submenuContent}
@@ -431,6 +451,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <GestionEmpresarial
                 submenuContent={submenuContent}
@@ -455,6 +477,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
           />
         </Route>
         <Route exact path="/reportesProyectos">
@@ -467,6 +491,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
           />
         </Route>
         <Route exact path="/reportesProyectos/:idProyecto">
@@ -491,6 +517,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <ExpedientesDigitales
                 submenuContent={submenuContent}
@@ -515,6 +543,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <Publicaciones
                 submenuContent={submenuContent}
@@ -539,6 +569,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <EstadosFinancieros
                 submenuContent={submenuContent}
@@ -563,6 +595,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <CumplimientoFiscal
                 submenuContent={submenuContent}
@@ -587,6 +621,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <ExpedientesContables
                 submenuContent={submenuContent}
@@ -611,6 +647,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <AlmacenDigitalOperaciones
                 submenuContent={submenuContent}
@@ -635,6 +673,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <RecepcionPorLotes
                 submenuContent={submenuContent}
@@ -659,6 +699,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <AlmacenDigitalExpedientes
                 submenuContent={submenuContent}
@@ -683,6 +725,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <CartasTecnicas
                 submenuContent={submenuContent}
@@ -707,6 +751,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <Videos
                 submenuContent={submenuContent}
@@ -731,6 +777,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={
               <NoticiasFiscales
                 setSubmenuContent={setSubmenuContent}
@@ -754,6 +802,8 @@ function App() {
             setEmpresaDatos={setEmpresaDatos}
             loading={loading}
             setLoading={setLoading}
+            ejecutarQueryPermisosCRM={ejecutarQueryPermisosCRM}
+            setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
             component={<NotFound />}
           />
         </Route>

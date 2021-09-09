@@ -16,7 +16,7 @@ import {
   RadioGroup,
   Radio,
   FormControlLabel,
-  FormGroup,
+  /* FormGroup, */
   Checkbox,
   useMediaQuery,
   Paper,
@@ -93,6 +93,7 @@ export default function Usuarios(props) {
   const rfc = empresaDatos.RFC;
   const setLoading = props.setLoading;
   const setExecuteQueriesHeader = props.setExecuteQueriesHeader;
+  const setEjecutarQueryPermisosCRM = props.setEjecutarQueryPermisosCRM;
   const [permisosSubmenu, setPermisosSubmenu] = useState(-1);
   const [errorDB, setErrorDB] = useState(false);
   const [idUsuarioEditar, setIdUsuarioEditar] = useState(0);
@@ -331,6 +332,7 @@ export default function Usuarios(props) {
                 expanded={expanded}
                 setExpanded={setExpanded}
                 idSubmenuActual={idSubmenuActual}
+                setEjecutarQueryPermisosCRM={setEjecutarQueryPermisosCRM}
               />
             ) : showComponent === 5 ? (
               <EditarNotificacionesUsuario
@@ -466,6 +468,8 @@ function ListaUsuarios(props) {
             <TableCell component="th" scope="row">
               {`${usuario.nombre} ${usuario.apellidop} ${usuario.apellidom}`}
             </TableCell>
+            <TableCell align="right">{usuario.correo}</TableCell>
+            <TableCell align="right">{usuario.cel}</TableCell>
             <TableCell align="right">
               {usuario.estatus_vinculacion === 1 ? "Vinculado" : "No Vinculado"}
             </TableCell>
@@ -521,6 +525,22 @@ function ListaUsuarios(props) {
                         "mysecretpassword"
                       );
                       localStorage.setItem("menuTemporal", token);
+                      const tokenNuevosPermisosUsuario = jwt.sign(
+                        {
+                          idUsuario: usuario.idusuario,
+                          idsModulos: [],
+                          permisosModulos: [],
+                          idsMenus: [],
+                          permisosMenus: [],
+                          idsSubmenus: [],
+                          permisosSubmenus: [],
+                        },
+                        "mysecretpassword"
+                      );
+                      localStorage.setItem(
+                        "nuevosPermisosUsuario",
+                        tokenNuevosPermisosUsuario
+                      );
                     }}
                   >
                     <EditIcon
@@ -684,6 +704,12 @@ function ListaUsuarios(props) {
                 <strong>Nombre Usuario</strong>
               </TableCell>
               <TableCell align="right">
+                <strong>Correo</strong>
+              </TableCell>
+              <TableCell align="right">
+                <strong>Celular</strong>
+              </TableCell>
+              <TableCell align="right">
                 <strong>Estatus</strong>
               </TableCell>
               <TableCell align="right">
@@ -811,7 +837,7 @@ function EditarPermisosUsuario(props) {
   const TreeClasses = useTreeItemStyles();
   const setShowComponent = props.setShowComponent;
   const permisosSubmenu = props.permisosSubmenu;
-  const setPermisosSubmenu = props.setPermisosSubmenu;
+  /* const setPermisosSubmenu = props.setPermisosSubmenu; */
   const setLoading = props.setLoading;
   const usuario = props.usuario;
   const pwd = props.pwd;
@@ -821,11 +847,25 @@ function EditarPermisosUsuario(props) {
   const expanded = props.expanded;
   const setExpanded = props.setExpanded;
   const idSubmenuActual = props.idSubmenuActual;
-  const [permiso, setPermiso] = useState(-1);
+  const setEjecutarQueryPermisosCRM = props.setEjecutarQueryPermisosCRM;
+  /* const [permiso, setPermiso] = useState(-1);
   const [idModulo, setIdModulo] = useState(0);
   const [idMenu, setIdMenu] = useState(0);
-  const [idSubmenu, setIdSubmenu] = useState(0);
-  const [sumaSubmenuNotificacion, setSumaSubmenuNotificacion] = useState(-1);
+  const [idSubmenu, setIdSubmenu] = useState(0); */
+  const [permisosUsuarioModulos, setPermisosUsuarioModulos] = useState({
+    ids: [],
+    permisos: [],
+  });
+  const [permisosUsuarioMenus, setPermisosUsuarioMenus] = useState({
+    ids: [],
+    permisos: [],
+  });
+  const [permisosUsuarioSubmenus, setPermisosUsuarioSubmenus] = useState({
+    ids: [],
+    permisos: [],
+  });
+  /* const [sumaSubmenuNotificacion, setSumaSubmenuNotificacion] = useState(-1); */
+  const val = React.useRef();
   const [{ data: menuData, loading: menuLoading, error: menuError }] = useAxios(
     {
       url: API_BASE_URL + `/menuWeb`,
@@ -864,7 +904,7 @@ function EditarPermisosUsuario(props) {
       loading: modificaPermisosModuloLoading,
       error: modificaPermisosModuloError,
     },
-    executeModificaPermisosModulo,
+    /* executeModificaPermisosModulo, */
   ] = useAxios(
     {
       url: API_BASE_URL + `/modificaPermisoModulo`,
@@ -880,7 +920,7 @@ function EditarPermisosUsuario(props) {
       loading: modificaPermisosMenuLoading,
       error: modificaPermisosMenuError,
     },
-    executeModificaPermisosMenu,
+    /* executeModificaPermisosMenu, */
   ] = useAxios(
     {
       url: API_BASE_URL + `/modificaPermisoMenu`,
@@ -890,7 +930,7 @@ function EditarPermisosUsuario(props) {
       manual: true,
     }
   );
-  const [
+  /* const [
     {
       data: modificaPermisosSubmenuData,
       loading: modificaPermisosSubmenuLoading,
@@ -905,8 +945,8 @@ function EditarPermisosUsuario(props) {
     {
       manual: true,
     }
-  );
-  const [
+  ); */
+  /* const [
     {
       data: modificaNotificacionesSubmenuData,
       loading: modificaNotificacionesSubmenuLoading,
@@ -921,9 +961,95 @@ function EditarPermisosUsuario(props) {
     {
       manual: true,
     }
-  );
+  ); */
 
   useEffect(() => {
+    val.current = props;
+  }, [props]);
+
+  useEffect(() => {
+    if (localStorage.getItem("nuevosPermisosUsuario")) {
+      const permisosUsuarioGuardados = jwt.verify(
+        localStorage.getItem("nuevosPermisosUsuario"),
+        "mysecretpassword"
+      );
+      if (
+        permisosUsuarioGuardados.idsModulos.length > 0 ||
+        permisosUsuarioGuardados.idsMenus.length > 0 ||
+        permisosUsuarioGuardados.idsSubmenus.length > 0
+      ) {
+        setEjecutarQueryPermisosCRM(true);
+      }
+    }
+    return () => {
+      setEjecutarQueryPermisosCRM(true);
+    };
+  }, [setEjecutarQueryPermisosCRM]);
+
+  useEffect(() => {
+    if (permisosData) {
+      if (permisosData.error !== 0) {
+        swal("Error", dataBaseErrores(permisosData.error), "warning");
+      } else {
+        let idsModulos = [];
+        let permisosModulos = [];
+        let idsMenus = [];
+        let permisosMenus = [];
+        let idsSubmenus = [];
+        let permisosSubmenus = [];
+        for (let x = 0; x < permisosData.permisomodulos.length; x++) {
+          idsModulos.push(permisosData.permisomodulos[x].idmodulo);
+          permisosModulos.push(permisosData.permisomodulos[x].tipopermiso);
+
+          for (
+            let y = 0;
+            y < permisosData.permisomodulos[x].permisosmenu.length;
+            y++
+          ) {
+            idsMenus.push(
+              permisosData.permisomodulos[x].permisosmenu[y].idmenu
+            );
+            permisosMenus.push(
+              permisosData.permisomodulos[x].permisosmenu[y].tipopermiso
+            );
+
+            for (
+              let z = 0;
+              z <
+              permisosData.permisomodulos[x].permisosmenu[y].permisossubmenus
+                .length;
+              z++
+            ) {
+              idsSubmenus.push(
+                permisosData.permisomodulos[x].permisosmenu[y].permisossubmenus[
+                  z
+                ].idsubmenu
+              );
+              permisosSubmenus.push(
+                permisosData.permisomodulos[x].permisosmenu[y].permisossubmenus[
+                  z
+                ].tipopermiso
+              );
+            }
+          }
+        }
+        setPermisosUsuarioModulos({
+          ids: idsModulos,
+          permisos: permisosModulos,
+        });
+        setPermisosUsuarioMenus({
+          ids: idsMenus,
+          permisos: permisosMenus,
+        });
+        setPermisosUsuarioSubmenus({
+          ids: idsSubmenus,
+          permisos: permisosSubmenus,
+        });
+      }
+    }
+  }, [permisosData]);
+
+  /* useEffect(() => {
     if (idModulo !== 0 && permiso !== -1) {
       executeModificaPermisosModulo({
         params: {
@@ -947,7 +1073,7 @@ function EditarPermisosUsuario(props) {
     rfc,
     idUsuarioEditar,
     executeModificaPermisosModulo,
-  ]);
+  ]); */
 
   useEffect(() => {
     function checkData() {
@@ -973,7 +1099,7 @@ function EditarPermisosUsuario(props) {
     checkData();
   }, [modificaPermisosModuloData, executePermisos, setExecuteQueriesHeader]);
 
-  useEffect(() => {
+  /* useEffect(() => {
     if (idMenu !== 0 && permiso !== -1) {
       executeModificaPermisosMenu({
         params: {
@@ -997,7 +1123,7 @@ function EditarPermisosUsuario(props) {
     rfc,
     idUsuarioEditar,
     executeModificaPermisosMenu,
-  ]);
+  ]); */
 
   useEffect(() => {
     function checkData() {
@@ -1022,7 +1148,7 @@ function EditarPermisosUsuario(props) {
     checkData();
   }, [modificaPermisosMenuData, setExecuteQueriesHeader]);
 
-  useEffect(() => {
+  /* useEffect(() => {
     if (idSubmenu !== 0 && permiso !== -1) {
       executeModificaPermisosSubmenu({
         params: {
@@ -1045,9 +1171,9 @@ function EditarPermisosUsuario(props) {
     rfc,
     idUsuarioEditar,
     executeModificaPermisosSubmenu,
-  ]);
+  ]); */
 
-  useEffect(() => {
+  /* useEffect(() => {
     function checkData() {
       if (modificaPermisosSubmenuData && permiso !== -1) {
         if (modificaPermisosSubmenuData.error !== 0) {
@@ -1057,11 +1183,6 @@ function EditarPermisosUsuario(props) {
             "warning"
           );
         } else {
-          /* swal(
-            "Cambio de permisos exitoso",
-            "Se han cambiado los permisos con éxito",
-            "success"
-          ); */
           const token = jwt.sign(
             {
               menuTemporal: {
@@ -1088,9 +1209,9 @@ function EditarPermisosUsuario(props) {
     idUsuarioEditar,
     expanded,
     idSubmenuActual,
-  ]);
+  ]); */
 
-  useEffect(() => {
+  /* useEffect(() => {
     if (idSubmenu !== 0 && sumaSubmenuNotificacion !== -1) {
       executeModificaNotificacionesSubmenu({
         data: {
@@ -1113,9 +1234,9 @@ function EditarPermisosUsuario(props) {
     pwd,
     rfc,
     usuario,
-  ]);
+  ]); */
 
-  useEffect(() => {
+  /* useEffect(() => {
     function checkData() {
       if (modificaNotificacionesSubmenuData && sumaSubmenuNotificacion !== -1) {
         if (modificaNotificacionesSubmenuData.error !== 0) {
@@ -1158,15 +1279,15 @@ function EditarPermisosUsuario(props) {
     idUsuarioEditar,
     expanded,
     idSubmenuActual,
-  ]);
+  ]); */
 
   if (
     menuLoading ||
     permisosLoading ||
     modificaPermisosModuloLoading ||
-    modificaPermisosMenuLoading ||
+    modificaPermisosMenuLoading /* ||
     modificaPermisosSubmenuLoading ||
-    modificaNotificacionesSubmenuLoading
+    modificaNotificacionesSubmenuLoading */
   ) {
     setLoading(true);
     return <div></div>;
@@ -1177,14 +1298,14 @@ function EditarPermisosUsuario(props) {
     menuError ||
     permisosError ||
     modificaPermisosModuloError ||
-    modificaPermisosMenuError ||
-    modificaPermisosSubmenuError ||
-    modificaNotificacionesSubmenuError
+    modificaPermisosMenuError /* ||
+    modificaPermisosSubmenuError  ||
+    modificaNotificacionesSubmenuError */
   ) {
     return <ErrorQueryDB />;
   }
 
-  const getPermisosSubMenus = (idSubMenu, notificaciones) => {
+  /* const getPermisosSubMenus = (idSubMenu, notificaciones) => {
     if (permisosData.permisomodulos) {
       for (let x = 0; x < permisosData.permisomodulos.length; x++) {
         for (
@@ -1215,11 +1336,14 @@ function EditarPermisosUsuario(props) {
       }
     }
     return 0;
-  };
+  }; */
 
   const getSubMenus = (menu) => {
     return menu.submenus.map((submenu, index) => {
-      let permisoNotificacion = getPermisosSubMenus(submenu.idsubmenu, true);
+      const indexPermiso = permisosUsuarioSubmenus.ids.indexOf(
+        submenu.idsubmenu
+      );
+      /* let permisoNotificacion = getPermisosSubMenus(submenu.idsubmenu, true); */
       return submenu.orden !== 0 ? (
         <StyledTreeItem
           key={submenu.idsubmenu}
@@ -1237,7 +1361,8 @@ function EditarPermisosUsuario(props) {
                 variant="outlined"
                 label="Permisos"
                 type="text"
-                value={getPermisosSubMenus(submenu.idsubmenu, false)}
+                /* value={getPermisosSubMenus(submenu.idsubmenu, false)} */
+                value={permisosUsuarioSubmenus.permisos[indexPermiso]}
                 InputLabelProps={{
                   shrink: true,
                 }}
@@ -1246,9 +1371,109 @@ function EditarPermisosUsuario(props) {
                   e.stopPropagation();
                 }}
                 onChange={(e) => {
-                  setIdSubmenu(submenu.idsubmenu);
-                  //console.log(parseInt(e.target.value));
-                  setPermiso(parseInt(e.target.value));
+                  /* setIdSubmenu(submenu.idsubmenu);
+                  setPermiso(parseInt(e.target.value)); */
+                  if (localStorage.getItem("nuevosPermisosUsuario")) {
+                    let nuevosPermisosSubmenusUsuario = permisosUsuarioSubmenus.permisos;
+                    nuevosPermisosSubmenusUsuario[indexPermiso] = parseInt(
+                      e.target.value
+                    );
+
+                    setPermisosUsuarioSubmenus({
+                      ...permisosUsuarioSubmenus,
+                      permisos: nuevosPermisosSubmenusUsuario,
+                    });
+
+                    const permisosUsuarioGuardados = jwt.verify(
+                      localStorage.getItem("nuevosPermisosUsuario"),
+                      "mysecretpassword"
+                    );
+
+                    let nuevosIdsSubmenus = permisosUsuarioGuardados.idsSubmenus;
+                    let nuevosPermisosSubmenus =
+                      permisosUsuarioGuardados.permisosSubmenus;
+                    
+                    let submenusPermisos = [];
+                    for(let x=0 ; x<permisosData.permisomodulos.length ; x++) {
+                      for(let y=0 ; y<permisosData.permisomodulos[x].permisosmenu.length ; y++) {
+                        for(let z=0 ; z<permisosData.permisomodulos[x].permisosmenu[y].permisossubmenus.length ; z++) {
+                          submenusPermisos.push({
+                          id: permisosData.permisomodulos[x].permisosmenu[y].permisossubmenus[z].idsubmenu,
+                          permiso: permisosData.permisomodulos[x].permisosmenu[y].permisossubmenus[z].tipopermiso,
+                        });
+                        }
+                      }
+                    }
+
+                    if (
+                      submenusPermisos.find(
+                      (submenuPermiso) =>
+                      submenuPermiso.id === submenu.idsubmenu
+                    ).permiso !== parseInt(e.target.value)
+                    ) {
+                      const pos = nuevosIdsSubmenus.indexOf(submenu.idsubmenu);
+                      if (pos === -1) {
+                        nuevosIdsSubmenus.push(submenu.idsubmenu);
+                        nuevosPermisosSubmenus.push(parseInt(e.target.value));
+                      } else {
+                        nuevosPermisosSubmenus[pos] = parseInt(e.target.value);
+                        /* nuevosIdsSubmenus.splice(pos, 1);
+                        nuevosPermisosSubmenus.splice(pos, 1); */
+                      }
+                    } else {
+                      const pos = nuevosIdsSubmenus.indexOf(submenu.idsubmenu);
+                      if (pos !== -1) {
+                        nuevosIdsSubmenus.splice(pos, 1);
+                        nuevosPermisosSubmenus.splice(pos, 1);
+                      }
+                    }
+
+                    const token = jwt.sign(
+                      {
+                        idUsuario: idUsuarioEditar,
+                        idsModulos: permisosUsuarioGuardados.idsModulos,
+                        permisosModulos: permisosUsuarioGuardados.permisosModulos,
+                        idsMenus: permisosUsuarioGuardados.idsMenus,
+                        permisosMenus: permisosUsuarioGuardados.permisosMenus,
+                        /* idsSubmenus: permisosUsuarioSubmenus.ids,
+                        permisosSubmenus: nuevosPermisosSubmenus, */
+                        idsSubmenus: nuevosIdsSubmenus,
+                        permisosSubmenus: nuevosPermisosSubmenus,
+                      },
+                      "mysecretpassword"
+                    );
+                    localStorage.setItem("nuevosPermisosUsuario", token);
+                  }
+                  else {
+                    let nuevosPermisosSubmenuUsuario = permisosUsuarioSubmenus.permisos;
+                    nuevosPermisosSubmenuUsuario[indexPermiso] = parseInt(e.target.value);
+
+                    setPermisosUsuarioSubmenus({
+                      ...permisosUsuarioSubmenus,
+                      permisos: nuevosPermisosSubmenuUsuario,
+                    });
+
+                    let nuevosIdsSubmenus = []
+                    let nuevosPermisosSubmenus = [];
+                    nuevosIdsSubmenus.push(submenu.idsubmenu);
+                    nuevosPermisosSubmenus.push(parseInt(e.target.value));
+                    const token = jwt.sign(
+                      {
+                        idUsuario: idUsuarioEditar,
+                        idsModulos: [],
+                        permisosModulos: [],
+                        idsMenus: [],
+                        permisosMenus: [],
+                        idsSubmenus: nuevosIdsSubmenus,
+                        permisosSubmenus: nuevosPermisosSubmenus,
+                      },
+                      "mysecretpassword"
+                    );
+                    localStorage.setItem(
+                      "nuevosPermisosUsuario",
+                      token
+                    );
+                  }
                 }}
               >
                 <option value="0">Bloqueado</option>
@@ -1256,7 +1481,7 @@ function EditarPermisosUsuario(props) {
                 <option value="2">Lectura y Escritura</option>
                 <option value="3">Todos</option>
               </TextField>
-              <Typography style={{ fontSize: "13px" }}>
+              {/* <Typography style={{ fontSize: "13px" }}>
                 Notificaciones
               </Typography>
               <FormGroup
@@ -1330,7 +1555,7 @@ function EditarPermisosUsuario(props) {
                   label="SMS"
                   labelPlacement="end"
                 />
-              </FormGroup>
+              </FormGroup> */}
             </div>
           }
           color="#00c853"
@@ -1342,7 +1567,7 @@ function EditarPermisosUsuario(props) {
     });
   };
 
-  const getPermisosMenus = (idMenu) => {
+  /* const getPermisosMenus = (idMenu) => {
     if (permisosData.permisomodulos) {
       for (let x = 0; x < permisosData.permisomodulos.length; x++) {
         for (
@@ -1361,11 +1586,12 @@ function EditarPermisosUsuario(props) {
       }
     }
     return false;
-  };
+  }; */
 
   const getMenus = (modulo) => {
     return modulo.menus.map((menu, index) => {
-      let permisoMenu = getPermisosMenus(menu.idmenu);
+      const indexPermiso = permisosUsuarioMenus.ids.indexOf(menu.idmenu);
+      /* let permisoMenu = getPermisosMenus(menu.idmenu); */
       return menu.orden !== 0 ? (
         <StyledTreeItem
           key={menu.idmenu}
@@ -1378,20 +1604,123 @@ function EditarPermisosUsuario(props) {
               aria-label="permisos"
               name="permisos"
               style={{ display: "block" }}
-              value={permisoMenu}
+              /* value={permisoMenu} */
+              value={permisosUsuarioMenus.permisos[indexPermiso]}
               onClick={(e) => {
-                e.stopPropagation();
                 if (
+                  parseInt(e.target.value) !==
+                  permisosUsuarioMenus.permisos[indexPermiso]
+                ) {
+                  if (localStorage.getItem("nuevosPermisosUsuario")) {
+                    let nuevosPermisosMenusUsuario = permisosUsuarioMenus.permisos;
+                    nuevosPermisosMenusUsuario[indexPermiso] = parseInt(e.target.value);
+
+                    setPermisosUsuarioMenus({
+                      ...permisosUsuarioMenus,
+                      permisos: nuevosPermisosMenusUsuario,
+                    });
+
+                    const permisosUsuarioGuardados = jwt.verify(
+                      localStorage.getItem("nuevosPermisosUsuario"),
+                      "mysecretpassword"
+                    );
+
+                    let nuevosIdsMenus = permisosUsuarioGuardados.idsMenus;
+                    let nuevosPermisosMenus =
+                      permisosUsuarioGuardados.permisosMenus;
+                    
+                    let menusPermisos = [];
+                    for(let x=0 ; x<permisosData.permisomodulos.length ; x++) {
+                      for(let y=0 ; y<permisosData.permisomodulos[x].permisosmenu.length ; y++) {
+                        menusPermisos.push({
+                          id: permisosData.permisomodulos[x].permisosmenu[y].idmenu,
+                          permiso: permisosData.permisomodulos[x].permisosmenu[y].tipopermiso,
+                        });
+                      }
+                    }
+                    if (
+                      menusPermisos.find(
+                        (menuPermiso) =>
+                        menuPermiso.id === menu.idmenu
+                      ).permiso !== parseInt(e.target.value)
+                    ) {
+                      const pos = nuevosIdsMenus.indexOf(menu.idmenu);
+                      if (pos === -1) {
+                        nuevosIdsMenus.push(menu.idmenu);
+                        nuevosPermisosMenus.push(parseInt(e.target.value));
+                      } else {
+                        nuevosIdsMenus.splice(pos, 1);
+                        nuevosPermisosMenus.splice(pos, 1);
+                      }
+                    } else {
+                      const pos = nuevosIdsMenus.indexOf(menu.idmenu);
+                      if (pos !== -1) {
+                        nuevosIdsMenus.splice(pos, 1);
+                        nuevosPermisosMenus.splice(pos, 1);
+                      }
+                    }
+
+                    const token = jwt.sign(
+                      {
+                        idUsuario: idUsuarioEditar,
+                        idsModulos: permisosUsuarioGuardados.idsModulos,
+                        permisosModulos: permisosUsuarioGuardados.permisosModulos,
+                        /* idsMenus: permisosUsuarioMenus.ids,
+                        permisosMenus: nuevosPermisosMenus, */
+                        idsMenus: nuevosIdsMenus,
+                        permisosMenus: nuevosPermisosMenus,
+                        idsSubmenus: permisosUsuarioGuardados.idsSubmenus,
+                        permisosSubmenus:
+                          permisosUsuarioGuardados.permisosSubmenus,
+                      },
+                      "mysecretpassword"
+                    );
+                    localStorage.setItem("nuevosPermisosUsuario", token);
+                  }
+                  else {
+                    let nuevosPermisosMenusUsuario = permisosUsuarioMenus.permisos;
+                    nuevosPermisosMenusUsuario[indexPermiso] = parseInt(e.target.value);
+
+                    setPermisosUsuarioMenus({
+                      ...permisosUsuarioMenus,
+                      permisos: nuevosPermisosMenusUsuario,
+                    });
+
+                    let nuevosIdsMenus = []
+                    let nuevosPermisosMenus = [];
+                    nuevosIdsMenus.push(menu.idmenu);
+                    nuevosPermisosMenus.push(parseInt(e.target.value));
+                    const token = jwt.sign(
+                      {
+                        idUsuario: idUsuarioEditar,
+                        idsModulos: [],
+                        permisosModulos: [],
+                        idsMenus: nuevosIdsMenus,
+                        permisosMenus: nuevosPermisosMenus,
+                        idsSubmenus: [],
+                        permisosSubmenus: [],
+                      },
+                      "mysecretpassword"
+                    );
+                    localStorage.setItem(
+                      "nuevosPermisosUsuario",
+                      token
+                    );
+                  }
+                }
+
+                e.stopPropagation();
+                /* if (
                   e.target.value &&
                   e.target.value.toString() !== permisoMenu.toString()
                 ) {
                   setIdMenu(menu.idmenu);
                   setPermiso(e.target.value === "true" ? 1 : 0);
-                }
+                } */
               }}
             >
-              <FormControlLabel value={true} control={<Radio />} label="Sí" />
-              <FormControlLabel value={false} control={<Radio />} label="No" />
+              <FormControlLabel value={1} control={<Radio />} label="Sí" />
+              <FormControlLabel value={0} control={<Radio />} label="No" />
             </RadioGroup>
           }
           color="#e3742f"
@@ -1405,7 +1734,7 @@ function EditarPermisosUsuario(props) {
     });
   };
 
-  const getPermisosModulos = (idmodulo) => {
+  /* const getPermisosModulos = (idmodulo) => {
     if (permisosData.permisomodulos) {
       for (let x = 0; x < permisosData.permisomodulos.length; x++) {
         if (idmodulo === permisosData.permisomodulos[x].idmodulo) {
@@ -1426,11 +1755,12 @@ function EditarPermisosUsuario(props) {
       localStorage.setItem("menuTemporal", token);
     }
     return false;
-  };
+  }; */
 
   const getModulos = () => {
     //console.log(menuData);
     return menuData.modulos.map((modulo, index) => {
+      const indexPermiso = permisosUsuarioModulos.ids.indexOf(modulo.idmodulo);
       return modulo.orden !== 0 ? (
         <StyledTreeItem
           key={modulo.idmodulo}
@@ -1453,21 +1783,114 @@ function EditarPermisosUsuario(props) {
               aria-label="permisos"
               name="permisos"
               row
-              value={getPermisosModulos(modulo.idmodulo)}
+              /* value={getPermisosModulos(modulo.idmodulo)} */
+              value={permisosUsuarioModulos.permisos[indexPermiso]}
               onClick={(e) => {
-                e.stopPropagation();
                 if (
-                  e.target.value &&
-                  e.target.value.toString() !==
-                    getPermisosModulos(modulo.idmodulo).toString()
+                  parseInt(e.target.value) !==
+                  permisosUsuarioModulos.permisos[indexPermiso]
                 ) {
-                  setIdModulo(modulo.idmodulo);
-                  setPermiso(e.target.value === "true" ? 1 : 0);
+                  if (localStorage.getItem("nuevosPermisosUsuario")) {
+                    let nuevosPermisosModulosUsuario =
+                      permisosUsuarioModulos.permisos;
+                    nuevosPermisosModulosUsuario[indexPermiso] = parseInt(
+                      e.target.value
+                    );
+
+                    setPermisosUsuarioModulos({
+                      ...permisosUsuarioModulos,
+                      permisos: nuevosPermisosModulosUsuario,
+                    });
+
+                    const permisosUsuarioGuardados = jwt.verify(
+                      localStorage.getItem("nuevosPermisosUsuario"),
+                      "mysecretpassword"
+                    );
+
+                    let nuevosIdsModulos = permisosUsuarioGuardados.idsModulos;
+                    let nuevosPermisosModulos =
+                      permisosUsuarioGuardados.permisosModulos;
+                    if (
+                      permisosData.permisomodulos.find(
+                        (moduloPermisos) =>
+                          moduloPermisos.idmodulo === modulo.idmodulo
+                      ).tipopermiso !== parseInt(e.target.value)
+                    ) {
+                      const pos = nuevosIdsModulos.indexOf(modulo.idmodulo);
+                      if (pos === -1) {
+                        nuevosIdsModulos.push(modulo.idmodulo);
+                        nuevosPermisosModulos.push(parseInt(e.target.value));
+                      } else {
+                        nuevosIdsModulos.splice(pos, 1);
+                        nuevosPermisosModulos.splice(pos, 1);
+                      }
+                    } else {
+                      const pos = nuevosIdsModulos.indexOf(modulo.idmodulo);
+                      if (pos !== -1) {
+                        nuevosIdsModulos.splice(pos, 1);
+                        nuevosPermisosModulos.splice(pos, 1);
+                      }
+                    }
+
+                    /* console.log(nuevosIdsModulos);
+                  console.log(nuevosPermisosModulos); */
+
+                    const token = jwt.sign(
+                      {
+                        idUsuario: idUsuarioEditar,
+                        /* idsModulos: permisosUsuarioModulos.ids,
+                      permisosModulos: nuevosPermisosModulos, */
+                        idsModulos: nuevosIdsModulos,
+                        permisosModulos: nuevosPermisosModulos,
+                        idsMenus: permisosUsuarioGuardados.idsMenus,
+                        permisosMenus: permisosUsuarioGuardados.permisosMenus,
+                        idsSubmenus: permisosUsuarioGuardados.idsSubmenus,
+                        permisosSubmenus:
+                          permisosUsuarioGuardados.permisosSubmenus,
+                      },
+                      "mysecretpassword"
+                    );
+                    localStorage.setItem("nuevosPermisosUsuario", token);
+                  } else {
+                    let nuevosPermisosModulosUsuario =
+                      permisosUsuarioModulos.permisos;
+                    nuevosPermisosModulosUsuario[indexPermiso] = parseInt(
+                      e.target.value
+                    );
+
+                    setPermisosUsuarioModulos({
+                      ...permisosUsuarioModulos,
+                      permisos: nuevosPermisosModulosUsuario,
+                    });
+
+                    let nuevosIdsModulos = []
+                    let nuevosPermisosModulos = [];
+                    nuevosIdsModulos.push(modulo.idmodulo);
+                    nuevosPermisosModulos.push(parseInt(e.target.value));
+                    const token = jwt.sign(
+                      {
+                        idUsuario: idUsuarioEditar,
+                        idsModulos: nuevosIdsModulos,
+                        permisosModulos: nuevosPermisosModulos,
+                        idsMenus: [],
+                        permisosMenus: [],
+                        idsSubmenus: [],
+                        permisosSubmenus: [],
+                      },
+                      "mysecretpassword"
+                    );
+                    localStorage.setItem(
+                      "nuevosPermisosUsuario",
+                      token
+                    );
+                  }
                 }
+
+                e.stopPropagation();
               }}
             >
-              <FormControlLabel value={true} control={<Radio />} label="Sí" />
-              <FormControlLabel value={false} control={<Radio />} label="No" />
+              <FormControlLabel value={1} control={<Radio />} label="Sí" />
+              <FormControlLabel value={0} control={<Radio />} label="No" />
             </RadioGroup>
           }
           color="#1a73e8"
@@ -1539,7 +1962,7 @@ function EditarPermisosUsuario(props) {
           expanded={expanded}
           onNodeToggle={handleChangeTreeView}
         >
-          {getModulos()}
+          {permisosUsuarioModulos.ids.length > 0 ? getModulos() : null}
         </TreeView>
       </Grid>
     </Grid>
@@ -2149,7 +2572,8 @@ function EditarNotificacionesUsuario(props) {
       data: guardarNotificacionesServiciosUsuarioEmpresaData,
       loading: guardarNotificacionesServiciosUsuarioEmpresaLoading,
       error: guardarNotificacionesServiciosUsuarioEmpresaError,
-    }, executeGuardarNotificacionesServiciosUsuarioEmpresa,
+    },
+    executeGuardarNotificacionesServiciosUsuarioEmpresa,
   ] = useAxios(
     {
       url: API_BASE_URL + `/guardarNotificacionesServiciosUsuarioEmpresa`,
@@ -2187,7 +2611,9 @@ function EditarNotificacionesUsuario(props) {
         if (guardarNotificacionesServiciosUsuarioEmpresaData.error !== 0) {
           swal(
             "Error",
-            dataBaseErrores(guardarNotificacionesServiciosUsuarioEmpresaData.error),
+            dataBaseErrores(
+              guardarNotificacionesServiciosUsuarioEmpresaData.error
+            ),
             "warning"
           );
         } else {
@@ -2201,13 +2627,19 @@ function EditarNotificacionesUsuario(props) {
     checkData();
   }, [guardarNotificacionesServiciosUsuarioEmpresaData]);
 
-  if (getNotificacionesServiciosUsuarioEmpresaLoading || guardarNotificacionesServiciosUsuarioEmpresaLoading) {
+  if (
+    getNotificacionesServiciosUsuarioEmpresaLoading ||
+    guardarNotificacionesServiciosUsuarioEmpresaLoading
+  ) {
     setLoading(true);
   } else {
     setLoading(false);
   }
 
-  if (getNotificacionesServiciosUsuarioEmpresaError || guardarNotificacionesServiciosUsuarioEmpresaError) {
+  if (
+    getNotificacionesServiciosUsuarioEmpresaError ||
+    guardarNotificacionesServiciosUsuarioEmpresaError
+  ) {
     return <ErrorQueryDB />;
   }
 
@@ -2245,9 +2677,9 @@ function EditarNotificacionesUsuario(props) {
         idempresa: idEmpresa,
         idusuario: idUsuarioEditar,
         datosnotificaciones: notificacionesUsuario,
-      }
-    })
-  }
+      },
+    });
+  };
 
   return (
     <Grid container justify="center" spacing={3}>
@@ -2279,7 +2711,14 @@ function EditarNotificacionesUsuario(props) {
         </Typography>
       </Grid>
       <Grid item xs={12}>
-        <Button variant="contained" color="primary" style={{ float: "right" }} onClick={handleClickGuardarNotificaciones}>Guardar</Button>
+        <Button
+          variant="contained"
+          color="primary"
+          style={{ float: "right" }}
+          onClick={handleClickGuardarNotificaciones}
+        >
+          Guardar
+        </Button>
       </Grid>
       <Grid item xs={12}>
         <TableContainer component={Paper}>

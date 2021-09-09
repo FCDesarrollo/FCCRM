@@ -84,7 +84,7 @@ export default function Registrate() {
       } else {
         swal(
           "Registro correcto",
-          "Se envió un código de confirmación a su correo",
+          "Se envió un código de confirmación al correo "+correo,
           "success"
         ).then(() => {
           const usuarioToken = jwt.sign(

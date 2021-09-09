@@ -299,6 +299,8 @@ export default function Header(props) {
   const setLoading = props.setLoading;
   const executeQueriesHeader = props.executeQueriesHeader;
   const setExecuteQueriesHeader = props.setExecuteQueriesHeader;
+  const ejecutarQueryPermisosCRM = props.ejecutarQueryPermisosCRM;
+  const setEjecutarQueryPermisosCRM = props.setEjecutarQueryPermisosCRM;
   let userId = 0;
   let userEmail = "";
   let userPassword = "";
@@ -344,6 +346,8 @@ export default function Header(props) {
   const [empresaPermisos, setEmpresaPermisos] = useState(true);
   const [nombreEmpresa, setNombreEmpresa] = useState("");
   const [nombreUsuario, setNombreUsuario] = useState("");
+  const [correoUsuario, setCorreoUsuario] = useState("");
+  const [celularUsuario, setCelularUsuario] = useState("");
   const [perfilUsuario, setPerfilUsuario] = useState("");
   const [openDrawer, setOpenDrawer] = useState(
     window.location.hash.substr(2) === "" ? true : false
@@ -458,6 +462,24 @@ export default function Header(props) {
     }
   );
 
+  const [
+    {
+      data: modificaPermisosCRMUsuarioData,
+      loading: modificaPermisosCRMUsuarioLoading,
+      error: modificaPermisosCRMUsuarioError,
+    },
+    executeModificaPermisosCRMUsuario,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/modificaPermisosCRMUsuario`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
   useEffect(() => {
     function checkData() {
       if (getEmpresaData) {
@@ -526,6 +548,8 @@ export default function Header(props) {
             setNombreUsuario(
               `${decodedToken.userData.nombre} ${decodedToken.userData.apellidop} ${decodedToken.userData.apellidom}`
             );
+            setCorreoUsuario(decodedToken.userData.correo);
+            setCelularUsuario(decodedToken.userData.cel);
             setPerfilUsuario(decodedEToken.empresaData.perfil);
             setNombreEmpresa(decodedEToken.empresaData.nombreempresa);
           } else {
@@ -631,8 +655,28 @@ export default function Header(props) {
         }
         setSubmenuContent(dataSubmenuAndPermisos);
       }
+      if (
+        perfilData &&
+        perfilData.empresa &&
+        perfilData.empresa[0].carpetas === 1 &&
+        carpetasEmpresa === 0
+      ) {
+        setEmpresaDatos(perfilData.empresa[0]);
+        const token = jwt.sign(
+          { empresaData: perfilData.empresa[0] },
+          "mysecretpassword"
+        );
+        localStorage.setItem("emToken", token);
+      }
     }
-  }, [menuData, perfilData, currentPath, setSubmenuContent]);
+  }, [
+    menuData,
+    perfilData,
+    currentPath,
+    setSubmenuContent,
+    carpetasEmpresa,
+    setEmpresaDatos,
+  ]);
 
   useEffect(() => {
     function checkData() {
@@ -656,6 +700,75 @@ export default function Header(props) {
     checkData();
   }, [eliminaNotificacionData]);
 
+  useEffect(() => {
+    async function modificarPermisosCRM() {
+      const nuevosPermisosUsuario = jwt.verify(
+        localStorage.getItem("nuevosPermisosUsuario"),
+        "mysecretpassword"
+      );
+      if (
+        nuevosPermisosUsuario.idsModulos.length > 0 ||
+        nuevosPermisosUsuario.idsMenus.length > 0 ||
+        nuevosPermisosUsuario.idsSubmenus.length > 0
+      ) {
+        executeModificaPermisosCRMUsuario({
+          data: {
+            usuario: userEmail,
+            pwd: userPassword,
+            rfc: empresaRFC,
+            idsubmenu: 21,
+            idusuario: nuevosPermisosUsuario.idUsuario,
+            idsModulos: nuevosPermisosUsuario.idsModulos,
+            permisosmodulos: nuevosPermisosUsuario.permisosModulos,
+            idsmenus: nuevosPermisosUsuario.idsMenus,
+            permisosmenus: nuevosPermisosUsuario.permisosMenus,
+            idsSubmenus: nuevosPermisosUsuario.idsSubmenus,
+            permisosSubmenus: nuevosPermisosUsuario.permisosSubmenus,
+          },
+        });
+        setEjecutarQueryPermisosCRM(false);
+        localStorage.removeItem("nuevosPermisosUsuario");
+        await executeMenu();
+        await executePerfil();
+      }
+      else {
+        setEjecutarQueryPermisosCRM(false);
+        localStorage.removeItem("nuevosPermisosUsuario");
+      }
+    }
+    /* console.log("query:",ejecutarQueryPermisosCRM);
+    console.log("item:",localStorage.getItem("nuevosPermisosUsuario")); */
+    if (ejecutarQueryPermisosCRM && localStorage.getItem("nuevosPermisosUsuario")) {
+      modificarPermisosCRM();
+    }
+
+    if(!ejecutarQueryPermisosCRM && !localStorage.getItem("nuevosPermisosUsuario")) {
+      setEjecutarQueryPermisosCRM(false);
+      localStorage.removeItem("nuevosPermisosUsuario");
+    }
+  }, [
+    ejecutarQueryPermisosCRM,
+    setEjecutarQueryPermisosCRM,
+    executeModificaPermisosCRMUsuario,
+    userEmail,
+    userPassword,
+    empresaRFC,
+    executeMenu,
+    executePerfil,
+  ]);
+
+  useEffect(() => {
+    if (modificaPermisosCRMUsuarioData) {
+      if (modificaPermisosCRMUsuarioData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(modificaPermisosCRMUsuarioData.error),
+          "warning"
+        );
+      }
+    }
+  }, [modificaPermisosCRMUsuarioData]);
+
   window.onhashchange = function () {
     localStorage.removeItem("menuTemporal");
     localStorage.removeItem("dataTemporal");
@@ -671,7 +784,8 @@ export default function Header(props) {
     perfilLoading ||
     empresasLoading ||
     notificacionesLoading ||
-    eliminaNotificacionLoading
+    eliminaNotificacionLoading ||
+    modificaPermisosCRMUsuarioLoading
   ) {
     return (
       <LoadingComponent
@@ -689,7 +803,8 @@ export default function Header(props) {
     perfilError ||
     empresasError ||
     notificacionesError ||
-    eliminaNotificacionError
+    eliminaNotificacionError ||
+    modificaPermisosCRMUsuarioError
   ) {
     return <ErrorQueryDB />;
   }
@@ -1348,29 +1463,31 @@ export default function Header(props) {
                 {/* <Websocket url='ws://127.0.0.1:6001' onMessage={testWebSocket} /> */}
               </IconButton>
             </Tooltip>
-            <ListItem className={classes.toolbarList}>
-              <ListItemText
-                disableTypography
-                primary={
-                  <Typography className={classes.toolbarListItemText}>
-                    {nombreUsuario}
-                  </Typography>
-                }
-                secondary={
-                  <Typography className={classes.toolbarListItemText}>
-                    {perfilUsuario}
-                  </Typography>
-                }
-              />
-              <ListItemAvatar
-                className={classes.toolbarListItemAvatar}
-                onClick={handleOpenMenu}
-              >
-                <Avatar>
-                  <PersonIcon />
-                </Avatar>
-              </ListItemAvatar>
-            </ListItem>
+            <Tooltip title={`${correoUsuario} - ${celularUsuario}`}>
+              <ListItem className={classes.toolbarList}>
+                <ListItemText
+                  disableTypography
+                  primary={
+                    <Typography className={classes.toolbarListItemText}>
+                      {nombreUsuario}
+                    </Typography>
+                  }
+                  secondary={
+                    <Typography className={classes.toolbarListItemText}>
+                      {perfilUsuario}
+                    </Typography>
+                  }
+                />
+                <ListItemAvatar
+                  className={classes.toolbarListItemAvatar}
+                  onClick={handleOpenMenu}
+                >
+                  <Avatar>
+                    <PersonIcon />
+                  </Avatar>
+                </ListItemAvatar>
+              </ListItem>
+            </Tooltip>
           </List>
         </Toolbar>
       </AppBar>
