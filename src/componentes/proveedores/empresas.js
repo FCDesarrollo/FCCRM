@@ -56,6 +56,7 @@ import {
   pasteValidation,
   doubleKeyValidation,
   doublePasteValidation,
+  validarCorreo,
 } from "../../helpers/inputHelpers";
 import { verificarArchivoMovimiento } from "../../helpers/extensionesArchivos";
 
@@ -579,9 +580,8 @@ export default function Empresas(props) {
   const [pageUsuarios, setPageUsuarios] = useState(0);
   const [pageMovimientos, setPageMovimientos] = useState(0);
   const [busquedaFiltroUsuarios, setBusquedaFiltroUsuarios] = useState("");
-  const [busquedaFiltroMovimientos, setBusquedaFiltroMovimientos] = useState(
-    ""
-  );
+  const [busquedaFiltroMovimientos, setBusquedaFiltroMovimientos] =
+    useState("");
   const [rowsServicios, setRowsServicios] = useState([]);
   const [pageServicios, setPageServicios] = useState(0);
   const [busquedaFiltroServicios, setBusquedaFiltroServicios] = useState("");
@@ -1646,7 +1646,7 @@ function InformacionEmpresa(props) {
     ciudad: "",
     codigopostal: 0,
     colonia: "",
-    correo: "",
+    correoEmpresa: "",
     direccion: "",
     empresaBD: "",
     estado: "",
@@ -1714,7 +1714,7 @@ function InformacionEmpresa(props) {
           ciudad: getEmpresaData.empresa[0].ciudad,
           codigopostal: getEmpresaData.empresa[0].codigopostal,
           colonia: getEmpresaData.empresa[0].colonia,
-          correo: getEmpresaData.empresa[0].correo,
+          correoEmpresa: getEmpresaData.empresa[0].correo,
           direccion: getEmpresaData.empresa[0].direccion,
           empresaBD: getEmpresaData.empresa[0].empresaBD,
           estado: getEmpresaData.empresa[0].estado,
@@ -1738,10 +1738,17 @@ function InformacionEmpresa(props) {
   useEffect(() => {
     if (guardarInformacionEmpresaData) {
       if (guardarInformacionEmpresaData.error !== 0) {
-        swal("Error", dataBaseErrores(guardarInformacionEmpresaData.error), "warning");
-      }
-      else {
-        swal("Información Guardada", "Información guardada con éxito", "success");
+        swal(
+          "Error",
+          dataBaseErrores(guardarInformacionEmpresaData.error),
+          "warning"
+        );
+      } else {
+        swal(
+          "Información Guardada",
+          "Información guardada con éxito",
+          "success"
+        );
       }
     }
   }, [guardarInformacionEmpresaData]);
@@ -1757,24 +1764,42 @@ function InformacionEmpresa(props) {
   }
 
   const guardarInformacionEmpresa = () => {
-    const { calle, ciudad, codigopostal, colonia, direccion, estado, municipio, num_ext, num_int } = datosEmpresa;
-    executeGuardarInformacionEmpresa({
-      data: {
-        usuario: correo,
-        pwd: password,
-        idempresa: idEmpresa,
-        calle: calle,
-        ciudad: ciudad,
-        codigopostal: codigopostal,
-        colonia: colonia,
-        direccion: direccion,
-        estado: estado,
-        municipio: municipio,
-        num_ext: num_ext,
-        num_int: num_int,
-      }
-    })
-  }
+    const {
+      calle,
+      ciudad,
+      codigopostal,
+      colonia,
+      correoEmpresa,
+      direccion,
+      estado,
+      municipio,
+      num_ext,
+      num_int,
+    } = datosEmpresa;
+    if (correoEmpresa.trim() === "") {
+      swal("Error", "Ingrese un correo", "warning");
+    } else if (!validarCorreo(correoEmpresa.trim())) {
+      swal("Error", "Ingrese un correo valido", "warning");
+    } else {
+      executeGuardarInformacionEmpresa({
+        data: {
+          usuario: correo,
+          pwd: password,
+          idempresa: idEmpresa,
+          calle: calle !== null ? calle.trim() : calle,
+          ciudad: ciudad !== null ? ciudad.trim() : ciudad,
+          codigopostal: codigopostal,
+          colonia: colonia !== null ? colonia.trim() : colonia,
+          correo: correoEmpresa.trim(),
+          direccion: direccion !== null ? direccion.trim() : direccion,
+          estado: estado !== null ? estado.trim() : estado,
+          municipio: municipio !== null ? municipio.trim() : municipio,
+          num_ext: num_ext,
+          num_int: num_int,
+        },
+      });
+    }
+  };
 
   return (
     <Card>
@@ -1900,13 +1925,13 @@ function InformacionEmpresa(props) {
                   : ""
               }
               inputProps={{
-                maxLength: 50,
+                maxLength: 5,
               }}
               onKeyPress={(e) => {
-                keyValidation(e, 1);
+                keyValidation(e, 2);
               }}
               onChange={(e) => {
-                pasteValidation(e, 1);
+                pasteValidation(e, 2);
                 setDatosEmpresa({
                   ...datosEmpresa,
                   codigopostal: e.target.value,
@@ -1927,10 +1952,10 @@ function InformacionEmpresa(props) {
                 maxLength: 50,
               }}
               onKeyPress={(e) => {
-                keyValidation(e, 1);
+                keyValidation(e, 3);
               }}
               onChange={(e) => {
-                pasteValidation(e, 1);
+                pasteValidation(e, 3);
                 setDatosEmpresa({
                   ...datosEmpresa,
                   colonia: e.target.value,
@@ -1941,23 +1966,24 @@ function InformacionEmpresa(props) {
           <Grid item xs={4}>
             <TextField
               id="correo"
-              disabled
+              /* disabled */
+              required
               className={classes.textFields}
               label="Correo"
               variant="outlined"
               margin="normal"
-              value={datosEmpresa.correo !== null ? datosEmpresa.correo : ""}
+              value={datosEmpresa.correoEmpresa !== null ? datosEmpresa.correoEmpresa : ""}
               inputProps={{
                 maxLength: 50,
               }}
               onKeyPress={(e) => {
-                keyValidation(e, 1);
+                keyValidation(e, 4);
               }}
               onChange={(e) => {
-                pasteValidation(e, 1);
+                pasteValidation(e, 4);
                 setDatosEmpresa({
                   ...datosEmpresa,
-                  correo: e.target.value,
+                  correoEmpresa: e.target.value,
                 });
               }}
             />
@@ -2260,7 +2286,13 @@ function InformacionEmpresa(props) {
               label="Estatus"
               variant="outlined"
               margin="normal"
-              value={datosEmpresa.status !== null ? datosEmpresa.status === 1 ? 'Activa' : 'Inactiva' : ""}
+              value={
+                datosEmpresa.status !== null
+                  ? datosEmpresa.status === 1
+                    ? "Activa"
+                    : "Inactiva"
+                  : ""
+              }
               inputProps={{
                 maxLength: 50,
               }}
@@ -2406,13 +2438,10 @@ function EstadoDeCuenta(props) {
   const [pageNotificaciones, setPageNotificaciones] = useState(0);
   const [orderNotificaciones, setOrderNotificaciones] = useState("desc");
   const [orderByNotificaciones, setOrderByNotificaciones] = useState("id");
-  const [rowsPerPageNotificaciones, setRowsPerPageNotificaciones] = useState(
-    10
-  );
-  const [
-    busquedaFiltroNotificaciones,
-    setBusquedaFiltroNotificaciones,
-  ] = useState("");
+  const [rowsPerPageNotificaciones, setRowsPerPageNotificaciones] =
+    useState(10);
+  const [busquedaFiltroNotificaciones, setBusquedaFiltroNotificaciones] =
+    useState("");
 
   const [
     {
@@ -3081,8 +3110,7 @@ function EstadoDeCuenta(props) {
                             <IconButton
                               onClick={() => {
                                 swal({
-                                  text:
-                                    "¿Está seguro de quitar la fecha límite de pago?",
+                                  text: "¿Está seguro de quitar la fecha límite de pago?",
                                   buttons: ["No", "Sí"],
                                   dangerMode: true,
                                 }).then((value) => {
@@ -3170,8 +3198,7 @@ function EstadoDeCuenta(props) {
                             <IconButton
                               onClick={() => {
                                 swal({
-                                  text:
-                                    "¿Está seguro de quitar la fecha de período de prueba?",
+                                  text: "¿Está seguro de quitar la fecha de período de prueba?",
                                   buttons: ["No", "Sí"],
                                   dangerMode: true,
                                 }).then((value) => {
@@ -3293,9 +3320,8 @@ function MovimientosEmpresa(props) {
   const [tipoMovimiento, setTipoMovimiento] = useState("0");
   const [archivosMovimiento, setArchivosMovimiento] = useState(null);
   const [openMenuNuevoMovimiento, setOpenMenuNuevoMovimiento] = useState(false);
-  const [openMenuAsociarMovimiento, setOpenMenuAsociarMovimiento] = useState(
-    false
-  );
+  const [openMenuAsociarMovimiento, setOpenMenuAsociarMovimiento] =
+    useState(false);
   const [rowsMovimientos, setRowsMovimientos] = useState([]);
   const [
     rowsMovimientosAsociacionOriginales,
@@ -4917,9 +4943,8 @@ function MovimientosAsociacionesEmpresa(props) {
   const [orderMovimientos, setOrderMovimientos] = useState("desc");
   const [orderByMovimientos, setOrderByMovimientos] = useState("fecha");
   const [rowsPerPageMovimientos, setRowsPerPageMovimientos] = useState(10);
-  const [busquedaFiltroMovimientos, setBusquedaFiltroMovimientos] = useState(
-    ""
-  );
+  const [busquedaFiltroMovimientos, setBusquedaFiltroMovimientos] =
+    useState("");
 
   const [
     {

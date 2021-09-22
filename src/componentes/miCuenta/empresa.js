@@ -60,6 +60,7 @@ import {
   pasteValidation,
   doubleKeyValidation,
   doublePasteValidation,
+  validarCorreo,
 } from "../../helpers/inputHelpers";
 import { API_BASE_URL } from "../../config";
 import useAxios from "axios-hooks";
@@ -327,6 +328,9 @@ function InformacionGeneral(props) {
     key: null,
     passwordcertificado: "",
   });
+  const [nuevoCorreo, setNuevoCorreo] = useState("");
+  const [codigoCorreo, setCodigoCorreo] = useState("");
+  const [nuevoCorreoPaso, setNuevoCorreoPaso] = useState(1);
 
   const [
     {
@@ -356,6 +360,24 @@ function InformacionGeneral(props) {
   ] = useAxios(
     {
       url: API_BASE_URL + `/renovarCertificadoEmpresa`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
+  const [
+    {
+      data: cambiarCorreoEmpresaUsuarioData,
+      loading: cambiarCorreoEmpresaUsuarioLoading,
+      error: cambiarCorreoEmpresaUsuarioError,
+    },
+    executeCambiarCorreoEmpresaUsuario,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/cambiarCorreoEmpresaUsuario`,
       method: "POST",
     },
     {
@@ -412,16 +434,53 @@ function InformacionGeneral(props) {
     }
   }, [renovarCertificadoEmpresaData]);
 
+  useEffect(() => {
+    if (cambiarCorreoEmpresaUsuarioData) {
+      if (cambiarCorreoEmpresaUsuarioData.error !== 0) {
+        swal(
+          "Error",
+          dataBaseErrores(cambiarCorreoEmpresaUsuarioData.error),
+          "warning"
+        );
+      } else {
+        /* if (cambiarCorreoEmpresaUsuarioData.paso === 2) {
+          setNuevoCorreoPaso(2);
+        } else {
+          swal("Correo Actualizado", "Correo actualizado con éxito", "success");
+          setNuevoCorreo("");
+          setCodigoCorreo("");
+          setNuevoCorreoPaso(1);
+        } */
+        setEmpresaDatos(cambiarCorreoEmpresaUsuarioData.datosempresa[0]);
+        const token = jwt.sign(
+          { empresaData: cambiarCorreoEmpresaUsuarioData.datosempresa[0] },
+          "mysecretpassword"
+        );
+        localStorage.setItem("emToken", token);
+        setOpenMenuCambiarCorreo(false);
+        setNuevoCorreo("");
+        setCodigoCorreo("");
+        setNuevoCorreoPaso(1);
+        swal("Correo Actualizado", "Correo de la empresa actualizado con éxito", "success");
+      }
+    }
+  }, [cambiarCorreoEmpresaUsuarioData, setEmpresaDatos]);
+
   if (
     editarDatosFacturacionEmpresaLoading ||
-    renovarCertificadoEmpresaLoading
+    renovarCertificadoEmpresaLoading ||
+    cambiarCorreoEmpresaUsuarioLoading
   ) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (editarDatosFacturacionEmpresaError || renovarCertificadoEmpresaError) {
+  if (
+    editarDatosFacturacionEmpresaError ||
+    renovarCertificadoEmpresaError ||
+    cambiarCorreoEmpresaUsuarioError
+  ) {
     return <ErrorQueryDB />;
   }
 
@@ -431,6 +490,7 @@ function InformacionGeneral(props) {
 
   const handleCloseMenuCambiarCorreo = () => {
     setOpenMenuCambiarCorreo(false);
+    setNuevoCorreo("");
   };
 
   const handleClickOpenMenuRenovarCetificado = () => {
@@ -499,6 +559,37 @@ function InformacionGeneral(props) {
         data: formData,
         headers: {
           "Content-Type": "multipart/form-data",
+        },
+      });
+    }
+  };
+
+  const cambiarCorreoEmpresa = () => {
+    if (nuevoCorreoPaso === 1 && nuevoCorreo.trim() === "") {
+      swal("Error", "Ingrese un correo", "warning");
+    } else if (nuevoCorreoPaso === 1 && !validarCorreo(nuevoCorreo.trim())) {
+      swal("Error", "Ingrese un correo valido", "warning");
+    } else if (
+      nuevoCorreoPaso === 1 &&
+      empresaDatos.correo === nuevoCorreo.trim()
+    ) {
+      swal(
+        "Error",
+        "Ingrese un correo diferente al actual de la empresa",
+        "warning"
+      );
+    } else if (nuevoCorreoPaso === 2 && codigoCorreo.trim() === "") {
+      swal("Error", "Ingrese el código", "warning");
+    } else {
+      executeCambiarCorreoEmpresaUsuario({
+        data: {
+          usuario: correo,
+          pwd: password,
+          rfc: rfc,
+          idsubmenu: idSubmenu,
+          idempresa: idEmpresa,
+          correo: nuevoCorreo.trim(),
+          paso: /* nuevoCorreoPaso */2,
         },
       });
     }
@@ -796,10 +887,59 @@ function InformacionGeneral(props) {
         onClose={handleCloseMenuCambiarCorreo}
         aria-labelledby="simple-dialog-title"
         open={openMenuCambiarCorreo}
+        fullWidth={true}
+        maxWidth="md"
       >
         <DialogTitle id="simple-dialog-title">Cambiar Correo</DialogTitle>
         <DialogContent dividers>
-          <Grid container justify="center" spacing={3}></Grid>
+          <Grid container justify="center" spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                className={classes.textFields}
+                id="nuevoCorreo"
+                label="Nuevo Correo"
+                required
+                variant="outlined"
+                type="text"
+                margin="normal"
+                value={nuevoCorreo}
+                inputProps={{
+                  maxLength: 70,
+                }}
+                onKeyPress={(e) => {
+                  keyValidation(e, 4);
+                }}
+                onChange={(e) => {
+                  pasteValidation(e, 4);
+                  setNuevoCorreo(e.target.value);
+                }}
+              />
+            </Grid>
+            {nuevoCorreoPaso === 2 && (
+              <Grid item xs={12}>
+                <TextField
+                  className={classes.textFields}
+                  id="codigoCorreo"
+                  label="Código"
+                  required
+                  variant="outlined"
+                  type="text"
+                  margin="normal"
+                  value={codigoCorreo}
+                  inputProps={{
+                    maxLength: 10,
+                  }}
+                  onKeyPress={(e) => {
+                    keyValidation(e, 2);
+                  }}
+                  onChange={(e) => {
+                    pasteValidation(e, 2);
+                    setCodigoCorreo(e.target.value);
+                  }}
+                />
+              </Grid>
+            )}
+          </Grid>
         </DialogContent>
         <DialogActions>
           <Button
@@ -814,9 +954,7 @@ function InformacionGeneral(props) {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => {
-              /* renovarCertificadoEmpresa(); */
-            }}
+            onClick={cambiarCorreoEmpresa}
           >
             Cambiar
           </Button>
@@ -1159,10 +1297,22 @@ function Sucursales(props) {
           setDatosSucursal({
             idSucursal: getSucursalEmpresaData.sucursal[0].idsucursal,
             sucursal: getSucursalEmpresaData.sucursal[0].sucursal,
-            rutaadw: getSucursalEmpresaData.sucursal[0].rutaadw !== null ? getSucursalEmpresaData.sucursal[0].rutaadw : "",
-            sincronizado: getSucursalEmpresaData.sucursal[0].sincronizado !== null ? getSucursalEmpresaData.sucursal[0].sincronizado : "",
-            idadw: getSucursalEmpresaData.sucursal[0].idadw !== null ? getSucursalEmpresaData.sucursal[0].idadw : "",
-            defaultRow: getSucursalEmpresaData.sucursal[0].default !== null ? getSucursalEmpresaData.sucursal[0].default : "",
+            rutaadw:
+              getSucursalEmpresaData.sucursal[0].rutaadw !== null
+                ? getSucursalEmpresaData.sucursal[0].rutaadw
+                : "",
+            sincronizado:
+              getSucursalEmpresaData.sucursal[0].sincronizado !== null
+                ? getSucursalEmpresaData.sucursal[0].sincronizado
+                : "",
+            idadw:
+              getSucursalEmpresaData.sucursal[0].idadw !== null
+                ? getSucursalEmpresaData.sucursal[0].idadw
+                : "",
+            defaultRow:
+              getSucursalEmpresaData.sucursal[0].default !== null
+                ? getSucursalEmpresaData.sucursal[0].default
+                : "",
           });
         }
       }
@@ -1377,25 +1527,27 @@ function Sucursales(props) {
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="Eliminar">
-                              <IconButton onClick={() => {
-                                swal({
-                                  text: `¿Está seguro de eliminar la sucursal?`,
-                                  buttons: ["No", "Sí"],
-                                  dangerMode: true,
-                                }).then((value) => {
-                                  if (value) {
-                                    executeEliminarSucursalEmpresa({
-                                      params: {
-                                        usuario: correo,
-                                        pwd: password,
-                                        rfc: rfc,
-                                        idsubmenu: 71,
-                                        idsucursal: sucursal.idsucursal,
-                                      },
-                                    });
-                                  }
-                                });
-                              }}>
+                              <IconButton
+                                onClick={() => {
+                                  swal({
+                                    text: `¿Está seguro de eliminar la sucursal?`,
+                                    buttons: ["No", "Sí"],
+                                    dangerMode: true,
+                                  }).then((value) => {
+                                    if (value) {
+                                      executeEliminarSucursalEmpresa({
+                                        params: {
+                                          usuario: correo,
+                                          pwd: password,
+                                          rfc: rfc,
+                                          idsubmenu: 71,
+                                          idsucursal: sucursal.idsucursal,
+                                        },
+                                      });
+                                    }
+                                  });
+                                }}
+                              >
                                 <DeleteIcon color="secondary" />
                               </IconButton>
                             </Tooltip>

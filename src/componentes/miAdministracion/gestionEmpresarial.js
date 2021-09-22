@@ -78,7 +78,8 @@ import jwt from "jsonwebtoken";
 import TreeMenu, { ItemComponent } from "react-simple-tree-menu";
 import "../../../node_modules/react-simple-tree-menu/dist/main.css";
 import {
-  PDFDownloadLink,
+  /* PDFDownloadLink, */
+  BlobProvider,
   Document,
   Page,
   Text,
@@ -132,6 +133,7 @@ export default function GestionEmpresarial(props) {
   const classes = useStyles();
   const usuarioDatos = props.usuarioDatos;
   const empresaDatos = props.empresaDatos;
+  const idEmpresa = empresaDatos.idempresa;
   const nombreEmpresa = empresaDatos.nombreempresa;
   const idUsuario = usuarioDatos.idusuario;
   const correoUsuario = usuarioDatos.correo;
@@ -231,6 +233,7 @@ export default function GestionEmpresarial(props) {
             idUsuario={idUsuario}
             correoUsuario={correoUsuario}
             passwordUsuario={passwordUsuario}
+            idEmpresa={idEmpresa}
             rfcEmpresa={rfcEmpresa}
             idModulo={idModulo}
             idMenu={idMenu}
@@ -599,6 +602,7 @@ function PlanesTrabajo(props) {
   const idUsuario = props.idUsuario;
   const correoUsuario = props.correoUsuario;
   const passwordUsuario = props.passwordUsuario;
+  const idEmpresa = props.idEmpresa;
   const rfcEmpresa = props.rfcEmpresa;
   const idModulo = props.idModulo;
   const idMenu = props.idMenu;
@@ -665,6 +669,24 @@ function PlanesTrabajo(props) {
     }
   );
 
+  const [
+    {
+      data: guardarReporteProyectosData,
+      loading: guardarReporteProyectosLoading,
+      error: guardarReporteProyectosError,
+    },
+    executeGuardarReporteProyectos,
+  ] = useAxios(
+    {
+      url: API_BASE_URL + `/guardarReporteProyectos`,
+      method: "POST",
+    },
+    {
+      useCache: false,
+      manual: true,
+    }
+  );
+
   useEffect(() => {
     function checkData() {
       if (guardarPryProyectoData) {
@@ -684,13 +706,38 @@ function PlanesTrabajo(props) {
     checkData();
   }, [guardarPryProyectoData, executeGetPryProyectos]);
 
-  if (agentesPersonasLoading || guardarPryProyectoLoading) {
+  useEffect(() => {
+    function checkData() {
+      if (guardarReporteProyectosData) {
+        if (guardarReporteProyectosData.error !== 0) {
+          swal(
+            "Error",
+            dataBaseErrores(guardarReporteProyectosData.error),
+            "warning"
+          );
+        } else {
+        }
+      }
+    }
+
+    checkData();
+  }, [guardarReporteProyectosData]);
+
+  if (
+    agentesPersonasLoading ||
+    guardarPryProyectoLoading ||
+    guardarReporteProyectosLoading
+  ) {
     setLoading(true);
     return <div></div>;
   } else {
     setLoading(false);
   }
-  if (agentesPersonasError || guardarPryProyectoError) {
+  if (
+    agentesPersonasError ||
+    guardarPryProyectoError ||
+    guardarReporteProyectosError
+  ) {
     return <ErrorQueryDB />;
   }
 
@@ -893,12 +940,67 @@ function PlanesTrabajo(props) {
                     </Button>
                   </Link>
                   <div>
-              <PDFDownloadLink document={<ReportePorProyecto idProyecto={7} setLoading={setLoading} correoUsuario={correoUsuario} passwordUsuario={passwordUsuario} rfcEmpresa={rfcEmpresa} idSubmenu={idSubmenu} />} fileName="somename.pdf">
-                {({ blob, url, loading, error }) =>
-                  loading ? 'Loading document...' : <button>{url}</button>
-                }
-              </PDFDownloadLink>
-            </div>
+                    <BlobProvider
+                      document={
+                        <ReportePorProyecto
+                          idProyecto={7}
+                          setLoading={setLoading}
+                          correoUsuario={correoUsuario}
+                          passwordUsuario={passwordUsuario}
+                          rfcEmpresa={rfcEmpresa}
+                          idSubmenu={idSubmenu}
+                        />
+                      }
+                      fileName="somename.pdf"
+                    >
+                      {({ blob, url, loading, error }) =>
+                        loading ? (
+                          "Cargando Reporte..."
+                        ) : (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            disabled={permisosSubmenu < 2}
+                            style={{ float: "right", marginRight: 10 }}
+                            onClick={() => {
+                              var xhr = new XMLHttpRequest();
+                              xhr.open("GET", `${url}`, true);
+                              xhr.responseType = "blob";
+                              xhr.onload = function (e) {
+                                if (this.status === 200) {
+                                  var myBlob = this.response;
+                                  // myBlob is now the blob that the object URL pointed to.
+                                  const formData = new FormData();
+                                  formData.append("usuario", correoUsuario);
+                                  formData.append("pwd", passwordUsuario);
+                                  formData.append("rfc", rfcEmpresa);
+                                  formData.append("idsubmenu", idSubmenu);
+                                  formData.append("idEmpresa", idEmpresa);
+                                  formData.append("reporte", myBlob);
+                                  formData.append(
+                                    "fecha",
+                                    moment().format("YYYYMMDDHmmss")
+                                  );
+                                  executeGuardarReporteProyectos({
+                                    data: formData,
+                                    headers: {
+                                      "Content-Type": "multipart/form-data",
+                                    },
+                                  });
+                                }
+                                else {
+                                  swal("Error", "Error al intentar descargar el reporte", "warning");
+                                }
+                              };
+                              xhr.send();
+                            }}
+                          >
+                            Descargar
+                          </Button>
+                        )
+                      }
+                    </BlobProvider>
+                  </div>
                 </Grid>
               </Fragment>
             )}
@@ -1422,7 +1524,10 @@ function Proyectos(props) {
                                 </IconButton>
                               </Tooltip>
                               <Tooltip title="Reporte">
-                                <Link to={`/reportesProyectos/${proyecto.idProyecto}`} target="_blank">
+                                <Link
+                                  to={`/reportesProyectos/${proyecto.idProyecto}`}
+                                  target="_blank"
+                                >
                                   <IconButton>
                                     <PictureAsPdfIcon color="primary" />
                                   </IconButton>
@@ -3750,14 +3855,17 @@ function Actividades(props) {
       if (actividadSelected.Nivel === 0) {
         swal("Error", "La actividad ya esta en el nivel mas bajo", "warning");
       } else {
+        console.log(treeData);
         console.log(actividadSelected);
+        console.log("id actividad:",idActividadSelected);
+        /* console.log(actividadSelected);
         const actividadAnterior =
           actividadSelected.Pos === 1
             ? []
             : actividades.filter(
                 (actividad) => actividad.Pos === actividadSelected.Pos - 1
               )[0];
-        console.log(actividadAnterior);
+        console.log(actividadAnterior); */
 
         /* executeModificarInfoPryProyActividad({
           data: {
@@ -6692,391 +6800,369 @@ function ReportePorProyecto(props) {
   }
   return (
     <Document>
-        {actividadesProyectosData.map(
-          (actividadesProyecto, indexActividadesProyecto) => (
-            <Page
-              key={indexActividadesProyecto}
-              size="A4"
-              style={stylesPDF.page}
-            >
-              <View style={stylesPDF.body}>
-                <View style={stylesPDF.row}>
-                  <Image src={DublockLogo} style={{ width: "200px" }} />
-                </View>
-                <View style={stylesPDF.row}>
-                  <Text style={{ textAlign: "center" }}>
-                    Detalle de Proyecto
-                  </Text>
-                </View>
-                <View style={stylesPDF.row}>
-                  <Text>Proyecto: {actividadesProyecto.nombreProyecto}</Text>
-                </View>
-                <View style={stylesPDF.table}>
-                  {/* TableHeader */}
-                  <View style={stylesPDF.tableRow}>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>Ps</Text>
-                    </View>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>NV</Text>
-                    </View>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>Actividad</Text>
-                    </View>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>FecIni</Text>
-                    </View>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>FecFin</Text>
-                    </View>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>Avance</Text>
-                    </View>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>Agente</Text>
-                    </View>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>Estatus</Text>
-                    </View>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>FecUltAccion</Text>
-                    </View>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>Doctos</Text>
-                    </View>
-                    <View style={stylesPDF.tableColActividades}>
-                      <Text style={stylesPDF.tableHeader}>Dias Retraso</Text>
-                    </View>
+      {actividadesProyectosData.map(
+        (actividadesProyecto, indexActividadesProyecto) => (
+          <Page key={indexActividadesProyecto} size="A4" style={stylesPDF.page}>
+            <View style={stylesPDF.body}>
+              <View style={stylesPDF.row}>
+                <Image src={DublockLogo} style={{ width: "200px" }} />
+              </View>
+              <View style={stylesPDF.row}>
+                <Text style={{ textAlign: "center" }}>Detalle de Proyecto</Text>
+              </View>
+              <View style={stylesPDF.row}>
+                <Text>Proyecto: {actividadesProyecto.nombreProyecto}</Text>
+              </View>
+              <View style={stylesPDF.table}>
+                {/* TableHeader */}
+                <View style={stylesPDF.tableRow}>
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>Ps</Text>
                   </View>
-                  {/* TableBody */}
-                  {actividadesProyecto.actividades.map((actividad, index) => {
-                    let diasRetraso = 0;
-                    diasRetraso =
-                      actividad.Avance !== 100 &&
-                      actividad.FecFin < fechaActual.format("YYYY-MM-DD")
-                        ? fechaActual.diff(actividad.FecFin, "days")
-                        : 0;
-                    return (
-                      <View style={stylesPDF.tableRow} key={index}>
-                        <View style={stylesPDF.tableColActividades}>
-                          <Text
-                            id={`actividad${actividad.id}`}
-                            style={stylesPDF.tableCell}
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>NV</Text>
+                  </View>
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>Actividad</Text>
+                  </View>
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>FecIni</Text>
+                  </View>
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>FecFin</Text>
+                  </View>
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>Avance</Text>
+                  </View>
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>Agente</Text>
+                  </View>
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>Estatus</Text>
+                  </View>
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>FecUltAccion</Text>
+                  </View>
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>Doctos</Text>
+                  </View>
+                  <View style={stylesPDF.tableColActividades}>
+                    <Text style={stylesPDF.tableHeader}>Dias Retraso</Text>
+                  </View>
+                </View>
+                {/* TableBody */}
+                {actividadesProyecto.actividades.map((actividad, index) => {
+                  let diasRetraso = 0;
+                  diasRetraso =
+                    actividad.Avance !== 100 &&
+                    actividad.FecFin < fechaActual.format("YYYY-MM-DD")
+                      ? fechaActual.diff(actividad.FecFin, "days")
+                      : 0;
+                  return (
+                    <View style={stylesPDF.tableRow} key={index}>
+                      <View style={stylesPDF.tableColActividades}>
+                        <Text
+                          id={`actividad${actividad.id}`}
+                          style={stylesPDF.tableCell}
+                        >
+                          {actividad.Pos}
+                        </Text>
+                      </View>
+                      <View style={stylesPDF.tableColActividades}>
+                        <Text style={stylesPDF.tableCell}>
+                          {actividad.Nivel}
+                        </Text>
+                      </View>
+                      <View style={stylesPDF.tableColActividades}>
+                        <Text style={stylesPDF.tableCell}>
+                          {actividad.Actividad}
+                        </Text>
+                      </View>
+                      <View style={stylesPDF.tableColActividades}>
+                        <Text style={stylesPDF.tableCell}>
+                          {actividad.FecIni}
+                        </Text>
+                      </View>
+                      <View style={stylesPDF.tableColActividades}>
+                        <Text style={stylesPDF.tableCell}>
+                          {actividad.FecFin}
+                        </Text>
+                      </View>
+                      <View style={stylesPDF.tableColActividades}>
+                        <Text style={stylesPDF.tableCell}>
+                          {actividad.Avance}%
+                        </Text>
+                      </View>
+                      <View style={stylesPDF.tableColActividades}>
+                        <Text style={stylesPDF.tableCell}>
+                          {actividad.Agente}
+                        </Text>
+                      </View>
+                      <View style={stylesPDF.tableColActividades}>
+                        <Text style={stylesPDF.tableCell}>
+                          {estatus[actividad.Estatus - 1]}
+                        </Text>
+                      </View>
+                      <View style={stylesPDF.tableColActividades}>
+                        {actividad.idUltimaAccion !== 0 ? (
+                          <LinkPdf
+                            style={stylesPDF.tableCellLink}
+                            src={`#accion${actividad.idUltimaAccion}`}
                           >
-                            {actividad.Pos}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColActividades}>
-                          <Text style={stylesPDF.tableCell}>
-                            {actividad.Nivel}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColActividades}>
-                          <Text style={stylesPDF.tableCell}>
-                            {actividad.Actividad}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColActividades}>
-                          <Text style={stylesPDF.tableCell}>
-                            {actividad.FecIni}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColActividades}>
-                          <Text style={stylesPDF.tableCell}>
-                            {actividad.FecFin}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColActividades}>
-                          <Text style={stylesPDF.tableCell}>
-                            {actividad.Avance}%
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColActividades}>
-                          <Text style={stylesPDF.tableCell}>
-                            {actividad.Agente}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColActividades}>
-                          <Text style={stylesPDF.tableCell}>
-                            {estatus[actividad.Estatus - 1]}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColActividades}>
-                          {actividad.idUltimaAccion !== 0 ? (
-                            <LinkPdf
-                              style={stylesPDF.tableCellLink}
-                              src={`#accion${actividad.idUltimaAccion}`}
-                            >
-                              <Text style={stylesPDF.tableCell}>
-                                {actividad.FecUltAccion}
-                              </Text>
-                            </LinkPdf>
-                          ) : (
                             <Text style={stylesPDF.tableCell}>
                               {actividad.FecUltAccion}
                             </Text>
-                          )}
-                        </View>
-                        <View style={stylesPDF.tableColActividades}>
-                          {actividad.numDocumentos > 0 ? (
-                            <LinkPdf
-                              style={stylesPDF.tableCellLink}
-                              src={`#documentoActividad${actividad.id}`}
-                            >
-                              <Text style={stylesPDF.tableCell}>
-                                {actividad.numDocumentos}
-                              </Text>
-                            </LinkPdf>
-                          ) : (
+                          </LinkPdf>
+                        ) : (
+                          <Text style={stylesPDF.tableCell}>
+                            {actividad.FecUltAccion}
+                          </Text>
+                        )}
+                      </View>
+                      <View style={stylesPDF.tableColActividades}>
+                        {actividad.numDocumentos > 0 ? (
+                          <LinkPdf
+                            style={stylesPDF.tableCellLink}
+                            src={`#documentoActividad${actividad.id}`}
+                          >
                             <Text style={stylesPDF.tableCell}>
                               {actividad.numDocumentos}
                             </Text>
-                          )}
-                        </View>
-                        <View style={stylesPDF.tableColActividades}>
-                          <Text style={stylesPDF.tableCell}>{diasRetraso}</Text>
-                        </View>
+                          </LinkPdf>
+                        ) : (
+                          <Text style={stylesPDF.tableCell}>
+                            {actividad.numDocumentos}
+                          </Text>
+                        )}
                       </View>
-                    );
-                  })}
+                      <View style={stylesPDF.tableColActividades}>
+                        <Text style={stylesPDF.tableCell}>{diasRetraso}</Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          </Page>
+        )
+      )}
+      {accionesProyectosData.map((accionesProyecto, indexAccionesProyecto) => (
+        <Page key={indexAccionesProyecto} size="A4" style={stylesPDF.page}>
+          <View style={stylesPDF.body}>
+            <View style={stylesPDF.row}>
+              <Text style={{ textAlign: "center" }}>Detalle de Acciones</Text>
+            </View>
+            <View style={stylesPDF.row}>
+              <Text>Proyecto: {accionesProyecto.nombreProyecto}</Text>
+            </View>
+            <View style={stylesPDF.table}>
+              {/* TableHeader */}
+              <View style={stylesPDF.tableRow}>
+                <View style={stylesPDF.tableColAcciones}>
+                  <Text style={stylesPDF.tableHeader}>Actividad</Text>
+                </View>
+                <View style={stylesPDF.tableColAcciones}>
+                  <Text style={stylesPDF.tableHeader}>Accion</Text>
+                </View>
+                <View style={stylesPDF.tableColAcciones}>
+                  <Text style={stylesPDF.tableHeader}>FecFinActividad</Text>
+                </View>
+                <View style={stylesPDF.tableColAcciones}>
+                  <Text style={stylesPDF.tableHeader}>FechaAccion</Text>
+                </View>
+                <View style={stylesPDF.tableColAcciones}>
+                  <Text style={stylesPDF.tableHeader}>Ejecutó</Text>
+                </View>
+                <View style={stylesPDF.tableColAcciones}>
+                  <Text style={stylesPDF.tableHeader}>Avance</Text>
+                </View>
+                <View style={stylesPDF.tableColAcciones}>
+                  <Text style={stylesPDF.tableHeader}>Estatus</Text>
+                </View>
+                <View style={stylesPDF.tableColAcciones}>
+                  <Text style={stylesPDF.tableHeader}>Docto</Text>
+                </View>
+                <View style={stylesPDF.tableColAcciones}>
+                  <Text style={stylesPDF.tableHeader}>DiasRetrasoVsPlan</Text>
                 </View>
               </View>
-            </Page>
-          )
-        )}
-        {accionesProyectosData.map(
-          (accionesProyecto, indexAccionesProyecto) => (
-            <Page key={indexAccionesProyecto} size="A4" style={stylesPDF.page}>
-              <View style={stylesPDF.body}>
-                <View style={stylesPDF.row}>
-                  <Text style={{ textAlign: "center" }}>
-                    Detalle de Acciones
-                  </Text>
-                </View>
-                <View style={stylesPDF.row}>
-                  <Text>Proyecto: {accionesProyecto.nombreProyecto}</Text>
-                </View>
-                <View style={stylesPDF.table}>
-                  {/* TableHeader */}
-                  <View style={stylesPDF.tableRow}>
+              {/* TableBody */}
+              {accionesProyecto.acciones.map((accion, index) => {
+                let diasRetraso = 0;
+                diasRetraso = moment(accion.fecha).diff(
+                  accion.fecFinActividad,
+                  "days"
+                );
+                diasRetraso = diasRetraso > 0 ? diasRetraso : 0;
+                let personas = "";
+                for (let x = 0; x < accion.personas.length; x++) {
+                  personas += accion.personas[x].Agente;
+                  personas +=
+                    x === accion.personas.length - 1
+                      ? ""
+                      : x === accion.personas.length - 2
+                      ? " y "
+                      : " ,";
+                }
+                return (
+                  <View style={stylesPDF.tableRow} key={index}>
                     <View style={stylesPDF.tableColAcciones}>
-                      <Text style={stylesPDF.tableHeader}>Actividad</Text>
+                      <LinkPdf
+                        style={stylesPDF.tableCellLink}
+                        src={`#actividad${accion.idactividad}`}
+                      >
+                        <Text
+                          id={`accion${accion.id}`}
+                          style={stylesPDF.tableCell}
+                        >
+                          {accion.Actividad}
+                        </Text>
+                      </LinkPdf>
                     </View>
                     <View style={stylesPDF.tableColAcciones}>
-                      <Text style={stylesPDF.tableHeader}>Accion</Text>
+                      <Text style={stylesPDF.tableCell}>{accion.nombre}</Text>
                     </View>
                     <View style={stylesPDF.tableColAcciones}>
-                      <Text style={stylesPDF.tableHeader}>FecFinActividad</Text>
-                    </View>
-                    <View style={stylesPDF.tableColAcciones}>
-                      <Text style={stylesPDF.tableHeader}>FechaAccion</Text>
-                    </View>
-                    <View style={stylesPDF.tableColAcciones}>
-                      <Text style={stylesPDF.tableHeader}>Ejecutó</Text>
-                    </View>
-                    <View style={stylesPDF.tableColAcciones}>
-                      <Text style={stylesPDF.tableHeader}>Avance</Text>
-                    </View>
-                    <View style={stylesPDF.tableColAcciones}>
-                      <Text style={stylesPDF.tableHeader}>Estatus</Text>
-                    </View>
-                    <View style={stylesPDF.tableColAcciones}>
-                      <Text style={stylesPDF.tableHeader}>Docto</Text>
-                    </View>
-                    <View style={stylesPDF.tableColAcciones}>
-                      <Text style={stylesPDF.tableHeader}>
-                        DiasRetrasoVsPlan
+                      <Text style={stylesPDF.tableCell}>
+                        {accion.fecFinActividad}
                       </Text>
                     </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableCell}>{accion.fecha}</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableCell}>{personas}</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableCell}>{accion.Avance}%</Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableCell}>
+                        {estatus[accion.estatus - 1]}
+                      </Text>
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      {accion.numDocumentos > 0 ? (
+                        <LinkPdf
+                          style={stylesPDF.tableCellLink}
+                          src={`#documentoaccion${accion.id}`}
+                        >
+                          <Text style={stylesPDF.tableCell}>
+                            {accion.numDocumentos}
+                          </Text>
+                        </LinkPdf>
+                      ) : (
+                        <Text style={stylesPDF.tableCell}>
+                          {accion.numDocumentos}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={stylesPDF.tableColAcciones}>
+                      <Text style={stylesPDF.tableCell}>{diasRetraso}</Text>
+                    </View>
                   </View>
-                  {/* TableBody */}
-                  {accionesProyecto.acciones.map((accion, index) => {
-                    let diasRetraso = 0;
-                    diasRetraso = moment(accion.fecha).diff(
-                      accion.fecFinActividad,
-                      "days"
-                    );
-                    diasRetraso = diasRetraso > 0 ? diasRetraso : 0;
-                    let personas = "";
-                    for (let x = 0; x < accion.personas.length; x++) {
-                      personas += accion.personas[x].Agente;
-                      personas +=
-                        x === accion.personas.length - 1
-                          ? ""
-                          : x === accion.personas.length - 2
-                          ? " y "
-                          : " ,";
-                    }
-                    return (
-                      <View style={stylesPDF.tableRow} key={index}>
-                        <View style={stylesPDF.tableColAcciones}>
-                          <LinkPdf
-                            style={stylesPDF.tableCellLink}
-                            src={`#actividad${accion.idactividad}`}
-                          >
-                            <Text
-                              id={`accion${accion.id}`}
-                              style={stylesPDF.tableCell}
-                            >
-                              {accion.Actividad}
-                            </Text>
-                          </LinkPdf>
-                        </View>
-                        <View style={stylesPDF.tableColAcciones}>
-                          <Text style={stylesPDF.tableCell}>
-                            {accion.nombre}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColAcciones}>
-                          <Text style={stylesPDF.tableCell}>
-                            {accion.fecFinActividad}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColAcciones}>
-                          <Text style={stylesPDF.tableCell}>
-                            {accion.fecha}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColAcciones}>
-                          <Text style={stylesPDF.tableCell}>{personas}</Text>
-                        </View>
-                        <View style={stylesPDF.tableColAcciones}>
-                          <Text style={stylesPDF.tableCell}>
-                            {accion.Avance}%
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColAcciones}>
-                          <Text style={stylesPDF.tableCell}>
-                            {estatus[accion.estatus - 1]}
-                          </Text>
-                        </View>
-                        <View style={stylesPDF.tableColAcciones}>
-                          {accion.numDocumentos > 0 ? (
-                            <LinkPdf
-                              style={stylesPDF.tableCellLink}
-                              src={`#documentoaccion${accion.id}`}
-                            >
-                              <Text style={stylesPDF.tableCell}>
-                                {accion.numDocumentos}
-                              </Text>
-                            </LinkPdf>
-                          ) : (
-                            <Text style={stylesPDF.tableCell}>
-                              {accion.numDocumentos}
-                            </Text>
-                          )}
-                        </View>
-                        <View style={stylesPDF.tableColAcciones}>
-                          <Text style={stylesPDF.tableCell}>{diasRetraso}</Text>
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
+                );
+              })}
+            </View>
+          </View>
+        </Page>
+      ))}
+      {documentosProyectosData.map(
+        (documentosProyecto, indexDocumentosProyecto) => (
+          <Page key={indexDocumentosProyecto} size="A4" style={stylesPDF.page}>
+            <View style={stylesPDF.body}>
+              <View style={stylesPDF.row}>
+                <Text
+                  id={`documentos${documentosProyecto.idProyecto}`}
+                  style={{ textAlign: "center" }}
+                >
+                  Detalle de Documentos
+                </Text>
               </View>
-            </Page>
-          )
-        )}
-        {documentosProyectosData.map(
-          (documentosProyecto, indexDocumentosProyecto) => (
-            <Page
-              key={indexDocumentosProyecto}
-              size="A4"
-              style={stylesPDF.page}
-            >
-              <View style={stylesPDF.body}>
-                <View style={stylesPDF.row}>
-                  <Text
-                    id={`documentos${documentosProyecto.idProyecto}`}
-                    style={{ textAlign: "center" }}
-                  >
-                    Detalle de Documentos
-                  </Text>
-                </View>
-                <View style={stylesPDF.row}>
-                  <Text>Proyecto: {documentosProyecto.nombreProyecto}</Text>
-                </View>
-                <View style={stylesPDF.table}>
-                  {/* TableHeader */}
-                  <View style={stylesPDF.tableRow}>
-                    <View style={stylesPDF.tableColDocumentos}>
-                      <Text style={stylesPDF.tableHeader}>Actividad</Text>
-                    </View>
-                    <View style={stylesPDF.tableColDocumentos}>
-                      <Text style={stylesPDF.tableHeader}>Accion</Text>
-                    </View>
-                    <View style={stylesPDF.tableColDocumentos}>
-                      <Text style={stylesPDF.tableHeader}>Documento</Text>
-                    </View>
+              <View style={stylesPDF.row}>
+                <Text>Proyecto: {documentosProyecto.nombreProyecto}</Text>
+              </View>
+              <View style={stylesPDF.table}>
+                {/* TableHeader */}
+                <View style={stylesPDF.tableRow}>
+                  <View style={stylesPDF.tableColDocumentos}>
+                    <Text style={stylesPDF.tableHeader}>Actividad</Text>
                   </View>
-                  {/* TableBody */}
-                  {documentosProyecto.documentos.map((documento, index) => {
-                    return (
-                      <View style={stylesPDF.tableRow} key={index}>
-                        <View style={stylesPDF.tableColDocumentos}>
-                          {documento.idactividad !== 0 ? (
-                            <LinkPdf
-                              style={stylesPDF.linksDocumentos}
-                              src={`#actividad${documento.idactividad}`}
-                            >
-                              <Text
-                                id={`documentoActividad${documento.idactividad}`}
-                                style={stylesPDF.tableCell}
-                              >
-                                {documento.Actividad}
-                              </Text>
-                            </LinkPdf>
-                          ) : (
+                  <View style={stylesPDF.tableColDocumentos}>
+                    <Text style={stylesPDF.tableHeader}>Accion</Text>
+                  </View>
+                  <View style={stylesPDF.tableColDocumentos}>
+                    <Text style={stylesPDF.tableHeader}>Documento</Text>
+                  </View>
+                </View>
+                {/* TableBody */}
+                {documentosProyecto.documentos.map((documento, index) => {
+                  return (
+                    <View style={stylesPDF.tableRow} key={index}>
+                      <View style={stylesPDF.tableColDocumentos}>
+                        {documento.idactividad !== 0 ? (
+                          <LinkPdf
+                            style={stylesPDF.linksDocumentos}
+                            src={`#actividad${documento.idactividad}`}
+                          >
                             <Text
                               id={`documentoActividad${documento.idactividad}`}
                               style={stylesPDF.tableCell}
                             >
                               {documento.Actividad}
                             </Text>
-                          )}
-                        </View>
-                        <View style={stylesPDF.tableColDocumentos}>
-                          {documento.idaccion !== 0 ? (
-                            <LinkPdf
-                              style={stylesPDF.linksDocumentos}
-                              src={`#accion${documento.idaccion}`}
-                            >
-                              <Text
-                                id={`documentoAccion${documento.idaccion}`}
-                                style={stylesPDF.tableCell}
-                              >
-                                {documento.Accion}
-                              </Text>
-                            </LinkPdf>
-                          ) : (
+                          </LinkPdf>
+                        ) : (
+                          <Text
+                            id={`documentoActividad${documento.idactividad}`}
+                            style={stylesPDF.tableCell}
+                          >
+                            {documento.Actividad}
+                          </Text>
+                        )}
+                      </View>
+                      <View style={stylesPDF.tableColDocumentos}>
+                        {documento.idaccion !== 0 ? (
+                          <LinkPdf
+                            style={stylesPDF.linksDocumentos}
+                            src={`#accion${documento.idaccion}`}
+                          >
                             <Text
                               id={`documentoAccion${documento.idaccion}`}
                               style={stylesPDF.tableCell}
                             >
                               {documento.Accion}
                             </Text>
-                          )}
-                        </View>
-                        <View style={stylesPDF.tableColDocumentos}>
-                          <LinkPdf
-                            style={stylesPDF.linksDocumentos}
-                            src={documento.LinkDocumento}
-                            rel="noopener noreferrer meaning"
-                            target="_blank"
-                          >
-                            <Text style={stylesPDF.tableCell}>
-                              {documento.NombreDocumento}
-                            </Text>
                           </LinkPdf>
-                        </View>
+                        ) : (
+                          <Text
+                            id={`documentoAccion${documento.idaccion}`}
+                            style={stylesPDF.tableCell}
+                          >
+                            {documento.Accion}
+                          </Text>
+                        )}
                       </View>
-                    );
-                  })}
-                </View>
+                      <View style={stylesPDF.tableColDocumentos}>
+                        <LinkPdf
+                          style={stylesPDF.linksDocumentos}
+                          src={documento.LinkDocumento}
+                          rel="noopener noreferrer meaning"
+                          target="_blank"
+                        >
+                          <Text style={stylesPDF.tableCell}>
+                            {documento.NombreDocumento}
+                          </Text>
+                        </LinkPdf>
+                      </View>
+                    </View>
+                  );
+                })}
               </View>
-            </Page>
-          )
-        )}
-      </Document>
+            </View>
+          </Page>
+        )
+      )}
+    </Document>
   );
 }

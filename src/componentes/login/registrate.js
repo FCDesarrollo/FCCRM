@@ -84,11 +84,11 @@ export default function Registrate() {
       } else {
         swal(
           "Registro correcto",
-          "Se envió un código de confirmación al correo "+correo,
+          "Se envió un código de confirmación al correo "+registrateData.correo,
           "success"
         ).then(() => {
           const usuarioToken = jwt.sign(
-            { usuario: correo },
+            { usuario: registrateData.correo },
             "mysecretpassword"
           );
           localStorage.setItem("usuarioToken", usuarioToken);
@@ -96,7 +96,7 @@ export default function Registrate() {
         });
       }
     }
-  }, [registrateData, correo, identificador]);
+  }, [registrateData, identificador]);
 
   if (registrateLoading) {
     return <CircularProgress />;
@@ -142,7 +142,7 @@ export default function Registrate() {
         inputAM.current.focus();
       });
       setDisabledButton(false);
-    } else if (cel.trim() === "") {
+    } /* else if (cel.trim() === "") {
       swal(
         "Faltan llenar campos",
         "Ingrese un teléfono paterno",
@@ -155,7 +155,7 @@ export default function Registrate() {
         inputTelefono.current.focus();
       });
       setDisabledButton(false);
-    } else if (correo.trim() === "") {
+    } */ else if (correo.trim() === "") {
       swal(
         "Faltan llenar campos",
         "Ingrese un correo electrónico",
@@ -301,7 +301,7 @@ export default function Registrate() {
                   variant="outlined"
                   label="Teléfono"
                   type="text"
-                  required
+                  /* required */
                   value={cel}
                   inputProps={{
                     maxLength: 70,

@@ -2094,9 +2094,9 @@ function CrearUsuario(props) {
       swal("Error", "Ingrese un correo", "warning");
     } else if (!validarCorreo(correo.trim())) {
       swal("Error", "Ingrese un correo valido", "warning");
-    } else if (celular.trim() === "") {
+    } /* else if (celular.trim() === "") {
       swal("Error", "Ingrese un celular", "warning");
-    } else if (perfil === "0") {
+    } */ else if (perfil === "0") {
       swal("Error", "Seleccione un perfil", "warning");
     } else {
       const identificador = Math.floor(Math.random() * 1000000);
@@ -2145,6 +2145,7 @@ function CrearUsuario(props) {
         <TextField
           className={classes.textFields}
           id="nombre"
+          required
           label="Nombre"
           variant="outlined"
           type="text"
@@ -2169,6 +2170,7 @@ function CrearUsuario(props) {
         <TextField
           className={classes.textFields}
           id="apellidoPaterno"
+          required
           label="Apellido Paterno"
           variant="outlined"
           type="text"
@@ -2193,6 +2195,7 @@ function CrearUsuario(props) {
         <TextField
           className={classes.textFields}
           id="apellidoMaterno"
+          required
           label="Apellido Materno"
           variant="outlined"
           type="text"
@@ -2217,6 +2220,7 @@ function CrearUsuario(props) {
         <TextField
           className={classes.textFields}
           id="correoElectronico"
+          required
           label="Correo Electrónico"
           variant="outlined"
           type="text"
@@ -2241,6 +2245,7 @@ function CrearUsuario(props) {
         <TextField
           className={classes.textFields}
           id="telefonoCelular"
+          /* required */
           label="Teléfono Celular"
           variant="outlined"
           type="text"
@@ -2265,6 +2270,7 @@ function CrearUsuario(props) {
         <TextField
           className={classes.textFields}
           id="asignarPerfil"
+          required
           label="Asignar Perfil"
           variant="outlined"
           type="text"

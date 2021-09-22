@@ -62,6 +62,7 @@ import moment from "moment";
 import swal from "sweetalert";
 /* import swalReact from "@sweetalert/with-react"; */
 import ErrorQueryDB from "../componentsHelpers/errorQueryDB";
+import imageCompression from "browser-image-compression";
 
 const jwt = require("jsonwebtoken");
 
@@ -584,6 +585,7 @@ function TablaADO(props) {
     sucursal: "0",
     comentarios: "",
   });
+  const [archivosLoading, setArchivosLoading] = useState(false);
   //const [busquedaFiltro, setBusquedaFiltro] = useState("");
   const [
     {
@@ -831,6 +833,12 @@ function TablaADO(props) {
     const { archivos, fecha, sucursal } = nuevoADO;
     if (archivos === null || archivos.length === 0) {
       swal("Faltan llenar campos", "Seleccione un archivo", "warning");
+    } else if (archivos.length > 50) {
+      swal(
+        "Faltan llenar campos",
+        "Solo se permite un máximo de 50 archivos",
+        "warning"
+      );
     } else {
       for (let x = 0; x < archivos.length; x++) {
         if (!verificarExtensionArchivo(archivos[x].name)) {
@@ -859,10 +867,16 @@ function TablaADO(props) {
         formData.append("observaciones", nuevoADO.comentarios);
         formData.append("usuario_storage", empresaDatos.usuario_storage);
         formData.append("password_storage", empresaDatos.password_storage);
+        let filesOriginalsNames = [];
         for (let x = 0; x < archivos.length; x++) {
           formData.append(x, archivos[x]);
+          filesOriginalsNames.push(
+            archivos.length - 1 === x
+              ? archivos[x].name
+              : archivos[x].name + "-$-"
+          );
         }
-
+        formData.append("filesOriginalsNames", filesOriginalsNames);
         executeCargaArchivos({
           data: formData,
           headers: {
@@ -1107,6 +1121,9 @@ function TablaADO(props) {
         <DialogContent>
           <Grid container justify="center" spacing={3}>
             <Grid item xs={12} md={8}>
+              <Typography variant="subtitle1" style={{ marginBottom: "-20px" }}>
+                Máximo 50 archivos
+              </Typography>
               <TextField
                 className={classes.textFields}
                 id="archivoNewADO"
@@ -1116,11 +1133,43 @@ function TablaADO(props) {
                 inputProps={{
                   multiple: true,
                 }}
-                onChange={(e) => {
+                onChange={async (e) => {
+                  let archivosNuevos = [];
+                  setArchivosLoading(true);
+                  for await (let file of e.target.files) {
+                    let extencionArchivo = file.name.split(".");
+                    extencionArchivo =
+                      extencionArchivo[extencionArchivo.length - 1];
+                    if (
+                      extencionArchivo === "png" ||
+                      extencionArchivo === "jpeg" ||
+                      extencionArchivo === "jpg"
+                    ) {
+                      const imageFile = file;
+
+                      const options = {
+                        maxSizeMB: 0.5,
+                        maxWidthOrHeight: 1920,
+                        useWebWorker: true,
+                      };
+                      try {
+                        const compressedFile = await imageCompression(
+                          imageFile,
+                          options
+                        );
+                        archivosNuevos.push(compressedFile);
+                      } catch (error) {
+                        console.log(error);
+                      }
+                    } else {
+                      archivosNuevos.push(file);
+                    }
+                  }
                   setNuevoADO({
                     ...nuevoADO,
-                    archivos: e.target.files,
+                    archivos: archivosNuevos,
                   });
+                  setArchivosLoading(false);
                 }}
               />
             </Grid>
@@ -1189,8 +1238,15 @@ function TablaADO(props) {
           </Grid>
         </DialogContent>
         <DialogActions>
+          {archivosLoading && (
+            <Typography variant="subtitle1" color="secondary">
+              Reduciendo tamaño de imagenes, espere por favor.
+            </Typography>
+          )}
           <Button
-            disabled={permisosSubmenu < 1 || statusEmpresa !== 1}
+            disabled={
+              permisosSubmenu < 1 || statusEmpresa !== 1 || archivosLoading
+            }
             onClick={() => {
               newADO();
             }}
@@ -1331,7 +1387,10 @@ function VerDocumentos(props) {
         } else {
           if (descargarArchivosAlmacenDigitalData.link !== "") {
             var link = document.createElement("a");
-            link.setAttribute("href", descargarArchivosAlmacenDigitalData.link + "/download");
+            link.setAttribute(
+              "href",
+              descargarArchivosAlmacenDigitalData.link + "/download"
+            );
             link.setAttribute("download", true);
             link.click();
             /* window.open(descargarArchivosAlmacenDigitalData.link + "/download"); */
