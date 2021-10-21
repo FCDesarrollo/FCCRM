@@ -71,7 +71,7 @@ export default function Registrate() {
     executeRegistrate
   ] = useAxios(
     {
-      url: "http://apicrm.dublock.com/registrarUsuario",
+      url: "https://apicrm.dublock.com/registrarUsuario",
       method: "POST"
     },
     { manual: true }

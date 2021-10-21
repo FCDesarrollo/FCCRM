@@ -2229,7 +2229,7 @@ function InformacionEmpresa(props) {
               label="Password Storage"
               variant="outlined"
               margin="normal"
-              type="password"
+              type="text"
               value={
                 datosEmpresa.password_storage !== null
                   ? datosEmpresa.password_storage

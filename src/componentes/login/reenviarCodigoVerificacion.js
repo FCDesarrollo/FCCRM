@@ -56,7 +56,7 @@ export default function ReenviarCodigoVerificacion() {
     executeReenviarCodigo
   ] = useAxios(
     {
-      url: "http://apicrm.dublock.com/reenviaCodigo",
+      url: "https://apicrm.dublock.com/reenviaCodigo",
       method: "POST"
     },
     { manual: true }

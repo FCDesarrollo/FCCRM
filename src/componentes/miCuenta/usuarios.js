@@ -2100,7 +2100,7 @@ function CrearUsuario(props) {
       swal("Error", "Seleccione un perfil", "warning");
     } else {
       const identificador = Math.floor(Math.random() * 1000000);
-      const linkConfirmacion = `http://${window.location.host}/#/?ruta=cambiarContra&usuario=`;
+      const linkConfirmacion = `https://${window.location.host}/#/?ruta=cambiarContra&usuario=`;
       executeCrearNuevoUsuario({
         data: {
           usuario: usuario,

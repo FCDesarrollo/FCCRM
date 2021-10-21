@@ -59,7 +59,7 @@ export default function VerificarCodigo() {
     executeVerificarCodigo
   ] = useAxios(
     {
-      url: "http://apicrm.dublock.com/verificaCodigo",
+      url: "https://apicrm.dublock.com/verificaCodigo",
       method: "POST"
     },
     { manual: true }

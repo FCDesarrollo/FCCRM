@@ -2885,7 +2885,7 @@ function FormularioAYG(props) {
         "warning"
       );
     } else {
-      const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
+      const linkMensaje = `https://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
       const encabezadoMensaje =
         radioTipo !== "gastos"
           ? `Nuevo requerimiento de ${tableTittle.toLowerCase()}`
@@ -3023,7 +3023,7 @@ function FormularioAYG(props) {
         }
       }
       const encabezadoMensaje = `Se actualizo un requerimiento de ${tableTittle.toLowerCase()}`;
-      const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
+      const linkMensaje = `https://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
       const mensaje = `${usuarioNombreCompleto} ha actualizado un requerimiento de ${tableTittle.toLowerCase()} en ${nombreEmpresa}: \n ${linkMensaje}`;
       const formData = new FormData();
       formData.append("usuario", usuario);
@@ -3359,7 +3359,7 @@ function FormularioAYG(props) {
       }
       if (cambioEstatus) {
         const encabezadoMensaje = `Se actualizo el estatus de un requerimiento de ${tableTittle.toLowerCase()}`;
-        const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
+        const linkMensaje = `https://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
         const mensaje = `${usuarioNombreCompleto} ha actualizado el estatus de un requerimiento de ${tableTittle.toLowerCase()} en ${nombreEmpresa}: \n ${linkMensaje}`;
         let estatusGasto = 0;
         if (
@@ -3604,7 +3604,7 @@ function FormularioAYG(props) {
 
   const reenviarNotificacionUsuarios = () => {
     if (usuariosNotificacionesSelected.length > 0) {
-      const linkMensaje = `http://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
+      const linkMensaje = `https://${window.location.host}/#/?ruta=autorizacionesGastos&idempresa=${empresaId}&idmodulo=${idModulo}&idmenu=${idMenu}&idsubmenu=${idSubmenu}&iddocumento=${idRequerimiento}&tipo=${radioTipo}`;
       const reenviarNotificacionDatos = {
         usuario: usuario,
         pwd: usuarioPassword,

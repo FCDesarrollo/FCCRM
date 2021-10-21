@@ -3858,6 +3858,7 @@ function Actividades(props) {
         console.log(treeData);
         console.log(actividadSelected);
         console.log("id actividad:",idActividadSelected);
+        console.log("nivel: ",actividadSelected.Nivel - 1);
         /* console.log(actividadSelected);
         const actividadAnterior =
           actividadSelected.Pos === 1
